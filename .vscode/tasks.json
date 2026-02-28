@@ -1,0 +1,54 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run Frontend",
+            "type": "shell",
+            "command": "npm run dev",
+            "isBackground": true,
+            "problemMatcher": {
+                "owner": "vite",
+                "pattern": {
+                    "regexp": "^$"
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": "VITE v",
+                    "endsPattern": "ready in"
+                }
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/frontend"
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "group": "frontend"
+            }
+        },
+        {
+            "label": "Run Backend",
+            "type": "shell",
+            "command": "./mvnw.cmd spring-boot:run",
+            "options": {
+                "cwd": "${workspaceFolder}/backend"
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "group": "backend"
+            }
+        },
+        {
+            "label": "Run Full App",
+            "dependsOn": [
+                "Run Frontend",
+                "Run Backend"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
