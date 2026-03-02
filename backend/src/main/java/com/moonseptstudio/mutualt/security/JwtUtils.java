@@ -17,7 +17,7 @@ public class JwtUtils {
     private int jwtExpirationMs;
 
     private java.security.Key getSigningKey() {
-        byte[] keyBytes = io.jsonwebtoken.io.Decoders.BASE64.decode(jwtSecret);
+        byte[] keyBytes = jwtSecret.getBytes(java.nio.charset.StandardCharsets.UTF_8);
         return io.jsonwebtoken.security.Keys.hmacShaKeyFor(keyBytes);
     }
 
