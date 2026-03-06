@@ -12,6 +12,17 @@ body {
   @apply bg-slate-50 text-slate-900;
 }
 
+button,
+a,
+[role="button"],
+input[type="submit"],
+input[type="reset"],
+input[type="button"],
+select,
+.cursor-pointer {
+  cursor: pointer !important;
+}
+
 h1,
 h2,
 h3,

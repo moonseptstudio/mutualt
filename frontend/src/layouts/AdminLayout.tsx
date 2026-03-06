@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     ShieldCheck,
     Users,
@@ -10,6 +10,7 @@ import {
     Bell,
     AlertTriangle
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const SidebarItem = ({ icon: Icon, label, to, active }: any) => (
     <Link
@@ -29,6 +30,13 @@ const SidebarItem = ({ icon: Icon, label, to, active }: any) => (
 
 const AdminLayout = () => {
     const location = useLocation();
+    const navigate = useNavigate();
+    const { user, logout } = useAuth();
+
+    const handleSignOut = () => {
+        logout();
+        navigate('/admin/login');
+    };
 
     return (
         <div className="flex h-screen bg-[#F8FAFC] overflow-hidden font-sans selection:bg-primary-500/30">
@@ -62,6 +70,12 @@ const AdminLayout = () => {
                         active={location.pathname === '/admin/users'}
                     />
                     <SidebarItem
+                        icon={ShieldCheck}
+                        label="Categories"
+                        to="/admin/categories"
+                        active={location.pathname === '/admin/categories'}
+                    />
+                    <SidebarItem
                         icon={Hospital}
                         label="Stations"
                         to="/admin/stations"
@@ -89,7 +103,10 @@ const AdminLayout = () => {
                 </nav>
 
                 <div className="p-6">
-                    <button className="flex items-center space-x-3 px-4 py-4 w-full text-slate-500 hover:bg-rose-50 hover:text-rose-600 rounded-2xl transition-all duration-300 font-medium text-[11px] uppercase tracking-wider group">
+                    <button
+                        onClick={handleSignOut}
+                        className="flex items-center space-x-3 px-4 py-4 w-full text-slate-500 hover:bg-rose-50 hover:text-rose-600 rounded-2xl transition-all duration-300 font-medium text-[11px] uppercase tracking-wider group"
+                    >
                         <LogOut size={18} className="group-hover:-translate-x-1 transition-transform" />
                         <span>Sign Out</span>
                     </button>
@@ -121,11 +138,11 @@ const AdminLayout = () => {
                         </button>
 
                         <div className="flex items-center space-x-4 cursor-pointer group bg-slate-50 hover:bg-slate-100 p-1.5 pr-4 rounded-2xl transition-all">
-                            <div className="w-9 h-9 bg-slate-950 rounded-[12px] flex items-center justify-center text-white shadow-lg shadow-slate-900/10">
-                                <ShieldCheck size={18} />
+                            <div className="w-9 h-9 bg-slate-950 rounded-[12px] flex items-center justify-center text-white shadow-lg shadow-slate-900/10 font-medium text-xs uppercase">
+                                {user?.username?.substring(0, 2) || 'AD'}
                             </div>
                             <div className="hidden sm:block">
-                                <p className="text-[11px] font-semibold text-slate-900 leading-none">Super Admin</p>
+                                <p className="text-[11px] font-semibold text-slate-900 leading-none">{user?.username || 'Administrator'}</p>
                                 <p className="text-[11px] font-medium text-primary-600 leading-none mt-1.5 uppercase tracking-wider">Root Access</p>
                             </div>
                         </div>

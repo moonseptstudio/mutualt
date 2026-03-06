@@ -11,7 +11,8 @@ import {
     Hospital,
     Lock,
     ArrowRight,
-    AlertCircle
+    AlertCircle,
+    ChevronDown
 } from 'lucide-react';
 
 const RegisterPage = () => {
@@ -75,10 +76,11 @@ const RegisterPage = () => {
                 username: formData.nic,
                 password: formData.password,
                 fullName: formData.fullName,
+                email: formData.email,
                 nic: formData.nic,
-                jobCategoryId: formData.jobCategoryId,
-                gradeId: formData.gradeId,
-                currentStationId: formData.currentStationId
+                jobCategoryId: Number(formData.jobCategoryId),
+                gradeId: Number(formData.gradeId),
+                currentStationId: Number(formData.currentStationId)
             });
 
             // Automatically login after registration
@@ -202,12 +204,15 @@ const RegisterPage = () => {
                                                     <select
                                                         value={formData.jobCategoryId}
                                                         onChange={(e) => setFormData({ ...formData, jobCategoryId: e.target.value })}
-                                                        className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 focus:bg-white outline-none transition-all font-medium appearance-none"
+                                                        className="w-full pl-12 pr-10 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 focus:bg-white outline-none transition-all font-medium appearance-none"
                                                         required
                                                     >
                                                         <option value="">Select Category</option>
                                                         {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                                     </select>
+                                                    <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                                                        <ChevronDown className="w-5 h-5 text-slate-400" />
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div>
@@ -217,12 +222,15 @@ const RegisterPage = () => {
                                                     <select
                                                         value={formData.currentStationId}
                                                         onChange={(e) => setFormData({ ...formData, currentStationId: e.target.value })}
-                                                        className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 focus:bg-white outline-none transition-all font-medium appearance-none"
+                                                        className="w-full pl-12 pr-10 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 focus:bg-white outline-none transition-all font-medium appearance-none"
                                                         required
                                                     >
                                                         <option value="">Select Station</option>
                                                         {stations.map(s => <option key={s.id} value={s.id}>{s.name} ({s.district})</option>)}
                                                     </select>
+                                                    <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                                                        <ChevronDown className="w-5 h-5 text-slate-400" />
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div className="grid grid-cols-2 gap-4">
@@ -232,12 +240,15 @@ const RegisterPage = () => {
                                                         <select
                                                             value={formData.gradeId}
                                                             onChange={(e) => setFormData({ ...formData, gradeId: e.target.value })}
-                                                            className="w-full px-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 focus:bg-white outline-none transition-all font-medium appearance-none"
+                                                            className="w-full pl-4 pr-10 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 focus:bg-white outline-none transition-all font-medium appearance-none"
                                                             required
                                                         >
                                                             <option value="">Select Grade</option>
                                                             {grades.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                                                         </select>
+                                                        <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                                                            <ChevronDown className="w-5 h-5 text-slate-400" />
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div>

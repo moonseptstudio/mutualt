@@ -9,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/profile")
 public class ProfileController {
@@ -34,7 +33,49 @@ public class ProfileController {
         dto.setGradeName(profile.getGrade().getName());
         dto.setCurrentStationName(profile.getCurrentStation().getName());
         dto.setCurrentStationDistrict(profile.getCurrentStation().getDistrict());
+        dto.setPhoneNumber(profile.getPhoneNumber());
+        dto.setVerificationLevel(profile.getVerificationLevel());
+        dto.setServiceLetterStatus(profile.getServiceLetterStatus());
+        dto.setBiometricsStatus(profile.getBiometricsStatus());
+        dto.setProfileImageUrl(profile.getProfileImageUrl());
+        dto.setServiceLetterUrl(profile.getServiceLetterUrl());
 
         return dto;
+    }
+
+    @PutMapping("/me")
+    public UserProfileDto updateProfile(@RequestBody UserProfileDto updateDto, Authentication authentication) {
+        User user = userRepository.findByUsername(authentication.getName()).orElseThrow();
+        UserProfile profile = userProfileRepository.findByUserId(user.getId()).orElseThrow();
+
+        if (updateDto.getEmail() != null) {
+            profile.setEmail(updateDto.getEmail());
+        }
+        if (updateDto.getPhoneNumber() != null) {
+            profile.setPhoneNumber(updateDto.getPhoneNumber());
+        }
+        if (updateDto.getProfileImageUrl() != null) {
+            profile.setProfileImageUrl(updateDto.getProfileImageUrl());
+        }
+
+        userProfileRepository.save(profile);
+        return getCurrentProfile(authentication);
+    }
+
+    @PutMapping("/submit-doc/{docType}")
+    public UserProfileDto submitDocument(@PathVariable String docType, Authentication authentication) {
+        User user = userRepository.findByUsername(authentication.getName()).orElseThrow();
+        UserProfile profile = userProfileRepository.findByUserId(user.getId()).orElseThrow();
+
+        if ("serviceLetter".equalsIgnoreCase(docType)) {
+            profile.setServiceLetterStatus("REVIEWING");
+            profile.setVerificationLevel(2); // Bump level on submission
+        } else if ("biometrics".equalsIgnoreCase(docType)) {
+            profile.setBiometricsStatus("COMPLETED");
+            profile.setVerificationLevel(3); // Bump level on biometric completion
+        }
+
+        userProfileRepository.save(profile);
+        return getCurrentProfile(authentication);
     }
 }

@@ -35,4 +35,14 @@ public class UserProfile {
     @ManyToOne
     @JoinColumn(name = "current_station_id")
     private Station currentStation;
+
+    private String phoneNumber;
+
+    @Column(columnDefinition = "int default 1")
+    private Integer verificationLevel = 1;
+
+    private String serviceLetterStatus = "PENDING"; // PENDING, REVIEWING, COMPLETED
+    private String biometricsStatus = "PENDING"; // PENDING, COMPLETED
+    private String profileImageUrl;
+    private String serviceLetterUrl;
 }

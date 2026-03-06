@@ -1,5 +1,6 @@
 import { Outlet, Link } from 'react-router-dom';
 import { RefreshCw } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const WebLayout = () => {
     return (
@@ -54,8 +55,8 @@ const WebLayout = () => {
                     <div>
                         <h4 className="text-white font-semibold mb-4 text-sm uppercase tracking-wider">Legal</h4>
                         <ul className="space-y-2 text-sm">
-                            <li><a href="#" className="hover:text-blue-400">Privacy Policy</a></li>
-                            <li><a href="#" className="hover:text-blue-400">Terms of Service</a></li>
+                            <li><button onClick={() => toast('Privacy Policy will be updated soon', { icon: '📄' })} className="hover:text-blue-400 cursor-pointer">Privacy Policy</button></li>
+                            <li><button onClick={() => toast('Terms of Service will be updated soon', { icon: '⚖️' })} className="hover:text-blue-400 cursor-pointer">Terms of Service</button></li>
                         </ul>
                     </div>
                 </div>

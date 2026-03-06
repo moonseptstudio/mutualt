@@ -8,6 +8,8 @@ import {
     Clock
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import apiClient from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 
@@ -55,14 +57,20 @@ const MatchCard = ({ match, currentUserId }: any) => {
 
 const ClientDashboard = () => {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const [matches, setMatches] = useState<any[]>([]);
+    const [profile, setProfile] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
-                const response = await apiClient.get('/matches');
-                setMatches(response.data);
+                const [matchesRes, profileRes] = await Promise.all([
+                    apiClient.get('/matches'),
+                    apiClient.get('/profile/me')
+                ]);
+                setMatches(matchesRes.data);
+                setProfile(profileRes.data);
             } catch (err) {
                 console.error("Dashboard fetch error", err);
             } finally {
@@ -76,10 +84,10 @@ const ClientDashboard = () => {
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 space-y-8">
-            <div className="flex flex-col lg:flex-row items-start justify-between gap-6">
-                <div>
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+                <div className="text-center lg:text-left">
                     <h1 className="text-4xl font-semibold text-slate-950 tracking-tight leading-none">
-                        Welcome, {user?.username}
+                        Welcome, {profile?.fullName || user?.fullName || user?.username}
                     </h1>
                     <p className="text-slate-500 mt-2 font-medium">Your mutual transfer overview for <span className="text-primary-600 font-bold">March 2026</span>.</p>
                 </div>
@@ -115,8 +123,11 @@ const ClientDashboard = () => {
                                 <p className="text-white/60 text-base font-medium leading-relaxed mb-8">
                                     A potential cycle has been closed between <b>{tripleMatch.participants[1]?.stationName}</b>, <b>{tripleMatch.participants[2]?.stationName}</b>, and your current station. Unlock to contact participants.
                                 </p>
-                                <button className="px-8 py-4 bg-white text-slate-950 font-medium rounded-2xl hover:bg-primary-50 transition-all hover:scale-105 active:scale-95 text-sm shadow-xl">
-                                    Unlock Match Chain
+                                <button
+                                    onClick={() => navigate('/matches')}
+                                    className="px-8 py-4 bg-white text-slate-950 font-medium rounded-2xl hover:bg-primary-50 transition-all hover:scale-105 active:scale-95 text-sm shadow-xl"
+                                >
+                                    View Match Details
                                 </button>
                             </div>
 
@@ -128,7 +139,7 @@ const ClientDashboard = () => {
                     <div>
                         <div className="flex items-center justify-between mb-6">
                             <h3 className="text-xl font-semibold text-slate-900 tracking-tight">Personalized Matches</h3>
-                            <button className="text-xs font-medium text-primary-600 uppercase tracking-wider hover:text-primary-800 transition-colors">See All</button>
+                            <button onClick={() => navigate('/matches')} className="text-xs font-medium text-primary-600 uppercase tracking-wider hover:text-primary-800 transition-colors">See All</button>
                         </div>
                         {loading ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -156,15 +167,15 @@ const ClientDashboard = () => {
                             </div>
                             <div>
                                 <h4 className="font-semibold text-slate-900 leading-tight tracking-tight">Verification Status</h4>
-                                <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Active Level 2</p>
+                                <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Active Level {profile?.verificationLevel || 1}</p>
                             </div>
                         </div>
 
                         <div className="space-y-6">
                             {[
                                 { label: 'Identity Verified', icon: ShieldCheck, status: 'Completed', color: 'text-emerald-500' },
-                                { label: 'Service Letter', icon: Clock, status: 'Reviewing', color: 'text-amber-500' },
-                                { label: 'Biometrics', icon: Zap, status: 'Pending', color: 'text-slate-400' }
+                                { label: 'Service Letter', icon: Clock, status: profile?.serviceLetterStatus || 'Pending', color: profile?.serviceLetterStatus === 'COMPLETED' ? 'text-emerald-500' : 'text-amber-500' },
+                                { label: 'Biometrics', icon: Zap, status: profile?.biometricsStatus || 'Pending', color: profile?.biometricsStatus === 'COMPLETED' ? 'text-emerald-500' : 'text-slate-400' }
                             ].map((item, i) => (
                                 <div key={i} className="flex items-center justify-between">
                                     <div className="flex items-center space-x-3">
@@ -176,7 +187,10 @@ const ClientDashboard = () => {
                             ))}
                         </div>
 
-                        <button className="w-full mt-10 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-[11px] font-semibold text-slate-900 uppercase tracking-wider hover:bg-slate-100 transition-all active:scale-95">
+                        <button
+                            onClick={() => navigate('/profile')}
+                            className="w-full mt-10 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-[11px] font-semibold text-slate-900 uppercase tracking-wider hover:bg-slate-100 transition-all active:scale-95"
+                        >
                             Complete Profile
                         </button>
                     </div>
@@ -193,7 +207,10 @@ const ClientDashboard = () => {
                                     <span className="text-2xl font-medium">Rs. 450</span>
                                     <span className="text-xs font-medium text-white/40 uppercase tracking-wider">/ month</span>
                                 </div>
-                                <button className="w-full py-3 bg-white text-slate-950 rounded-xl text-xs font-medium shadow-lg shadow-white/5 hover:bg-primary-50 transition-all">
+                                <button
+                                    onClick={() => toast('Pro upgrades coming soon', { icon: '🚀' })}
+                                    className="w-full py-3 bg-white text-slate-950 rounded-xl text-xs font-medium shadow-lg shadow-white/5 hover:bg-primary-50 transition-all"
+                                >
                                     Get Unlimited
                                 </button>
                             </div>

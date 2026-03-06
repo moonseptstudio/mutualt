@@ -8,6 +8,7 @@ import {
     ShieldCheck,
     Globe
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const StatCard = ({ title, value, change, icon: Icon, trend }: any) => (
     <div className="glass-card p-6 rounded-[32px] overflow-hidden relative group transition-all hover:scale-[1.02] duration-500">
@@ -36,8 +37,13 @@ const AdminDashboard = () => {
                     <p className="text-slate-500 mt-2 font-medium">Real-time infrastructure and user engagement overview.</p>
                 </div>
                 <div className="flex items-center space-x-2 bg-white p-1 rounded-2xl border border-slate-200 shadow-sm">
-                    <button className="px-4 py-2 bg-slate-950 text-white text-xs font-medium rounded-xl shadow-lg">Real-time</button>
-                    <button className="px-4 py-2 text-slate-500 text-xs font-bold hover:bg-slate-50 rounded-xl transition-all">Historical</button>
+                    <button className="px-4 py-2 bg-slate-950 text-white text-xs font-medium rounded-xl shadow-lg cursor-pointer">Real-time</button>
+                    <button
+                        onClick={() => toast('Historical data view coming soon', { icon: '📊' })}
+                        className="px-4 py-2 text-slate-500 text-xs font-bold hover:bg-slate-50 rounded-xl transition-all cursor-pointer"
+                    >
+                        Historical
+                    </button>
                 </div>
             </div>
 
@@ -55,12 +61,15 @@ const AdminDashboard = () => {
                             <h3 className="text-xl font-semibold text-slate-900 tracking-tight">Matching Velocity</h3>
                             <p className="text-slate-500 text-sm font-medium">Weekly transfer completion rate</p>
                         </div>
-                        <button className="p-2 hover:bg-slate-100 rounded-full transition-all">
+                        <button
+                            onClick={() => toast('Detailed velocity report coming soon', { icon: '📈' })}
+                            className="p-2 hover:bg-slate-100 rounded-full transition-all cursor-pointer"
+                        >
                             <ArrowUpRight size={20} className="text-slate-400" />
                         </button>
                     </div>
 
-                    <div className="h-64 flex items-end justify-between space-x-3 px-4">
+                    <div className="h-64 flex items-end justify-between space-x-3 px-4 mt-6">
                         {[45, 60, 40, 80, 55, 90, 70, 85, 65, 95].map((h, i) => (
                             <div
                                 key={i}

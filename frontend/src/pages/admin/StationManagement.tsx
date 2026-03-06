@@ -9,6 +9,7 @@ import {
     Activity,
     Globe
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const StationManagement = () => {
     const [stations, setStations] = useState<any[]>([]);
@@ -37,7 +38,10 @@ const StationManagement = () => {
                     <h1 className="text-4xl font-semibold text-slate-950 tracking-tight leading-none">Station Registry</h1>
                     <p className="text-slate-500 mt-2 font-medium">Manage healthcare facilities and monitor transfer capacity.</p>
                 </div>
-                <button className="flex items-center justify-center space-x-2 bg-slate-950 text-white px-8 py-3.5 rounded-2xl font-medium shadow-xl shadow-slate-900/20 hover:bg-primary-600 transition-all active:scale-95 text-sm">
+                <button
+                    onClick={() => toast('Register station wizard coming soon', { icon: '🏥' })}
+                    className="flex items-center justify-center space-x-2 bg-slate-950 text-white px-8 py-3.5 rounded-2xl font-medium shadow-xl shadow-slate-900/20 hover:bg-primary-600 transition-all active:scale-95 text-sm cursor-pointer"
+                >
                     <Plus size={18} />
                     <span>Register Station</span>
                 </button>
@@ -124,7 +128,13 @@ const StationManagement = () => {
                                             </div>
                                         </td>
                                         <td className="px-8 py-6 text-right">
-                                            <button className="p-2.5 hover:bg-slate-100 rounded-xl transition-all text-slate-400 hover:text-slate-950">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toast('Station actions coming soon', { icon: '⚙️' });
+                                                }}
+                                                className="p-2.5 hover:bg-slate-100 rounded-xl transition-all text-slate-400 hover:text-slate-950 cursor-pointer"
+                                            >
                                                 <MoreHorizontal size={18} />
                                             </button>
                                         </td>

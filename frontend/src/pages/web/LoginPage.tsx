@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import {
     ShieldCheck,
     ArrowRight,
@@ -14,6 +15,7 @@ import { useAuth } from '../../context/AuthContext';
 const LoginPage = () => {
     const [nic, setNic] = useState('');
     const [password, setPassword] = useState('');
+    const [rememberMe, setRememberMe] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -31,13 +33,13 @@ const LoginPage = () => {
                 password: password
             });
 
-            login(response.data);
-
             if (response.data.role === 'ADMIN') {
-                navigate('/admin');
-            } else {
-                navigate('/dashboard');
+                setError('Please use the dedicated Admin Portal to log in.');
+                return;
             }
+
+            login(response.data, rememberMe);
+            navigate('/dashboard');
         } catch (err: any) {
             setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
         } finally {
@@ -94,7 +96,13 @@ const LoginPage = () => {
                                     <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">
                                         Password
                                     </label>
-                                    <a href="#" className="text-xs font-bold text-blue-600 hover:text-blue-700">Forgot?</a>
+                                    <button
+                                        type="button"
+                                        onClick={() => toast('Password reset feature is coming soon.', { icon: '🔧' })}
+                                        className="text-xs font-bold text-blue-600 hover:text-blue-700 cursor-pointer"
+                                    >
+                                        Forgot?
+                                    </button>
                                 </div>
                                 <div className="relative group">
                                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={20} />
@@ -107,6 +115,21 @@ const LoginPage = () => {
                                         required
                                     />
                                 </div>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                                <label className="flex items-center space-x-2 cursor-pointer group">
+                                    <div className="relative flex items-center justify-center w-5 h-5 rounded border-2 border-slate-200 bg-white group-hover:border-blue-500 transition-colors">
+                                        <input
+                                            type="checkbox"
+                                            checked={rememberMe}
+                                            onChange={(e) => setRememberMe(e.target.checked)}
+                                            className="peer sr-only"
+                                        />
+                                        <div className="hidden peer-checked:block w-2.5 h-2.5 bg-blue-600 rounded-sm"></div>
+                                    </div>
+                                    <span className="text-sm font-medium text-slate-500 group-hover:text-slate-700 transition-colors">Remember me</span>
+                                </label>
                             </div>
 
                             <button

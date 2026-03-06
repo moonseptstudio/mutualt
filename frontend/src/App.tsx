@@ -4,6 +4,7 @@ import {
   Route,
   Navigate
 } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 
 // Layouts
 import WebLayout from './layouts/WebLayout';
@@ -28,11 +29,16 @@ import Settings from './pages/client/Settings';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import UserManagement from './pages/admin/UserManagement';
 import StationManagement from './pages/admin/StationManagement';
+import JobCategoryManagement from './pages/admin/JobCategoryManagement';
 import SystemCycles from './pages/admin/SystemCycles';
+
+import AdminLoginPage from './pages/web/AdminLoginPage';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
     <Router>
+      <Toaster position="top-right" />
       <Routes>
         {/* Public Website Routes */}
         <Route element={<WebLayout />}>
@@ -43,21 +49,29 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
         </Route>
 
+        {/* Admin Login Route without WebLayout */}
+        <Route path="/admin/login" element={<AdminLoginPage />} />
+
         {/* Client/User Dashboard Routes */}
-        <Route element={<ClientLayout />}>
-          <Route path="/dashboard" element={<ClientDashboard />} />
-          <Route path="/preferences" element={<Preferences />} />
-          <Route path="/matches" element={<Matches />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/settings" element={<Settings />} />
+        <Route element={<ProtectedRoute allowedRoles={['USER']} />}>
+          <Route element={<ClientLayout />}>
+            <Route path="/dashboard" element={<ClientDashboard />} />
+            <Route path="/preferences" element={<Preferences />} />
+            <Route path="/matches" element={<Matches />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/settings" element={<Settings />} />
+          </Route>
         </Route>
 
         {/* Admin Routes */}
-        <Route element={<AdminLayout />}>
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/admin/users" element={<UserManagement />} />
-          <Route path="/admin/stations" element={<StationManagement />} />
-          <Route path="/admin/cycles" element={<SystemCycles />} />
+        <Route element={<ProtectedRoute allowedRoles={['ADMIN']} />}>
+          <Route element={<AdminLayout />}>
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/users" element={<UserManagement />} />
+            <Route path="/admin/categories" element={<JobCategoryManagement />} />
+            <Route path="/admin/stations" element={<StationManagement />} />
+            <Route path="/admin/cycles" element={<SystemCycles />} />
+          </Route>
         </Route>
 
         {/* Redirects */}

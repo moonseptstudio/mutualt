@@ -1,4 +1,6 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import Header from '../components/common/Header';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import {
     LayoutDashboard,
     MapPin,
@@ -6,10 +8,9 @@ import {
     UserCircle,
     LogOut,
     RefreshCw,
-    Bell,
-    Search,
     Settings
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const SidebarItem = ({ icon: Icon, label, to, active }: any) => (
     <Link
@@ -26,6 +27,14 @@ const SidebarItem = ({ icon: Icon, label, to, active }: any) => (
 
 const ClientLayout = () => {
     const location = useLocation();
+    const navigate = useNavigate();
+    const { logout } = useAuth();
+    const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+
+    const handleSignOut = () => {
+        logout();
+        navigate('/login');
+    };
 
     return (
         <div className="flex h-screen bg-[#FDFEFF] overflow-hidden font-sans selection:bg-primary-500/30">
@@ -80,7 +89,10 @@ const ClientLayout = () => {
                 </nav>
 
                 <div className="p-6">
-                    <button className="flex items-center space-x-3 px-4 py-4 w-full text-slate-400 hover:bg-rose-50 hover:text-rose-600 rounded-2xl transition-all duration-300 font-medium text-[11px] uppercase tracking-wider group">
+                    <button
+                        onClick={handleSignOut}
+                        className="flex items-center space-x-3 px-4 py-4 w-full text-slate-400 hover:bg-rose-50 hover:text-rose-600 rounded-2xl transition-all duration-300 font-medium text-[11px] uppercase tracking-wider group"
+                    >
                         <LogOut size={18} className="group-hover:-translate-x-1 transition-transform" />
                         <span>Sign Out</span>
                     </button>
@@ -89,41 +101,12 @@ const ClientLayout = () => {
 
             {/* Main Content */}
             <div className="grow flex flex-col min-w-0 overflow-hidden relative">
-                {/* Header */}
-                <header className="h-20 bg-white/70 backdrop-blur-md border-b border-slate-50 flex items-center justify-between px-10 shrink-0 z-20">
-                    <div className="relative w-64 lg:w-96 group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary-500 transition-colors" size={16} />
-                        <input
-                            type="text"
-                            placeholder="Find stations, matches..."
-                            className="w-full pl-12 pr-4 py-3 bg-slate-50/50 border border-transparent rounded-[16px] text-xs font-bold focus:bg-white focus:border-slate-100 focus:shadow-sm transition-all outline-none placeholder:text-slate-400"
-                        />
-                    </div>
-
-                    <div className="flex items-center space-x-6">
-                        <button className="relative p-2.5 text-slate-400 hover:bg-slate-50 rounded-2xl transition-all group">
-                            <Bell size={20} />
-                            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
-                        </button>
-
-                        <div className="h-10 w-px bg-slate-100 mx-2 hidden md:block"></div>
-
-                        <div className="flex items-center space-x-4 cursor-pointer group hover:bg-slate-50 p-1.5 pr-4 rounded-2xl transition-all">
-                            <div className="w-9 h-9 bg-primary-100 rounded-[12px] flex items-center justify-center text-primary-600 shadow-sm border border-primary-200">
-                                <span className="font-medium text-xs uppercase">KP</span>
-                            </div>
-                            <div className="hidden sm:block">
-                                <p className="text-[11px] font-semibold text-slate-900 leading-none">Kamal Perera</p>
-                                <p className="text-[11px] font-medium text-primary-600/60 leading-none mt-1.5 uppercase tracking-wider">Premium Member</p>
-                            </div>
-                        </div>
-                    </div>
-                </header>
+                <Header globalSearchQuery={globalSearchQuery} setGlobalSearchQuery={setGlobalSearchQuery} />
 
                 {/* Page Content */}
-                <main className="grow overflow-auto p-10 relative">
+                <main className="grow overflow-auto p-10 relative bg-slate-50/20">
                     <div className="max-w-6xl mx-auto">
-                        <Outlet />
+                        <Outlet context={{ globalSearchQuery, setGlobalSearchQuery }} />
                     </div>
                 </main>
             </div>

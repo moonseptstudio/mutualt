@@ -9,6 +9,7 @@ import {
     ArrowUpDown,
     Mail
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const users = [
     { id: 1, name: 'Aruna Jayawardena', email: 'aruna@hospital.gov.lk', role: 'Staff', status: 'Verified', station: 'Kandy General' },
@@ -47,7 +48,10 @@ const UserManagement = () => {
                     <h1 className="text-4xl font-semibold text-slate-950 tracking-tight leading-none">User Directory</h1>
                     <p className="text-slate-500 mt-2 font-medium">Manage and verify system accounts and access levels.</p>
                 </div>
-                <button className="flex items-center justify-center space-x-2 bg-slate-950 text-white px-8 py-3.5 rounded-2xl font-medium shadow-xl shadow-slate-900/20 hover:bg-primary-600 transition-all active:scale-95 text-sm">
+                <button
+                    onClick={() => toast('User onboarding wizard coming soon', { icon: '✨' })}
+                    className="flex items-center justify-center space-x-2 bg-slate-950 text-white px-8 py-3.5 rounded-2xl font-medium shadow-xl shadow-slate-900/20 hover:bg-primary-600 transition-all active:scale-95 text-sm cursor-pointer"
+                >
                     <UserPlus size={18} />
                     <span>Onboard User</span>
                 </button>
@@ -64,11 +68,17 @@ const UserManagement = () => {
                         />
                     </div>
                     <div className="flex items-center space-x-2">
-                        <button className="flex items-center space-x-2 px-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-medium text-slate-600 hover:bg-slate-50 transition-all">
+                        <button
+                            onClick={() => toast('Advanced filtering coming soon', { icon: '🎛️' })}
+                            className="flex items-center space-x-2 px-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-medium text-slate-600 hover:bg-slate-50 transition-all cursor-pointer"
+                        >
                             <Filter size={16} />
                             <span>Filter</span>
                         </button>
-                        <button className="flex items-center space-x-2 px-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-medium text-slate-600 hover:bg-slate-50 transition-all">
+                        <button
+                            onClick={() => toast('Sorting options coming soon', { icon: '↕️' })}
+                            className="flex items-center space-x-2 px-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-medium text-slate-600 hover:bg-slate-50 transition-all cursor-pointer"
+                        >
                             <ArrowUpDown size={16} />
                             <span>Sort</span>
                         </button>
@@ -110,7 +120,13 @@ const UserManagement = () => {
                                 </td>
                                 <td className="px-8 py-6">
                                     <div className="flex items-center space-x-2">
-                                        <button className="p-2.5 hover:bg-slate-200 rounded-xl transition-all text-slate-400 hover:text-slate-900">
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                toast('User action menu coming soon', { icon: '⚙️' });
+                                            }}
+                                            className="p-2.5 hover:bg-slate-200 rounded-xl transition-all text-slate-400 hover:text-slate-900 cursor-pointer"
+                                        >
                                             <MoreVertical size={18} />
                                         </button>
                                     </div>
@@ -125,11 +141,11 @@ const UserManagement = () => {
                     <div className="flex items-center space-x-2 font-medium text-xs uppercase tracking-wider">
                         <button className="px-4 py-2 opacity-50 cursor-not-allowed">Prev</button>
                         <div className="flex items-center space-x-1">
-                            <button className="w-8 h-8 rounded-lg bg-slate-950 text-white shadow-lg">1</button>
-                            <button className="w-8 h-8 rounded-lg hover:bg-slate-200 transition-all">2</button>
-                            <button className="w-8 h-8 rounded-lg hover:bg-slate-200 transition-all">3</button>
+                            <button className="w-8 h-8 rounded-lg bg-slate-950 text-white shadow-lg cursor-pointer">1</button>
+                            <button onClick={() => toast('Pagination coming soon')} className="w-8 h-8 rounded-lg hover:bg-slate-200 transition-all cursor-pointer">2</button>
+                            <button onClick={() => toast('Pagination coming soon')} className="w-8 h-8 rounded-lg hover:bg-slate-200 transition-all cursor-pointer">3</button>
                         </div>
-                        <button className="px-4 py-2 hover:text-primary-600 transition-all">Next</button>
+                        <button onClick={() => toast('Pagination coming soon')} className="px-4 py-2 hover:text-primary-600 transition-all cursor-pointer">Next</button>
                     </div>
                 </div>
             </div>

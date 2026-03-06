@@ -7,6 +7,7 @@ import {
     ShieldCheck,
     TrendingUp
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const CycleItem = ({ cycle, id }: any) => (
     <div className="glass-card p-10 rounded-[40px] border-white relative overflow-hidden group hover:scale-[1.01] transition-all duration-500 cursor-pointer">
@@ -58,7 +59,13 @@ const CycleItem = ({ cycle, id }: any) => (
                         <p className="text-2xl font-semibold text-slate-900 leading-none">{cycle.type}</p>
                     </div>
                     <div className="w-px h-12 bg-slate-100"></div>
-                    <button className="flex items-center space-x-3 bg-slate-950 text-white px-8 py-4 rounded-2xl font-medium hover:bg-primary-600 transition-all shadow-xl shadow-slate-950/10 active:scale-95 text-xs uppercase tracking-wider">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            toast('Loop closing sequence initiated... wait, not really!', { icon: '⚡' });
+                        }}
+                        className="flex items-center space-x-3 bg-slate-950 text-white px-8 py-4 rounded-2xl font-medium hover:bg-primary-600 transition-all shadow-xl shadow-slate-950/10 active:scale-95 text-xs uppercase tracking-wider cursor-pointer"
+                    >
                         <span>Close Loop</span>
                         <Zap size={16} fill="currentColor" />
                     </button>
@@ -95,7 +102,10 @@ const SystemCycles = () => {
                     <p className="text-slate-500 mt-2 font-medium">Complex transfer cycles and multi-way replacement matching.</p>
                 </div>
                 <div className="flex items-center space-x-4">
-                    <button className="flex items-center justify-center space-x-2 bg-white border border-slate-200 text-slate-950 px-6 py-3.5 rounded-2xl font-medium shadow-sm hover:bg-slate-50 transition-all text-xs uppercase tracking-wider">
+                    <button
+                        onClick={() => toast('Efficiency report generation coming soon', { icon: '📊' })}
+                        className="flex items-center justify-center space-x-2 bg-white border border-slate-200 text-slate-950 px-6 py-3.5 rounded-2xl font-medium shadow-sm hover:bg-slate-50 transition-all text-xs uppercase tracking-wider cursor-pointer"
+                    >
                         <TrendingUp size={18} className="text-primary-600" />
                         <span>Efficiency Report</span>
                     </button>

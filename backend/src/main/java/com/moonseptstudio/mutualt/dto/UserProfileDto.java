@@ -12,4 +12,10 @@ public class UserProfileDto {
     private String gradeName;
     private String currentStationName;
     private String currentStationDistrict;
+    private String phoneNumber;
+    private Integer verificationLevel;
+    private String serviceLetterStatus;
+    private String biometricsStatus;
+    private String profileImageUrl;
+    private String serviceLetterUrl;
 }

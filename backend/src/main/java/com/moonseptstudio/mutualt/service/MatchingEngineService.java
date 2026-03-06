@@ -1,10 +1,18 @@
 package com.moonseptstudio.mutualt.service;
 
-import com.moonseptstudio.mutualt.model.*;
-import com.moonseptstudio.mutualt.repository.*;
+import com.moonseptstudio.mutualt.model.TransferPreference;
+import com.moonseptstudio.mutualt.model.UserProfile;
+import com.moonseptstudio.mutualt.repository.TransferPreferenceRepository;
+import com.moonseptstudio.mutualt.repository.UserProfileRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 public class MatchingEngineService {

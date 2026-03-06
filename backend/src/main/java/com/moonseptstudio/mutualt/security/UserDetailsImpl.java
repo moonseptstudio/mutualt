@@ -30,8 +30,9 @@ public class UserDetailsImpl implements UserDetails {
     }
 
     public static UserDetailsImpl build(User user) {
+        String role = user.getRole() != null ? user.getRole() : "USER";
         Collection<? extends GrantedAuthority> authorities = Collections.singletonList(
-                new SimpleGrantedAuthority("ROLE_" + user.getRole()));
+                new SimpleGrantedAuthority("ROLE_" + role));
 
         return new UserDetailsImpl(
                 user.getId(),
