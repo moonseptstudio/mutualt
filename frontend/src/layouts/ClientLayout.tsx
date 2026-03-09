@@ -8,7 +8,9 @@ import {
     UserCircle,
     LogOut,
     RefreshCw,
-    Settings
+    Settings,
+    Inbox,
+    MessageSquare
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -30,8 +32,13 @@ const ClientLayout = () => {
     const navigate = useNavigate();
     const { logout } = useAuth();
     const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+    const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
 
-    const handleSignOut = () => {
+    const confirmSignOut = () => {
+        setIsSignOutModalOpen(true);
+    };
+
+    const executeSignOut = () => {
         logout();
         navigate('/login');
     };
@@ -73,6 +80,18 @@ const ClientLayout = () => {
                         to="/matches"
                         active={location.pathname === '/matches'}
                     />
+                    <SidebarItem
+                        icon={Inbox}
+                        label="Requests"
+                        to="/requests"
+                        active={location.pathname === '/requests'}
+                    />
+                    <SidebarItem
+                        icon={MessageSquare}
+                        label="Messages"
+                        to="/messages"
+                        active={location.pathname === '/messages'}
+                    />
                     <div className="h-px bg-slate-50 my-6 mx-4"></div>
                     <SidebarItem
                         icon={UserCircle}
@@ -90,8 +109,8 @@ const ClientLayout = () => {
 
                 <div className="p-6">
                     <button
-                        onClick={handleSignOut}
-                        className="flex items-center space-x-3 px-4 py-4 w-full text-slate-400 hover:bg-rose-50 hover:text-rose-600 rounded-2xl transition-all duration-300 font-medium text-[11px] uppercase tracking-wider group"
+                        onClick={confirmSignOut}
+                        className="flex items-center space-x-3 px-4 py-4 w-full text-slate-400 hover:bg-rose-50 hover:text-rose-600 rounded-2xl transition-all duration-300 font-medium text-[11px] uppercase tracking-wider group cursor-pointer"
                     >
                         <LogOut size={18} className="group-hover:-translate-x-1 transition-transform" />
                         <span>Sign Out</span>
@@ -110,6 +129,36 @@ const ClientLayout = () => {
                     </div>
                 </main>
             </div>
+
+            {/* Sign Out Confirmation Modal */}
+            {isSignOutModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
+                    <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsSignOutModalOpen(false)}></div>
+                    <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl p-6 sm:p-8 border border-slate-100 animate-in zoom-in-95 duration-300">
+                        <div className="mx-auto w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center mb-6">
+                            <LogOut className="text-rose-500" size={32} />
+                        </div>
+                        <h3 className="text-xl font-bold text-center text-slate-900 mb-2">Sign Out?</h3>
+                        <p className="text-slate-500 text-center text-sm mb-8">
+                            Are you sure you want to sign out of your account? You will need to log in again to access your dashboard.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <button
+                                onClick={() => setIsSignOutModalOpen(false)}
+                                className="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-sm transition-all cursor-pointer"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={executeSignOut}
+                                className="flex-1 px-4 py-3 bg-rose-500 hover:bg-rose-600 text-white font-semibold rounded-xl text-sm transition-all shadow-sm hover:shadow-rose-500/20 cursor-pointer"
+                            >
+                                Sign Out
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

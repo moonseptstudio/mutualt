@@ -47,8 +47,32 @@ public class PreferenceController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> removePreference(@PathVariable Long id) {
+    public ResponseEntity<?> removePreference(@PathVariable("id") Long id) {
         preferenceRepository.deleteById(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/reorder")
+    public ResponseEntity<?> reorderPreferences(@RequestBody List<Long> preferenceIds, Authentication authentication) {
+        User user = userRepository.findByUsername(authentication.getName()).orElseThrow();
+        List<TransferPreference> userPrefs = preferenceRepository.findByUserIdOrderByPriorityAsc(user.getId());
+
+        // Validate that all submitted IDs belong to the user
+        for (Long id : preferenceIds) {
+            boolean ownsPref = userPrefs.stream().anyMatch(p -> p.getId().equals(id));
+            if (!ownsPref) {
+                return ResponseEntity.badRequest().body("Invalid preference ID: " + id);
+            }
+        }
+
+        // Update priorities based on index in array
+        for (int i = 0; i < preferenceIds.size(); i++) {
+            Long prefId = preferenceIds.get(i);
+            TransferPreference pref = preferenceRepository.findById(prefId).orElseThrow();
+            pref.setPriority(i + 1);
+            preferenceRepository.save(pref);
+        }
+
         return ResponseEntity.ok().build();
     }
 }

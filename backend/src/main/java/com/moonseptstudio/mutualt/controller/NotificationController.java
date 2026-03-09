@@ -57,7 +57,7 @@ public class NotificationController {
     }
 
     @PutMapping("/{id}/read")
-    public ResponseEntity<?> markAsRead(@PathVariable Long id, Authentication authentication) {
+    public ResponseEntity<?> markAsRead(@PathVariable("id") Long id, Authentication authentication) {
         User user = userRepository.findByUsername(authentication.getName()).orElseThrow();
         Notification notification = notificationRepository.findById(id).orElseThrow();
 

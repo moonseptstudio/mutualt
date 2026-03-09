@@ -29,10 +29,15 @@ public class ProfileController {
         dto.setUsername(user.getUsername());
         dto.setEmail(profile.getEmail());
         dto.setNic(profile.getNic());
-        dto.setJobCategoryName(profile.getJobCategory().getName());
-        dto.setGradeName(profile.getGrade().getName());
-        dto.setCurrentStationName(profile.getCurrentStation().getName());
-        dto.setCurrentStationDistrict(profile.getCurrentStation().getDistrict());
+        dto.setJobCategoryName(profile.getJobCategory() != null ? profile.getJobCategory().getName() : null);
+        dto.setGradeName(profile.getGrade() != null ? profile.getGrade().getName() : null);
+
+        if (profile.getCurrentStation() != null) {
+            dto.setCurrentStationId(profile.getCurrentStation().getId());
+            dto.setCurrentStationName(profile.getCurrentStation().getName());
+            dto.setCurrentStationDistrict(profile.getCurrentStation().getDistrict());
+        }
+
         dto.setPhoneNumber(profile.getPhoneNumber());
         dto.setVerificationLevel(profile.getVerificationLevel());
         dto.setServiceLetterStatus(profile.getServiceLetterStatus());
@@ -63,7 +68,7 @@ public class ProfileController {
     }
 
     @PutMapping("/submit-doc/{docType}")
-    public UserProfileDto submitDocument(@PathVariable String docType, Authentication authentication) {
+    public UserProfileDto submitDocument(@PathVariable("docType") String docType, Authentication authentication) {
         User user = userRepository.findByUsername(authentication.getName()).orElseThrow();
         UserProfile profile = userProfileRepository.findByUserId(user.getId()).orElseThrow();
 

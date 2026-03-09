@@ -24,6 +24,8 @@ import Preferences from './pages/client/Preferences';
 import Matches from './pages/client/Matches';
 import Profile from './pages/client/Profile';
 import Settings from './pages/client/Settings';
+import Requests from './pages/client/Requests';
+import Messages from './pages/client/Messages';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -60,6 +62,8 @@ function App() {
             <Route path="/matches" element={<Matches />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/requests" element={<Requests />} />
+            <Route path="/messages" element={<Messages />} />
           </Route>
         </Route>
 

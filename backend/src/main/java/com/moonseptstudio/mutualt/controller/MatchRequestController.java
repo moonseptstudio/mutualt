@@ -1,0 +1,181 @@
+package com.moonseptstudio.mutualt.controller;
+
+import com.moonseptstudio.mutualt.dto.MatchRequestDto;
+import com.moonseptstudio.mutualt.model.ChatRoom;
+import com.moonseptstudio.mutualt.repository.ChatRoomRepository;
+import com.moonseptstudio.mutualt.model.MatchRequest;
+import com.moonseptstudio.mutualt.model.User;
+import com.moonseptstudio.mutualt.model.UserProfile;
+import com.moonseptstudio.mutualt.repository.MatchRequestRepository;
+import com.moonseptstudio.mutualt.repository.UserRepository;
+import com.moonseptstudio.mutualt.repository.UserProfileRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
+
+@CrossOrigin(origins = "*", maxAge = 3600)
+@RestController
+@RequestMapping("/api/requests")
+public class MatchRequestController {
+
+    @Autowired
+    MatchRequestRepository requestRepository;
+
+    @Autowired
+    UserRepository userRepository;
+
+    @Autowired
+    UserProfileRepository profileRepository;
+
+    @Autowired
+    ChatRoomRepository chatRoomRepository;
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getMyRequests(Authentication authentication) {
+        User user = userRepository.findByUsername(authentication.getName()).orElseThrow();
+
+        List<MatchRequestDto> incoming = requestRepository.findByReceiver(user).stream()
+                .map(this::convertToDto).collect(Collectors.toList());
+
+        List<MatchRequestDto> outgoing = requestRepository.findBySender(user).stream()
+                .map(this::convertToDto).collect(Collectors.toList());
+
+        return ResponseEntity.ok(Map.of("incoming", incoming, "outgoing", outgoing));
+    }
+
+    @PostMapping
+    public ResponseEntity<?> sendRequest(@RequestBody Map<String, Object> payload, Authentication authentication) {
+        User sender = userRepository.findByUsername(authentication.getName()).orElseThrow();
+        Long receiverId = Long.valueOf(payload.get("receiverId").toString());
+        User receiver = userRepository.findById(receiverId).orElseThrow();
+
+        if (sender.getId().equals(receiver.getId())) {
+            return ResponseEntity.badRequest().body("Cannot send request to yourself");
+        }
+
+        // Check for existing pending request
+        if (requestRepository.existsBySenderAndReceiverAndStatus(sender, receiver, "PENDING")) {
+            return ResponseEntity.badRequest().body("Request already pending");
+        }
+
+        MatchRequest request = new MatchRequest();
+        request.setSender(sender);
+        request.setReceiver(receiver);
+        request.setStatus("PENDING");
+        request.setMatchType(payload.getOrDefault("matchType", "DIRECT").toString());
+        request.setCycleUserIds(payload.getOrDefault("cycleUserIds", "").toString());
+        request.setCreatedAt(LocalDateTime.now());
+
+        requestRepository.save(request);
+        return ResponseEntity.ok(convertToDto(request));
+    }
+
+    @PutMapping("/{id}/accept")
+    public ResponseEntity<?> acceptRequest(@PathVariable("id") Long id, Authentication authentication) {
+        User user = userRepository.findByUsername(authentication.getName()).orElseThrow();
+        MatchRequest request = requestRepository.findById(id).orElseThrow();
+
+        if (!request.getReceiver().getId().equals(user.getId())) {
+            return ResponseEntity.status(403).body("Not authorized to accept this request");
+        }
+
+        request.setStatus("ACCEPTED");
+        requestRepository.save(request);
+
+        // CREATE CHAT ROOM
+        if ("TRIPLE".equals(request.getMatchType())) {
+            ChatRoom room = new ChatRoom();
+            room.setName("Group Chat: " + request.getSender().getUsername() + " & others");
+            room.setType("GROUP");
+            Set<User> members = new HashSet<>();
+            members.add(request.getSender());
+            members.add(request.getReceiver());
+
+            // Add other users from cycleUserIds
+            if (request.getCycleUserIds() != null && !request.getCycleUserIds().isEmpty()) {
+                String[] ids = request.getCycleUserIds().split(",");
+                for (String userIdStr : ids) {
+                    try {
+                        Long uid = Long.parseLong(userIdStr.trim());
+                        userRepository.findById(uid).ifPresent(members::add);
+                    } catch (NumberFormatException e) {
+                        // skip
+                    }
+                }
+            }
+            room.setMembers(members);
+            chatRoomRepository.save(room);
+        } else {
+            // DIRECT match - create DIRECT chat room
+            ChatRoom room = new ChatRoom();
+            room.setName(request.getSender().getUsername() + " & " + request.getReceiver().getUsername());
+            room.setType("DIRECT");
+            Set<User> members = new HashSet<>();
+            members.add(request.getSender());
+            members.add(request.getReceiver());
+            room.setMembers(members);
+            chatRoomRepository.save(room);
+        }
+
+        return ResponseEntity.ok(convertToDto(request));
+    }
+
+    @PutMapping("/{id}/reject")
+    public ResponseEntity<?> rejectRequest(@PathVariable("id") Long id, Authentication authentication) {
+        User user = userRepository.findByUsername(authentication.getName()).orElseThrow();
+        MatchRequest request = requestRepository.findById(id).orElseThrow();
+
+        if (!request.getReceiver().getId().equals(user.getId())) {
+            return ResponseEntity.status(403).body("Not authorized to reject this request");
+        }
+
+        request.setStatus("REJECTED");
+        requestRepository.save(request);
+        return ResponseEntity.ok(convertToDto(request));
+    }
+
+    private MatchRequestDto convertToDto(MatchRequest req) {
+        MatchRequestDto dto = new MatchRequestDto();
+        dto.setId(req.getId());
+        dto.setSenderId(req.getSender().getId());
+        dto.setReceiverId(req.getReceiver().getId());
+        dto.setStatus(req.getStatus());
+        dto.setMatchType(req.getMatchType());
+        dto.setCycleUserIds(req.getCycleUserIds());
+        dto.setCreatedAt(req.getCreatedAt());
+
+        UserProfile senderProfile = profileRepository.findByUserId(req.getSender().getId()).orElse(null);
+        UserProfile receiverProfile = profileRepository.findByUserId(req.getReceiver().getId()).orElse(null);
+
+        if (senderProfile != null) {
+            dto.setSenderName(senderProfile.getFullName());
+            dto.setSenderStationName(
+                    senderProfile.getCurrentStation() != null ? senderProfile.getCurrentStation().getName() : "N/A");
+        }
+        if (receiverProfile != null) {
+            dto.setReceiverName(receiverProfile.getFullName());
+            dto.setReceiverStationName(
+                    receiverProfile.getCurrentStation() != null ? receiverProfile.getCurrentStation().getName()
+                            : "N/A");
+        }
+
+        // Populating contact info if accepted
+        if ("ACCEPTED".equals(req.getStatus())) {
+            if (senderProfile != null) {
+                dto.setSenderPhone(senderProfile.getPhoneNumber());
+                dto.setSenderEmail(senderProfile.getEmail());
+            }
+            if (receiverProfile != null) {
+                dto.setReceiverPhone(receiverProfile.getPhoneNumber());
+                dto.setReceiverEmail(receiverProfile.getEmail());
+            }
+        }
+
+        return dto;
+    }
+}

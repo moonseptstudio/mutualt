@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Bell, User, Settings, LogOut, Command, ChevronDown } from 'lucide-react';
+import { Search, Bell, User, Settings, LogOut, Command, ChevronDown, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import apiClient from '../../api/client';
+import ConfirmationModal from './ConfirmationModal';
 
 interface HeaderProps {
     globalSearchQuery: string;
@@ -13,6 +15,8 @@ const Header = ({ globalSearchQuery, setGlobalSearchQuery }: HeaderProps) => {
     const navigate = useNavigate();
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+    const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
+    const [profile, setProfile] = useState<any>(null);
     const [notifications, setNotifications] = useState<any[]>([]);
     const searchInputRef = useRef<HTMLInputElement>(null);
     const notificationsDropdownRef = useRef<HTMLDivElement>(null);
@@ -20,36 +24,38 @@ const Header = ({ globalSearchQuery, setGlobalSearchQuery }: HeaderProps) => {
 
     const fetchNotifications = async () => {
         try {
-            const token = localStorage.getItem('token');
-            if (!token) return;
-            const res = await fetch('http://localhost:8080/api/notifications', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                setNotifications(data);
-            }
+            const res = await apiClient.get('/notifications');
+            setNotifications(res.data);
         } catch (error) {
             console.error('Failed to fetch notifications', error);
+        }
+    };
+
+    const fetchProfile = async () => {
+        try {
+            const response = await apiClient.get('/profile/me');
+            setProfile(response.data);
+        } catch (err) {
+            console.error("Failed to fetch profile in header", err);
         }
     };
 
     useEffect(() => {
         if (user) {
             fetchNotifications();
+            fetchProfile();
             // Poll every 30 seconds
-            const interval = setInterval(fetchNotifications, 30000);
+            const interval = setInterval(() => {
+                fetchNotifications();
+                fetchProfile();
+            }, 30000);
             return () => clearInterval(interval);
         }
     }, [user]);
 
     const markAsRead = async (id: number) => {
         try {
-            const token = localStorage.getItem('token');
-            await fetch(`http://localhost:8080/api/notifications/${id}/read`, {
-                method: 'PUT',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            await apiClient.put(`/notifications/${id}/read`);
             setNotifications(notifications.map(n => n.id === id ? { ...n, isRead: true } : n));
         } catch (error) {
             console.error('Failed to mark as read', error);
@@ -58,11 +64,7 @@ const Header = ({ globalSearchQuery, setGlobalSearchQuery }: HeaderProps) => {
 
     const markAllAsRead = async () => {
         try {
-            const token = localStorage.getItem('token');
-            await fetch(`http://localhost:8080/api/notifications/read-all`, {
-                method: 'PUT',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            await apiClient.put('/notifications/read-all');
             setNotifications(notifications.map(n => ({ ...n, isRead: true })));
         } catch (error) {
             console.error('Failed to mark all as read', error);
@@ -95,7 +97,18 @@ const Header = ({ globalSearchQuery, setGlobalSearchQuery }: HeaderProps) => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const handleSignOut = () => {
+    const confirmSignOut = () => {
+        setIsProfileOpen(false);
+        setIsSignOutModalOpen(true);
+    };
+
+    const getAvatarUrl = (url: string | null | undefined, name: string) => {
+        if (!url) return `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`;
+        if (url.startsWith('http') || url.startsWith('data:')) return url;
+        return `http://localhost:8080${url}`;
+    };
+
+    const executeSignOut = () => {
         logout();
         navigate('/login');
     };
@@ -115,10 +128,20 @@ const Header = ({ globalSearchQuery, setGlobalSearchQuery }: HeaderProps) => {
                     placeholder="Search anything..."
                     className="w-full pl-12 pr-20 py-3 bg-slate-100/50 border border-transparent rounded-[20px] text-sm font-medium focus:bg-white focus:border-primary-500/30 focus:ring-4 focus:ring-primary-500/5 transition-all outline-none placeholder:text-slate-400 tracking-tight"
                 />
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 items-center space-x-1 px-2 py-1 bg-white border border-slate-200 rounded-lg shadow-sm pointer-events-none hidden sm:flex">
-                    <Command size={10} className="text-slate-400 font-bold" />
-                    <span className="text-[10px] font-bold text-slate-500">K</span>
-                </div>
+                {globalSearchQuery && (
+                    <button
+                        onClick={() => setGlobalSearchQuery('')}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-rose-500 transition-colors cursor-pointer hidden sm:block"
+                    >
+                        <X size={16} strokeWidth={2.5} />
+                    </button>
+                )}
+                {!globalSearchQuery && (
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 items-center space-x-1 px-2 py-1 bg-white border border-slate-200 rounded-lg shadow-sm pointer-events-none hidden sm:flex">
+                        <Command size={10} className="text-slate-400 font-bold" />
+                        <span className="text-[10px] font-bold text-slate-500">K</span>
+                    </div>
+                )}
             </div>
 
             {/* Actions */}
@@ -189,11 +212,15 @@ const Header = ({ globalSearchQuery, setGlobalSearchQuery }: HeaderProps) => {
                         className={`flex items-center space-x-3 p-1.5 pr-4 rounded-[22px] transition-all duration-300 border ${isProfileOpen ? 'bg-white border-primary-200 shadow-lg shadow-primary-500/5 ring-4 ring-primary-500/5' : 'bg-slate-50/50 border-transparent hover:border-slate-200'
                             }`}
                     >
-                        <div className="w-9 h-9 bg-linear-to-br from-primary-500 to-indigo-600 rounded-[16px] flex items-center justify-center text-white shadow-md shadow-primary-900/10">
-                            <span className="font-bold text-xs uppercase">{(user?.fullName || user?.username || 'U').substring(0, 2)}</span>
+                        <div className="w-9 h-9 bg-linear-to-br from-primary-500 to-indigo-600 rounded-[14px] overflow-hidden flex items-center justify-center text-white shadow-md shadow-primary-900/10 border-2 border-white">
+                            <img
+                                src={getAvatarUrl(profile?.profileImageUrl || user?.profileImageUrl, user?.fullName || user?.username || 'User')}
+                                alt="profile"
+                                className="w-full h-full object-cover"
+                            />
                         </div>
                         <div className="hidden sm:block text-left">
-                            <p className="text-[11px] font-bold text-slate-900 leading-none">{user?.fullName || user?.username || 'User'}</p>
+                            <p className="text-[11px] font-bold text-slate-900 leading-none">{profile?.fullName || user?.fullName || user?.username || 'User'}</p>
                             <p className="text-[10px] font-bold text-primary-600/60 leading-none mt-1.5 uppercase tracking-widest">Verified Staff</p>
                         </div>
                         <ChevronDown size={14} className={`text-slate-400 transition-transform duration-300 ${isProfileOpen ? 'rotate-180' : ''}`} />
@@ -203,7 +230,7 @@ const Header = ({ globalSearchQuery, setGlobalSearchQuery }: HeaderProps) => {
                         <div className="absolute right-0 mt-3 w-64 bg-white rounded-3xl shadow-2xl shadow-slate-200/50 border border-slate-200 py-3 animate-in fade-in slide-in-from-top-4 duration-300 overflow-hidden">
                             <div className="px-5 py-3 mb-2">
                                 <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.15em] mb-1.5">Account Info</p>
-                                <p className="text-sm font-bold text-slate-900 truncate">{user?.fullName || user?.username}</p>
+                                <p className="text-sm font-bold text-slate-900 truncate">{profile?.fullName || user?.fullName || user?.username}</p>
                             </div>
                             <div className="px-2 space-y-1">
                                 <Link
@@ -229,7 +256,7 @@ const Header = ({ globalSearchQuery, setGlobalSearchQuery }: HeaderProps) => {
                             </div>
                             <div className="mt-3 pt-3 border-t border-slate-100 px-2">
                                 <button
-                                    onClick={handleSignOut}
+                                    onClick={confirmSignOut}
                                     className="flex items-center space-x-3 px-4 py-3 w-full text-rose-500 hover:bg-rose-50 rounded-2xl transition-all font-bold text-xs group"
                                 >
                                     <div className="p-1.5 bg-rose-50 rounded-xl group-hover:bg-rose-100 transition-colors">
@@ -242,6 +269,15 @@ const Header = ({ globalSearchQuery, setGlobalSearchQuery }: HeaderProps) => {
                     )}
                 </div>
             </div>
+            <ConfirmationModal
+                isOpen={isSignOutModalOpen}
+                onClose={() => setIsSignOutModalOpen(false)}
+                onConfirm={executeSignOut}
+                title="Sign Out?"
+                message="Are you sure you want to sign out of your account? You will need to log in again to access your dashboard."
+                confirmText="Sign Out"
+                type="logout"
+            />
         </header>
     );
 };

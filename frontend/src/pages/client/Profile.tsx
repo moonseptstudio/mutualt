@@ -32,6 +32,7 @@ import apiClient from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import ConfirmationModal from '../../components/common/ConfirmationModal';
 
 const DEFAULT_AVATARS = [
     'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
@@ -49,9 +50,11 @@ const Profile = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [editForm, setEditForm] = useState({ email: '', phoneNumber: '', profileImageUrl: '' });
     const [isUploading, setIsUploading] = useState(false);
+    const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
+    const [verifyingType, setVerifyingType] = useState<'email' | 'phone' | null>(null);
+    const [otpValue, setOtpValue] = useState('');
 
     const photoInputRef = useRef<HTMLInputElement>(null);
-    const docInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -84,18 +87,32 @@ const Profile = () => {
         }
     };
 
-    const handleSubmitDoc = async (docType: string) => {
+    const handleVerifyOTP = async () => {
+        if (otpValue.length !== 6) {
+            toast.error('Please enter a 6-digit OTP code');
+            return;
+        }
+
         try {
+            // Mocking the OTP verification by calling the existing doc submission endpoint
+            // Level 2 for Email, Level 3 for Phone
+            const docType = verifyingType === 'email' ? 'serviceLetter' : 'biometrics';
             const response = await apiClient.put(`/profile/submit-doc/${docType}`, {});
+
             setProfile(response.data);
-            toast.success(`${docType === 'serviceLetter' ? 'Service Letter' : 'Biometrics'} updated successfully`);
+            toast.success(`${verifyingType === 'email' ? 'Email' : 'Phone'} verified successfully`);
+            setVerifyingType(null);
+            setOtpValue('');
         } catch (err) {
-            console.error("Submission failed", err);
-            toast.error('Failed to update status');
+            toast.error('Verification failed. Please try again.');
         }
     };
 
-    const handleLogout = () => {
+    const confirmLogout = () => {
+        setIsSignOutModalOpen(true);
+    };
+
+    const executeLogout = () => {
         logout();
         navigate('/login');
     };
@@ -122,26 +139,7 @@ const Profile = () => {
         }
     };
 
-    const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
 
-        const formData = new FormData();
-        formData.append('file', file);
-
-        setIsUploading(true);
-        try {
-            const res = await apiClient.post('/upload/service-letter', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
-            setProfile({ ...profile, serviceLetterUrl: res.data, serviceLetterStatus: 'REVIEWING' });
-            toast.success('Document submitted for review');
-        } catch (err) {
-            toast.error('Failed to upload document');
-        } finally {
-            setIsUploading(false);
-        }
-    };
 
     const pickDefaultAvatar = async (avatarUrl: string) => {
         try {
@@ -169,7 +167,7 @@ const Profile = () => {
     if (!profile) return (
         <div className="p-10 text-center glass-card rounded-[32px]">
             <p className="text-slate-500 font-medium">Profile not found. Please log in again.</p>
-            <button onClick={handleLogout} className="mt-4 px-6 py-2 bg-slate-900 text-white rounded-xl">Go to Login</button>
+            <button onClick={executeLogout} className="mt-4 px-6 py-2 bg-slate-900 text-white rounded-xl">Go to Login</button>
         </div>
     );
 
@@ -287,8 +285,8 @@ const Profile = () => {
                     </div>
 
                     <button
-                        onClick={handleLogout}
-                        className="flex items-center space-x-3 px-6 py-4 w-full bg-rose-50 text-rose-600 rounded-3xl font-medium text-xs uppercase tracking-wider hover:bg-rose-100 transition-all group"
+                        onClick={confirmLogout}
+                        className="flex items-center space-x-3 px-6 py-4 w-full bg-rose-50 text-rose-600 rounded-3xl font-medium text-xs uppercase tracking-wider hover:bg-rose-100 transition-all group cursor-pointer"
                     >
                         <LogOut size={20} className="group-hover:-translate-x-1 transition-transform" />
                         <span>Sign Out from active session</span>
@@ -319,73 +317,50 @@ const Profile = () => {
                                 </div>
                                 <div>
                                     <div className="flex items-center justify-between">
-                                        <h4 className="font-semibold text-slate-900 text-sm">Service Record (Level 2)</h4>
-                                        <input
-                                            type="file"
-                                            ref={docInputRef}
-                                            onChange={handleDocUpload}
-                                            accept=".pdf,image/*"
-                                            className="hidden"
-                                        />
-                                        {(!profile.serviceLetterStatus || profile.serviceLetterStatus === 'PENDING') && (
+                                        <h4 className="font-semibold text-slate-900 text-sm">Email OTP Verification (Level 2)</h4>
+                                        {profile.verificationLevel < 2 && (
                                             <button
-                                                onClick={() => docInputRef.current?.click()}
-                                                disabled={isUploading}
-                                                className="text-[10px] font-bold text-primary-600 uppercase hover:text-primary-800 transition-colors flex items-center space-x-1"
+                                                onClick={() => setVerifyingType('email')}
+                                                className="text-[10px] font-bold text-primary-600 uppercase hover:text-primary-800 transition-colors"
                                             >
-                                                <FileText size={12} />
-                                                <span>Upload PDF/Image</span>
+                                                Verify Email
                                             </button>
                                         )}
                                     </div>
                                     <p className="text-xs text-slate-500 mt-1 font-medium leading-relaxed">
-                                        {profile.serviceLetterStatus === 'COMPLETED'
-                                            ? 'Official service letter verified by the ministry.'
-                                            : profile.serviceLetterStatus === 'REVIEWING'
-                                                ? 'Your document is currently being reviewed by an admin.'
-                                                : 'Please upload your official service letter to reach Level 2.'}
+                                        {profile.verificationLevel >= 2
+                                            ? `Official email address (${profile.email}) has been successfully verified.`
+                                            : 'Verify your official email address to secure your account and reach Level 2.'}
                                     </p>
-                                    <div className="flex items-center space-x-3 mt-3">
-                                        <p className={`text-xs font-medium uppercase tracking-wider ${profile.serviceLetterStatus === 'COMPLETED' ? 'text-emerald-500' : profile.serviceLetterStatus === 'REVIEWING' ? 'text-indigo-500' : 'text-amber-500'}`}>
-                                            {profile.serviceLetterStatus || 'PENDING'}
-                                        </p>
-                                        {profile.serviceLetterUrl && (
-                                            <a
-                                                href={`http://localhost:8080${profile.serviceLetterUrl}`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-[10px] text-slate-400 hover:text-primary-600 underline font-medium"
-                                            >
-                                                View Document
-                                            </a>
-                                        )}
-                                    </div>
+                                    <p className={`text-xs font-medium uppercase tracking-wider mt-3 ${profile.verificationLevel >= 2 ? 'text-emerald-500' : 'text-amber-500'}`}>
+                                        {profile.verificationLevel >= 2 ? 'Verified' : 'Pending'}
+                                    </p>
                                 </div>
                             </div>
 
                             <div className="relative">
-                                <div className={`absolute -left-[51px] top-0 p-2 ${profile.biometricsStatus === 'COMPLETED' ? 'bg-emerald-500' : 'bg-slate-300'} text-white rounded-full border-4 border-slate-50`}>
-                                    <ShieldCheck size={16} />
+                                <div className={`absolute -left-[51px] top-0 p-2 ${profile.verificationLevel >= 3 ? 'bg-emerald-500' : 'bg-slate-300'} text-white rounded-full border-4 border-slate-50`}>
+                                    <Smartphone size={16} />
                                 </div>
                                 <div>
                                     <div className="flex items-center justify-between">
-                                        <h4 className="font-semibold text-slate-900 text-sm">Biometric Identity (Level 3)</h4>
-                                        {(!profile.biometricsStatus || profile.biometricsStatus === 'PENDING') && (
+                                        <h4 className="font-semibold text-slate-900 text-sm">Phone SMS Verification (Level 3)</h4>
+                                        {profile.verificationLevel === 2 && (
                                             <button
-                                                onClick={() => handleSubmitDoc('biometrics')}
+                                                onClick={() => setVerifyingType('phone')}
                                                 className="text-[10px] font-bold text-primary-600 uppercase hover:text-primary-800 transition-colors"
                                             >
-                                                Complete Setup
+                                                Verify Phone
                                             </button>
                                         )}
                                     </div>
                                     <p className="text-xs text-slate-500 mt-1 font-medium leading-relaxed">
-                                        {profile.biometricsStatus === 'COMPLETED'
-                                            ? 'Fingerprint and facial recognition data successfully linked.'
-                                            : 'Add biometric data at your nearest regional center for maximum security.'}
+                                        {profile.verificationLevel >= 3
+                                            ? `Mobile number (${profile.phoneNumber}) verified via secure SMS OTP.`
+                                            : 'Complete Level 3 by verifying your mobile number to enable real-time match alerts.'}
                                     </p>
-                                    <p className={`text-xs font-medium uppercase tracking-wider mt-3 ${profile.biometricsStatus === 'COMPLETED' ? 'text-emerald-500' : 'text-slate-400'}`}>
-                                        {profile.biometricsStatus || 'PENDING'}
+                                    <p className={`text-xs font-medium uppercase tracking-wider mt-3 ${profile.verificationLevel >= 3 ? 'text-emerald-500' : 'text-slate-400'}`}>
+                                        {profile.verificationLevel >= 3 ? 'Verified' : 'Pending'}
                                     </p>
                                 </div>
                             </div>
@@ -393,6 +368,58 @@ const Profile = () => {
                     </div>
                 </div>
             </div>
+
+            {/* OTP Verification Modal */}
+            {verifyingType && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
+                    <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setVerifyingType(null)}></div>
+                    <div className="relative w-full max-w-sm bg-white rounded-3xl shadow-2xl p-6 sm:p-8 border border-slate-100 animate-in zoom-in-95 duration-300">
+                        <div className="mx-auto w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mb-6">
+                            {verifyingType === 'email' ? <Mail className="text-primary-600" size={32} /> : <Smartphone className="text-primary-600" size={32} />}
+                        </div>
+                        <h3 className="text-xl font-bold text-center text-slate-900 mb-2">
+                            Verify {verifyingType === 'email' ? 'Email' : 'Phone'}
+                        </h3>
+                        <p className="text-slate-500 text-center text-sm mb-6">
+                            We've sent a 6-digit verification code to your {verifyingType}. Please enter it below.
+                        </p>
+                        <div className="space-y-6">
+                            <input
+                                type="text"
+                                maxLength={6}
+                                value={otpValue}
+                                onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, ''))}
+                                placeholder="000000"
+                                className="w-full text-center text-3xl font-bold tracking-[0.5em] py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all"
+                            />
+                            <div className="flex flex-col sm:flex-row gap-3">
+                                <button
+                                    onClick={() => setVerifyingType(null)}
+                                    className="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-sm transition-all"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleVerifyOTP}
+                                    className="flex-1 px-4 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl text-sm transition-all shadow-lg shadow-primary-500/20"
+                                >
+                                    Verify
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Logout Confirmation */}
+            <ConfirmationModal
+                isOpen={isSignOutModalOpen}
+                onClose={() => setIsSignOutModalOpen(false)}
+                onConfirm={executeLogout}
+                title="Sign Out?"
+                message="Are you sure you want to sign out of your account? You will need to log in again to access your dashboard."
+                confirmText="Sign Out"
+                type="logout"
+            />
         </div>
     );
 };

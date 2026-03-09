@@ -26,7 +26,7 @@ public class StationController {
     }
 
     @GetMapping("/district/{district}")
-    public List<Station> getStationsByDistrict(@PathVariable String district) {
+    public List<Station> getStationsByDistrict(@PathVariable("district") String district) {
         return stationRepository.findByDistrict(district);
     }
 }

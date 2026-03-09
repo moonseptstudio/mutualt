@@ -6,6 +6,7 @@ interface User {
     token: string;
     role: string;
     fullName?: string;
+    profileImageUrl?: string;
 }
 
 interface AuthContextType {

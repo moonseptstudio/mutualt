@@ -10,6 +10,7 @@ public class UserProfileDto {
     private String nic;
     private String jobCategoryName;
     private String gradeName;
+    private Long currentStationId;
     private String currentStationName;
     private String currentStationDistrict;
     private String phoneNumber;

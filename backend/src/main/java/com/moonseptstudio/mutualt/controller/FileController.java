@@ -17,7 +17,8 @@ public class FileController {
     private final Path root = Paths.get("uploads");
 
     @GetMapping("/{subDir}/{filename:.+}")
-    public ResponseEntity<Resource> getFile(@PathVariable String subDir, @PathVariable String filename) {
+    public ResponseEntity<Resource> getFile(@PathVariable("subDir") String subDir,
+            @PathVariable("filename") String filename) {
         try {
             Path file = root.resolve(subDir).resolve(filename);
             Resource resource = new UrlResource(file.toUri());
