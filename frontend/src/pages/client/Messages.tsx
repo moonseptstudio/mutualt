@@ -34,7 +34,7 @@ const Messages = () => {
     const fetchRooms = async () => {
         try {
             setLoadingRooms(true);
-            const response = await apiClient.get('/api/messages/rooms');
+            const response = await apiClient.get('/messages/rooms');
             setRooms(response.data);
 
             const params = new URLSearchParams(location.search);
@@ -63,7 +63,7 @@ const Messages = () => {
             try {
                 // Only show history loader for the first fetch or when switching rooms
                 setLoadingHistory(messages.length === 0 || activeRoom?.id !== activeRoomId);
-                const response = await apiClient.get(`/api/messages/history/${activeRoomId}`);
+                const response = await apiClient.get(`/messages/history/${activeRoomId}`);
                 setMessages(response.data);
 
                 const room = rooms.find(r => r.id === activeRoomId);
@@ -93,7 +93,7 @@ const Messages = () => {
         try {
             const tempMsg = newMessage;
             setNewMessage('');
-            const response = await apiClient.post('/api/messages', {
+            const response = await apiClient.post('/messages', {
                 roomId: activeRoomId,
                 content: tempMsg
             });
