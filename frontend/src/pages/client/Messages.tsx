@@ -30,6 +30,8 @@ const Messages = () => {
     const [loadingHistory, setLoadingHistory] = useState(false);
     const [loadingRooms, setLoadingRooms] = useState(true);
     const [activeRoom, setActiveRoom] = useState<any>(null);
+    const prevMessageCount = useRef<number>(0);
+    const currentRoomIdRef = useRef<number | null>(null);
 
     const fetchRooms = async () => {
         try {
@@ -59,12 +61,33 @@ const Messages = () => {
     useEffect(() => {
         if (!activeRoomId) return;
 
-        const fetchHistory = async () => {
+        const isRoomSwitch = currentRoomIdRef.current !== activeRoomId;
+        if (isRoomSwitch) {
+            setMessages([]);
+            prevMessageCount.current = 0;
+            currentRoomIdRef.current = activeRoomId;
+        }
+
+        const fetchHistory = async (isBackground = false) => {
             try {
-                // Only show history loader for the first fetch or when switching rooms
-                setLoadingHistory(messages.length === 0 || activeRoom?.id !== activeRoomId);
+                // Only show history loader when switching rooms
+                if (!isBackground && isRoomSwitch) {
+                    setLoadingHistory(true);
+                }
+
                 const response = await apiClient.get(`/messages/history/${activeRoomId}`);
-                setMessages(response.data);
+
+                // Only update state if data actually changed to avoid unnecessary re-renders
+                // BUT preserve messages that are currently being sent (optimistic UI)
+                const newMessages = response.data;
+                setMessages(prev => {
+                    const sendingMessages = prev.filter(m => (m as any).sending);
+                    // Combine server messages with local "sending" messages
+                    const combined = [...newMessages, ...sendingMessages];
+
+                    if (JSON.stringify(prev) === JSON.stringify(combined)) return prev;
+                    return combined;
+                });
 
                 const room = rooms.find(r => r.id === activeRoomId);
                 setActiveRoom(room);
@@ -76,13 +99,23 @@ const Messages = () => {
         };
 
         fetchHistory();
-        const interval = setInterval(fetchHistory, 5000); // Polling
+        const interval = setInterval(() => fetchHistory(true), 5000); // Polling (background)
         return () => clearInterval(interval);
     }, [activeRoomId, rooms]);
 
     useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        if (scrollRef.current && messages.length > 0) {
+            const hasNewMessages = messages.length > prevMessageCount.current;
+            const container = scrollRef.current;
+
+            // Smart scroll: scroll to bottom if it's initial load or user is already near bottom
+            const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+
+            if (prevMessageCount.current === 0 || (hasNewMessages && isNearBottom)) {
+                container.scrollTop = container.scrollHeight;
+            }
+
+            prevMessageCount.current = messages.length;
         }
     }, [messages]);
 
@@ -90,17 +123,39 @@ const Messages = () => {
         e.preventDefault();
         if (!newMessage.trim() || !activeRoomId) return;
 
+        const content = newMessage.trim();
+        const tempId = `temp-${Date.now()}`;
+
+        // Optimistic message object for immediate UI update
+        const optimisticMsg = {
+            id: tempId,
+            content: content,
+            senderId: user?.id,
+            senderName: user?.fullName || user?.username,
+            createdAt: new Date().toISOString(),
+            isRead: false,
+            sending: true
+        };
+
+        setNewMessage('');
+        // Append optimistic message locally
+        setMessages(prev => [...prev, optimisticMsg]);
+
         try {
-            const tempMsg = newMessage;
-            setNewMessage('');
             const response = await apiClient.post('/messages', {
                 roomId: activeRoomId,
-                content: tempMsg
+                content: content
             });
-            setMessages([...messages, response.data]);
+
+            // Replace the optimistic message with the actual message from server
+            setMessages(prev => prev.map(m => m.id === tempId ? response.data : m));
         } catch (err) {
             console.error("Failed to send message", err);
             toast.error("Message failed to send");
+            // Remove the optimistic message on failure
+            setMessages(prev => prev.filter(m => m.id !== tempId));
+            // Restore the message in input so user can try again
+            setNewMessage(content);
         }
     };
 
@@ -191,20 +246,16 @@ const Messages = () => {
                                     <h4 className="font-bold text-slate-900 text-base tracking-tight leading-none truncate">
                                         {activeRoom?.type === 'GROUP' ? 'Transfer Group Chat' : partners[0]?.name}
                                     </h4>
-                                    <div className="flex flex-wrap gap-2 mt-2">
+                                    <div className="flex flex-wrap gap-2 mt-1">
                                         {partners.map((p: any) => (
                                             <div key={p.id} className="flex items-center space-x-2 bg-slate-100/50 p-1.5 pr-3 rounded-lg border border-white/50">
-                                                <div className="w-5 h-5 rounded-md overflow-hidden bg-white shrink-0">
-                                                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${p.name}`} alt="avatar" />
-                                                </div>
                                                 <div className="flex flex-col">
-                                                    <span className="text-[9px] font-bold text-slate-700 leading-none">{p.name}</span>
                                                     <div className="flex items-center space-x-2 mt-1">
-                                                        <span className="flex items-center text-[8px] text-emerald-600 font-bold bg-emerald-50 px-1 py-0.5 rounded leading-none">
-                                                            <Phone size={8} className="mr-0.5" /> {p.phoneNumber}
+                                                        <span className="flex items-center text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1 py-0.5 rounded leading-none">
+                                                            <Phone size={10} className="mr-0.5" /> {p.phoneNumber}
                                                         </span>
-                                                        <span className="flex items-center text-[8px] text-primary-600 font-bold bg-primary-50 px-1 py-0.5 rounded leading-none">
-                                                            <Mail size={8} className="mr-0.5" /> {p.email}
+                                                        <span className="flex items-center text-[10px] text-primary-600 font-bold bg-primary-50 px-1 py-0.5 rounded leading-none">
+                                                            <Mail size={10} className="mr-0.5" /> {p.email}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -231,7 +282,7 @@ const Messages = () => {
                             messages.map((msg, idx) => {
                                 const isMe = msg.senderId === user?.id;
                                 return (
-                                    <div key={idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                                    <div key={msg.id || idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'} ${(msg as any).sending ? 'opacity-60 grayscale-[0.5]' : ''}`}>
                                         <div className={`flex flex-col max-w-[75%] ${isMe ? 'items-end' : 'items-start'}`}>
                                             {!isMe && activeRoom?.type === 'GROUP' && (
                                                 <span className="text-[9px] font-bold text-slate-400 mb-1 ml-2 uppercase tracking-widest">{msg.senderName}</span>
@@ -244,7 +295,8 @@ const Messages = () => {
                                             </div>
                                             <div className="flex items-center mt-1.5 space-x-1 px-1 opacity-40">
                                                 <span className="text-[9px] font-bold uppercase tracking-widest">{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                {isMe && <CheckCheck size={10} />}
+                                                {isMe && !((msg as any).sending) && <CheckCheck size={10} />}
+                                                {isMe && (msg as any).sending && <Loader2 size={10} className="animate-spin" />}
                                             </div>
                                         </div>
                                     </div>

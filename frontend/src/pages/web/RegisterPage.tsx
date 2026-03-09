@@ -12,7 +12,9 @@ import {
     Lock,
     ArrowRight,
     AlertCircle,
-    ChevronDown
+    ChevronDown,
+    Eye,
+    EyeOff
 } from 'lucide-react';
 
 const RegisterPage = () => {
@@ -22,6 +24,8 @@ const RegisterPage = () => {
     const [stations, setStations] = useState<any[]>([]);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const navigate = useNavigate();
     const { login } = useAuth();
@@ -256,12 +260,21 @@ const RegisterPage = () => {
                                                     <div className="relative group">
                                                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                                         <input
-                                                            type="password"
+                                                            type={showPassword ? "text" : "password"}
                                                             value={formData.password}
                                                             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                                            className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 focus:bg-white outline-none transition-all font-medium"
+                                                            className="w-full pl-12 pr-12 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 focus:bg-white outline-none transition-all font-medium"
                                                             required
                                                         />
+                                                        {formData.password && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setShowPassword(!showPassword)}
+                                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
+                                                            >
+                                                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </div>
                                                 <div>
@@ -269,12 +282,21 @@ const RegisterPage = () => {
                                                     <div className="relative group">
                                                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                                         <input
-                                                            type="password"
+                                                            type={showConfirmPassword ? "text" : "password"}
                                                             value={formData.confirmPassword}
                                                             onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                                                            className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 focus:bg-white outline-none transition-all font-medium"
+                                                            className="w-full pl-12 pr-12 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 focus:bg-white outline-none transition-all font-medium"
                                                             required
                                                         />
+                                                        {formData.confirmPassword && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
+                                                            >
+                                                                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>

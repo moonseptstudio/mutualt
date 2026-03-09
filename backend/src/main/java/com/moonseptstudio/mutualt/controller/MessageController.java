@@ -13,6 +13,7 @@ import com.moonseptstudio.mutualt.repository.UserProfileRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/messages")
+@Transactional
 public class MessageController {
 
     @Autowired
@@ -64,7 +66,19 @@ public class MessageController {
     @PostMapping
     public ResponseEntity<?> sendMessage(@RequestBody Map<String, Object> payload, Authentication authentication) {
         User sender = userRepository.findByUsername(authentication.getName()).orElseThrow();
-        Long roomId = Long.valueOf(payload.get("roomId").toString());
+
+        Object roomIdObj = payload.get("roomId");
+        if (roomIdObj == null) {
+            return ResponseEntity.badRequest().body("Room ID is required");
+        }
+
+        Long roomId;
+        if (roomIdObj instanceof Number) {
+            roomId = ((Number) roomIdObj).longValue();
+        } else {
+            roomId = Long.valueOf(roomIdObj.toString());
+        }
+
         ChatRoom room = chatRoomRepository.findById(roomId).orElseThrow();
 
         // Security check
@@ -72,7 +86,7 @@ public class MessageController {
             return ResponseEntity.status(403).body("Not authorized to send messages to this room");
         }
 
-        String content = payload.get("content").toString();
+        String content = payload.getOrDefault("content", "").toString();
 
         Message message = new Message();
         message.setSender(sender);
@@ -80,6 +94,14 @@ public class MessageController {
         message.setContent(content);
         message.setCreatedAt(LocalDateTime.now());
         message.setRead(false);
+
+        // If DIRECT chat, set the receiver as well
+        if ("DIRECT".equals(room.getType())) {
+            User receiver = room.getMembers().stream()
+                    .filter(m -> !m.getId().equals(sender.getId()))
+                    .findFirst().orElse(null);
+            message.setReceiver(receiver);
+        }
 
         messageRepository.save(message);
         return ResponseEntity.ok(convertToDto(message));
