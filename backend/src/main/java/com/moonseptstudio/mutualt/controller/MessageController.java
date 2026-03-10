@@ -12,11 +12,14 @@ import com.moonseptstudio.mutualt.repository.UserRepository;
 import com.moonseptstudio.mutualt.repository.UserProfileRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -39,12 +42,54 @@ public class MessageController {
     @Autowired
     ChatRoomRepository chatRoomRepository;
 
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
+
     @GetMapping("/rooms")
     public ResponseEntity<?> getMyChatRooms(Authentication authentication) {
         User user = userRepository.findByUsername(authentication.getName()).orElseThrow();
         List<ChatRoomDto> rooms = chatRoomRepository.findByMember(user).stream()
-                .map(room -> convertRoomToDto(room)).collect(Collectors.toList());
-        return ResponseEntity.ok(rooms);
+                .map(room -> convertRoomToDto(room, user)).collect(Collectors.toList());
+
+        // Deduplicate by exact members
+        Map<String, ChatRoomDto> uniqueRooms = new HashMap<>();
+        for (ChatRoomDto room : rooms) {
+            String memberKey = room.getMembers().stream()
+                    .map(m -> String.valueOf(m.getId()))
+                    .sorted()
+                    .collect(Collectors.joining(","));
+
+            if (uniqueRooms.containsKey(memberKey)) {
+                ChatRoomDto existing = uniqueRooms.get(memberKey);
+                if (room.getLastMessage() != null) {
+                    if (existing.getLastMessage() == null
+                            || room.getLastMessage().getCreatedAt().isAfter(existing.getLastMessage().getCreatedAt())) {
+                        uniqueRooms.put(memberKey, room);
+                    }
+                }
+            } else {
+                uniqueRooms.put(memberKey, room);
+            }
+        }
+
+        List<ChatRoomDto> finalRooms = new ArrayList<>(uniqueRooms.values());
+
+        // Sort by last message time (newest first). Rooms without messages go to the
+        // bottom.
+        finalRooms.sort((r1, r2) -> {
+            if (r1.getLastMessage() != null && r2.getLastMessage() != null) {
+                return r2.getLastMessage().getCreatedAt().compareTo(r1.getLastMessage().getCreatedAt());
+            } else if (r1.getLastMessage() != null) {
+                return -1;
+            } else if (r2.getLastMessage() != null) {
+                return 1;
+            } else {
+                return r2.getId().compareTo(r1.getId());
+            }
+        });
+
+        updateLastSeen(user);
+        return ResponseEntity.ok(finalRooms);
     }
 
     @GetMapping("/history/{roomId}")
@@ -58,9 +103,52 @@ public class MessageController {
         }
 
         List<MessageDto> history = messageRepository.findByChatRoomOrderByCreatedAtAsc(room).stream()
-                .map(this::convertToDto).collect(Collectors.toList());
+                .map(msg -> {
+                    // Automatically mark as read if receiver is current user
+                    if (!msg.isRead() && msg.getSender() != null && !msg.getSender().getId().equals(user.getId())) {
+                        msg.setRead(true);
+                        msg.setReadAt(LocalDateTime.now());
+                        messageRepository.save(msg);
+                        // Notify sender that message was read
+                        messagingTemplate.convertAndSend("/topic/room/" + roomId, convertToDto(msg));
+                    }
+                    return convertToDto(msg);
+                }).collect(Collectors.toList());
 
+        updateLastSeen(user);
         return ResponseEntity.ok(history);
+    }
+
+    @PostMapping("/read")
+    public ResponseEntity<?> markAsRead(@RequestBody Map<String, Object> payload, Authentication authentication) {
+        User user = userRepository.findByUsername(authentication.getName()).orElseThrow();
+        updateLastSeen(user);
+
+        Object roomIdObj = payload.get("roomId");
+        if (roomIdObj == null) {
+            return ResponseEntity.badRequest().body("Room ID is required");
+        }
+        Long roomId = Long.valueOf(roomIdObj.toString());
+        ChatRoom room = chatRoomRepository.findById(roomId).orElseThrow();
+
+        // Security check
+        if (room.getMembers().stream().noneMatch(m -> m.getId().equals(user.getId()))) {
+            return ResponseEntity.status(403).body("Not a member of this chat");
+        }
+
+        List<Message> unreadMessages = messageRepository.findByChatRoomOrderByCreatedAtAsc(room).stream()
+                .filter(msg -> !msg.isRead() && msg.getSender() != null
+                        && !msg.getSender().getId().equals(user.getId()))
+                .collect(Collectors.toList());
+
+        for (Message msg : unreadMessages) {
+            msg.setRead(true);
+            msg.setReadAt(LocalDateTime.now());
+            messageRepository.save(msg);
+            messagingTemplate.convertAndSend("/topic/room/" + roomId, convertToDto(msg));
+        }
+
+        return ResponseEntity.ok(Map.of("message", "Marked " + unreadMessages.size() + " messages as read"));
     }
 
     @PostMapping
@@ -104,7 +192,18 @@ public class MessageController {
         }
 
         messageRepository.save(message);
+
+        updateLastSeen(sender);
+
+        // Broadcast message to WebSocket topic
+        messagingTemplate.convertAndSend("/topic/room/" + roomId, convertToDto(message));
+
         return ResponseEntity.ok(convertToDto(message));
+    }
+
+    private void updateLastSeen(User user) {
+        user.setLastSeen(LocalDateTime.now());
+        userRepository.save(user);
     }
 
     private MessageDto convertToDto(Message msg) {
@@ -126,19 +225,29 @@ public class MessageController {
         return dto;
     }
 
-    private ChatRoomDto convertRoomToDto(ChatRoom room) {
+    private ChatRoomDto convertRoomToDto(ChatRoom room, User currentUser) {
         ChatRoomDto dto = new ChatRoomDto();
         dto.setId(room.getId());
         dto.setName(room.getName());
         dto.setType(room.getType());
-        dto.setMembers(room.getMembers().stream().map(this::convertUserToSummary).collect(Collectors.toList()));
+        dto.setMembers(room.getMembers().stream()
+                .map(this::convertUserToSummaryDto).collect(Collectors.toList()));
+
+        List<Message> messages = messageRepository.findByChatRoomOrderByCreatedAtAsc(room);
+        if (!messages.isEmpty()) {
+            dto.setLastMessage(convertToDto(messages.get(messages.size() - 1)));
+        }
+
+        dto.setUnreadCount((int) messageRepository.countByChatRoomAndIsReadFalseAndSenderNot(room, currentUser));
+
         return dto;
     }
 
-    private ChatRoomDto.UserSummaryDto convertUserToSummary(User user) {
+    private ChatRoomDto.UserSummaryDto convertUserToSummaryDto(User user) {
         ChatRoomDto.UserSummaryDto summary = new ChatRoomDto.UserSummaryDto();
         summary.setId(user.getId());
         summary.setName(user.getUsername()); // Fallback
+        summary.setLastSeen(user.getLastSeen());
         UserProfile profile = profileRepository.findByUserId(user.getId()).orElse(null);
         if (profile != null) {
             summary.setName(profile.getFullName());

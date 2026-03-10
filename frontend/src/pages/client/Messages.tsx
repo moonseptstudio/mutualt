@@ -6,16 +6,17 @@ import {
     Send,
     User,
     Users,
-    Phone,
-    Mail,
     ChevronLeft,
     Search,
     MoreVertical,
     CheckCheck,
+    Check,
     Loader2,
     MessageSquare
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { Client } from '@stomp/stompjs';
+import { formatDistanceToNow } from 'date-fns';
 
 const Messages = () => {
     const { user } = useAuth();
@@ -32,30 +33,56 @@ const Messages = () => {
     const [activeRoom, setActiveRoom] = useState<any>(null);
     const prevMessageCount = useRef<number>(0);
     const currentRoomIdRef = useRef<number | null>(null);
+    const stompClientRef = useRef<Client | null>(null);
+    const [refreshTime, setRefreshTime] = useState(Date.now());
 
-    const fetchRooms = async () => {
+    // Force re-render relative times every minute
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setRefreshTime(Date.now());
+        }, 60000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const fetchRooms = async (isBackground = false) => {
         try {
-            setLoadingRooms(true);
+            if (!isBackground) setLoadingRooms(true);
             const response = await apiClient.get('/messages/rooms');
-            setRooms(response.data);
+            
+            setRooms(prevRooms => {
+                // Only update if there's an actual change to prevent unnecessary re-renders
+                if (JSON.stringify(prevRooms) !== JSON.stringify(response.data)) {
+                    return response.data;
+                }
+                return prevRooms;
+            });
 
             const params = new URLSearchParams(location.search);
             const roomIdParam = params.get('room');
-            if (roomIdParam) {
+            if (roomIdParam && !activeRoomId) {
                 setActiveRoomId(Number(roomIdParam));
             } else if (!activeRoomId && response.data.length > 0) {
                 setActiveRoomId(response.data[0].id);
             }
         } catch (err) {
             console.error("Failed to load chat rooms", err);
-            toast.error("Failed to load conversations");
+            if (!isBackground) toast.error("Failed to load conversations");
         } finally {
-            setLoadingRooms(false);
+            if (!isBackground) setLoadingRooms(false);
         }
     };
 
     useEffect(() => {
+        if (!user?.id) return;
+        
         fetchRooms();
+        
+        // Poll for room updates (including online status) every 30 seconds
+        const interval = setInterval(() => {
+            fetchRooms(true);
+        }, 30000);
+        
+        return () => clearInterval(interval);
     }, [user?.id, location.search]);
 
     useEffect(() => {
@@ -68,29 +95,24 @@ const Messages = () => {
             currentRoomIdRef.current = activeRoomId;
         }
 
-        const fetchHistory = async (isBackground = false) => {
+        const fetchHistory = async () => {
             try {
-                // Only show history loader when switching rooms
-                if (!isBackground && isRoomSwitch) {
+                if (isRoomSwitch) {
                     setLoadingHistory(true);
                 }
 
                 const response = await apiClient.get(`/messages/history/${activeRoomId}`);
 
-                // Only update state if data actually changed to avoid unnecessary re-renders
-                // BUT preserve messages that are currently being sent (optimistic UI)
                 const newMessages = response.data;
                 setMessages(prev => {
                     const sendingMessages = prev.filter(m => (m as any).sending);
-                    // Combine server messages with local "sending" messages
                     const combined = [...newMessages, ...sendingMessages];
-
                     if (JSON.stringify(prev) === JSON.stringify(combined)) return prev;
                     return combined;
                 });
 
                 const room = rooms.find(r => r.id === activeRoomId);
-                setActiveRoom(room);
+                if (room) setActiveRoom(room);
             } catch (err) {
                 console.error("Failed to fetch history", err);
             } finally {
@@ -99,9 +121,59 @@ const Messages = () => {
         };
 
         fetchHistory();
-        const interval = setInterval(() => fetchHistory(true), 5000); // Polling (background)
-        return () => clearInterval(interval);
-    }, [activeRoomId, rooms]);
+
+        // WebSocket Connection using native Browser WebSocket (more stable in ESM/Vite)
+        const client = new Client({
+            brokerURL: 'ws://localhost:8080/ws',
+            debug: (str) => console.log('STOMP: ' + str),
+            reconnectDelay: 5000,
+            heartbeatIncoming: 4000,
+            heartbeatOutgoing: 4000,
+        });
+
+        client.onConnect = (frame) => {
+            console.log('Connected: ' + frame);
+            client.subscribe(`/topic/room/${activeRoomId}`, (message) => {
+                const receivedMsg = JSON.parse(message.body);
+                setMessages(prev => {
+                    // Update existing message if it's a read receipt or from sending
+                    const existingIdx = prev.findIndex(m => m.id === receivedMsg.id || ((m as any).sending && m.content === receivedMsg.content));
+
+                    if (existingIdx !== -1) {
+                        const newMessages = [...prev];
+                        newMessages[existingIdx] = receivedMsg;
+                        return newMessages;
+                    }
+
+                    return [...prev, receivedMsg];
+                });
+            });
+        };
+
+        client.onStompError = (frame) => {
+            console.error('Broker reported error: ' + frame.headers['message']);
+            console.error('Additional details: ' + frame.body);
+        };
+
+        client.activate();
+        stompClientRef.current = client;
+
+        return () => {
+            if (stompClientRef.current) {
+                stompClientRef.current.deactivate();
+            }
+        };
+    }, [activeRoomId, user?.id]);
+
+    // Keep activeRoom in sync with rooms array
+    useEffect(() => {
+        if (activeRoomId && rooms.length > 0) {
+            const room = rooms.find(r => r.id === activeRoomId);
+            if (room && JSON.stringify(room) !== JSON.stringify(activeRoom)) {
+                setActiveRoom(room);
+            }
+        }
+    }, [rooms, activeRoomId]);
 
     useEffect(() => {
         if (scrollRef.current && messages.length > 0) {
@@ -109,15 +181,27 @@ const Messages = () => {
             const container = scrollRef.current;
 
             // Smart scroll: scroll to bottom if it's initial load or user is already near bottom
-            const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+            const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
 
             if (prevMessageCount.current === 0 || (hasNewMessages && isNearBottom)) {
-                container.scrollTop = container.scrollHeight;
+                setTimeout(() => {
+                    if (scrollRef.current) {
+                        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+                    }
+                }, 50);
             }
 
             prevMessageCount.current = messages.length;
+
+            // Mark unread messages as read
+            const unreadMessages = messages.filter(m => !(m.isRead || m.read) && m.senderId !== user?.id && !m.sending);
+            if (unreadMessages.length > 0 && activeRoomId) {
+                apiClient.post('/messages/read', { roomId: activeRoomId }).catch(console.error);
+                // Optimistically mark as read locally
+                setMessages(prev => prev.map(m => (!(m.isRead || m.read) && m.senderId !== user?.id && !m.sending) ? { ...m, isRead: true, read: true } : m));
+            }
         }
-    }, [messages]);
+    }, [messages, activeRoomId, user?.id]);
 
     const handleSendMessage = async (e: any) => {
         e.preventDefault();
@@ -163,7 +247,7 @@ const Messages = () => {
     const partners = activeRoom?.members?.filter((m: any) => m.id !== user?.id) || [];
 
     return (
-        <div className="h-[calc(100vh-180px)] glass-card rounded-[32px] overflow-hidden flex animate-in fade-in slide-in-from-bottom-8 duration-700 bg-white/40 border-white">
+        <div data-refresh={refreshTime} className="h-[calc(100vh-180px)] glass-card rounded-[32px] overflow-hidden flex animate-in fade-in slide-in-from-bottom-8 duration-700 bg-white/40 border-white">
             <div className={`w-full md:w-80 border-r border-slate-100 flex flex-col bg-white/60 backdrop-blur-xl ${activeRoomId ? 'hidden md:flex' : 'flex'}`}>
                 <div className="p-6 border-b border-slate-100">
                     <h3 className="text-xl font-bold text-slate-900 tracking-tight">Messages</h3>
@@ -203,17 +287,35 @@ const Messages = () => {
                                                 <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${partner.name}`} alt="avatar" />
                                             )}
                                         </div>
-                                        {room.type !== 'GROUP' && (
+                                        {room.type !== 'GROUP' && partner.lastSeen && (new Date().getTime() - new Date(partner.lastSeen).getTime() < 5 * 60 * 1000) && (
                                             <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-white shadow-sm"></div>
                                         )}
                                     </div>
                                     <div className="text-left flex-1 min-w-0">
-                                        <h4 className="font-bold text-slate-900 text-sm truncate">
-                                            {room.type === 'GROUP' ? 'Match Group Chat' : partner.name}
-                                        </h4>
-                                        <p className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
-                                            {room.type === 'GROUP' ? `${room.members.length} participants` : partner.email}
-                                        </p>
+                                        <div className="flex justify-between items-baseline">
+                                            <h4 className="font-bold text-slate-900 text-sm truncate">
+                                                {room.type === 'GROUP' ? 'Match Group Chat' : partner.name}
+                                            </h4>
+                                            {room.lastMessage && (
+                                                <span className="text-[9px] text-slate-400 shrink-0 ml-2 font-medium">
+                                                    {new Date(room.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center justify-between mt-0.5">
+                                            <p className="text-[10px] text-slate-500 font-medium truncate shrink">
+                                                {room.type === 'GROUP' ? `${room.members.length} participants` : (
+                                                    partner.lastSeen
+                                                        ? ((new Date().getTime() - new Date(partner.lastSeen).getTime()) < 5 * 60 * 1000 ? <span className="text-emerald-500">Online</span> : `Last seen: ${formatDistanceToNow(new Date(partner.lastSeen), { addSuffix: true })}`)
+                                                        : 'Offline'
+                                                )}
+                                            </p>
+                                            {room.unreadCount > 0 && (
+                                                <span className="bg-primary-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center ml-2">
+                                                    {room.unreadCount}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                 </button>
                             );
@@ -246,22 +348,13 @@ const Messages = () => {
                                     <h4 className="font-bold text-slate-900 text-base tracking-tight leading-none truncate">
                                         {activeRoom?.type === 'GROUP' ? 'Transfer Group Chat' : partners[0]?.name}
                                     </h4>
-                                    <div className="flex flex-wrap gap-2 mt-1">
-                                        {partners.map((p: any) => (
-                                            <div key={p.id} className="flex items-center space-x-2 bg-slate-100/50 p-1.5 pr-3 rounded-lg border border-white/50">
-                                                <div className="flex flex-col">
-                                                    <div className="flex items-center space-x-2 mt-1">
-                                                        <span className="flex items-center text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1 py-0.5 rounded leading-none">
-                                                            <Phone size={10} className="mr-0.5" /> {p.phoneNumber}
-                                                        </span>
-                                                        <span className="flex items-center text-[10px] text-primary-600 font-bold bg-primary-50 px-1 py-0.5 rounded leading-none">
-                                                            <Mail size={10} className="mr-0.5" /> {p.email}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
+                                    <p className="text-[10px] text-slate-500 font-medium truncate mt-1">
+                                        {activeRoom?.type !== 'GROUP' && partners[0]?.lastSeen && (
+                                            (new Date().getTime() - new Date(partners[0].lastSeen).getTime()) < 5 * 60 * 1000
+                                                ? <span className="text-emerald-500">Online</span>
+                                                : `Last seen ${formatDistanceToNow(new Date(partners[0].lastSeen), { addSuffix: true })}`
+                                        )}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -293,10 +386,16 @@ const Messages = () => {
                                                 }`}>
                                                 {msg.content}
                                             </div>
-                                            <div className="flex items-center mt-1.5 space-x-1 px-1 opacity-40">
-                                                <span className="text-[9px] font-bold uppercase tracking-widest">{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                {isMe && !((msg as any).sending) && <CheckCheck size={10} />}
-                                                {isMe && (msg as any).sending && <Loader2 size={10} className="animate-spin" />}
+                                            <div className="flex items-center mt-1.5 space-x-1 px-1">
+                                                <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400">
+                                                    {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                                {isMe && !((msg as any).sending) && (
+                                                    <span className={(msg.isRead || msg.read) ? "text-blue-500" : "text-slate-400"}>
+                                                        {(msg.isRead || msg.read) ? <CheckCheck size={12} /> : <Check size={12} />}
+                                                    </span>
+                                                )}
+                                                {isMe && (msg as any).sending && <Loader2 size={10} className="animate-spin text-slate-400" />}
                                             </div>
                                         </div>
                                     </div>

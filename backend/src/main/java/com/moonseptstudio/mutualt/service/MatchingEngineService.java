@@ -27,44 +27,51 @@ public class MatchingEngineService {
     public Map<Long, List<Long>> buildGraphForCategory(Long jobCategoryId, Long gradeId) {
         Map<Long, List<Long>> adj = new HashMap<>();
 
-        // 1. Get all profiles in this criteria
-        List<UserProfile> profiles = userProfileRepository.findAll();
-        // Note: In production, use a custom query: findByJobCategoryIdAndGradeId
+        // 1. Get all relevant profiles in one go
+        List<UserProfile> profiles = userProfileRepository.findByJobCategoryIdAndGradeId(jobCategoryId, gradeId);
 
         Map<Long, List<Long>> stationToUsers = new HashMap<>(); // stationId -> list of userIds
+        List<Long> userIds = new ArrayList<>();
+
         for (UserProfile p : profiles) {
-            if (p.getJobCategory() != null && p.getGrade() != null && p.getCurrentStation() != null &&
-                    p.getJobCategory().getId().equals(jobCategoryId) &&
-                    p.getGrade().getId().equals(gradeId)) {
+            if (p.getCurrentStation() != null) {
+                Long uid = p.getUser().getId();
+                userIds.add(uid);
                 stationToUsers.computeIfAbsent(p.getCurrentStation().getId(), k -> new ArrayList<>())
-                        .add(p.getUser().getId());
+                        .add(uid);
             }
         }
 
-        // 2. Map outgoing edges: User -> List of Users at their preferred stations
-        for (UserProfile p : profiles) {
-            if (p.getJobCategory() != null && p.getGrade() != null &&
-                    p.getJobCategory().getId().equals(jobCategoryId) &&
-                    p.getGrade().getId().equals(gradeId)) {
+        if (userIds.isEmpty())
+            return adj;
 
-                Long userId = p.getUser().getId();
-                List<TransferPreference> prefs = preferenceRepository.findByUserIdOrderByPriorityAsc(userId);
+        // 2. Batch fetch all preferences for these users
+        List<TransferPreference> allPrefs = preferenceRepository.findByUserIdIn(userIds);
+        Map<Long, List<TransferPreference>> userToPrefs = new HashMap<>();
+        for (TransferPreference pref : allPrefs) {
+            userToPrefs.computeIfAbsent(pref.getUser().getId(), k -> new ArrayList<>()).add(pref);
+        }
 
-                List<Long> targets = new ArrayList<>();
-                for (TransferPreference pref : prefs) {
-                    if (pref.getPreferredStation() != null) {
-                        List<Long> targetUserIds = stationToUsers.get(pref.getPreferredStation().getId());
-                        if (targetUserIds != null) {
-                            for (Long targetUserId : targetUserIds) {
-                                if (!targetUserId.equals(userId)) {
-                                    targets.add(targetUserId);
-                                }
+        // 3. Map outgoing edges: User -> List of Users at their preferred stations
+        for (Long userId : userIds) {
+            List<TransferPreference> prefs = userToPrefs.getOrDefault(userId, Collections.emptyList());
+            // Sort by priority since findByUserIdIn doesn't guarantee order per user
+            prefs.sort((a, b) -> Integer.compare(a.getPriority(), b.getPriority()));
+
+            Set<Long> targets = new HashSet<>();
+            for (TransferPreference pref : prefs) {
+                if (pref.getPreferredStation() != null) {
+                    List<Long> targetUserIds = stationToUsers.get(pref.getPreferredStation().getId());
+                    if (targetUserIds != null) {
+                        for (Long targetUserId : targetUserIds) {
+                            if (!targetUserId.equals(userId)) {
+                                targets.add(targetUserId);
                             }
                         }
                     }
                 }
-                adj.put(userId, targets);
             }
+            adj.put(userId, new ArrayList<>(targets));
         }
         return adj;
     }
@@ -77,7 +84,18 @@ public class MatchingEngineService {
 
         if (startUserId != null && startUserId > 0) {
             // Find cycles for a specific user
-            dfs(startUserId, startUserId, new ArrayList<>(), cycles, new HashSet<>(), 1, 3, adj);
+            List<List<Long>> rawCycles = new ArrayList<>();
+            dfs(startUserId, startUserId, new ArrayList<>(), rawCycles, new HashSet<>(), 1, 3, adj);
+
+            for (List<Long> cycle : rawCycles) {
+                List<Long> sortedCycle = new ArrayList<>(cycle);
+                Collections.sort(sortedCycle);
+                String hash = sortedCycle.toString();
+                if (!seenCycleHashes.contains(hash)) {
+                    cycles.add(cycle);
+                    seenCycleHashes.add(hash);
+                }
+            }
         } else {
             // Find all cycles for this category (for admin)
             for (Long userId : adj.keySet()) {

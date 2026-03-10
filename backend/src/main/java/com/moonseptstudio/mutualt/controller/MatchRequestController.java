@@ -89,9 +89,6 @@ public class MatchRequestController {
 
         // CREATE CHAT ROOM
         if ("TRIPLE".equals(request.getMatchType())) {
-            ChatRoom room = new ChatRoom();
-            room.setName("Group Chat: " + request.getSender().getUsername() + " & others");
-            room.setType("GROUP");
             Set<User> members = new HashSet<>();
             members.add(request.getSender());
             members.add(request.getReceiver());
@@ -108,18 +105,39 @@ public class MatchRequestController {
                     }
                 }
             }
-            room.setMembers(members);
-            chatRoomRepository.save(room);
+
+            // Check if a GROUP room with these exact members already exists
+            List<ChatRoom> existingRooms = chatRoomRepository.findByMember(user);
+            boolean roomExists = existingRooms.stream()
+                    .filter(r -> "GROUP".equals(r.getType()))
+                    .anyMatch(r -> r.getMembers().size() == members.size() && r.getMembers().containsAll(members));
+
+            if (!roomExists) {
+                ChatRoom room = new ChatRoom();
+                room.setName("Group Chat: " + request.getSender().getUsername() + " & others");
+                room.setType("GROUP");
+                room.setMembers(members);
+                chatRoomRepository.save(room);
+            }
         } else {
             // DIRECT match - create DIRECT chat room
-            ChatRoom room = new ChatRoom();
-            room.setName(request.getSender().getUsername() + " & " + request.getReceiver().getUsername());
-            room.setType("DIRECT");
             Set<User> members = new HashSet<>();
             members.add(request.getSender());
             members.add(request.getReceiver());
-            room.setMembers(members);
-            chatRoomRepository.save(room);
+
+            // Check if a DIRECT room with these exact members already exists
+            List<ChatRoom> existingRooms = chatRoomRepository.findByMember(user);
+            boolean roomExists = existingRooms.stream()
+                    .filter(r -> "DIRECT".equals(r.getType()))
+                    .anyMatch(r -> r.getMembers().size() == 2 && r.getMembers().containsAll(members));
+
+            if (!roomExists) {
+                ChatRoom room = new ChatRoom();
+                room.setName(request.getSender().getUsername() + " & " + request.getReceiver().getUsername());
+                room.setType("DIRECT");
+                room.setMembers(members);
+                chatRoomRepository.save(room);
+            }
         }
 
         return ResponseEntity.ok(convertToDto(request));

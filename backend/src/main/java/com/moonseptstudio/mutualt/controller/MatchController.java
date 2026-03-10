@@ -51,13 +51,72 @@ public class MatchController {
 
         logger.info("Found {} cycles for user {}", cycles.size(), authentication.getName());
 
+        if (cycles.isEmpty()) {
+            return List.of();
+        }
+
+        // Collect all participant IDs
+        java.util.Set<Long> participantIds = cycles.stream()
+                .flatMap(List::stream)
+                .collect(java.util.stream.Collectors.toSet());
+
+        // Batch fetch all profiles
+        java.util.Map<Long, UserProfile> profileMap = userProfileRepository
+                .findByUserIdIn(new java.util.ArrayList<>(participantIds))
+                .stream()
+                .collect(java.util.stream.Collectors.toMap(up -> up.getUser().getId(), up -> up));
+
+        // Batch fetch all requests related to current user
+        java.util.List<Long> otherIds = participantIds.stream()
+                .filter(id -> !id.equals(user.getId()))
+                .collect(java.util.stream.Collectors.toList());
+
+        java.util.Map<Long, com.moonseptstudio.mutualt.model.MatchRequest> outgoingRequests = new java.util.HashMap<>();
+        java.util.Map<Long, com.moonseptstudio.mutualt.model.MatchRequest> incomingRequests = new java.util.HashMap<>();
+
+        if (!otherIds.isEmpty()) {
+            matchRequestRepository.findBySenderIdAndReceiverIdIn(user.getId(), otherIds)
+                    .forEach(req -> outgoingRequests.put(req.getReceiver().getId(), req));
+            matchRequestRepository.findByReceiverIdAndSenderIdIn(user.getId(), otherIds)
+                    .forEach(req -> incomingRequests.put(req.getSender().getId(), req));
+        }
+
         return cycles.stream().map(cycle -> {
             MatchDto dto = new MatchDto();
             dto.setType(cycle.size() == 2 ? "Direct" : "Triple");
-            dto.setParticipants(
-                    cycle.stream().map(uid -> toSummaryDto(uid, user.getId())).collect(Collectors.toList()));
+
+            dto.setParticipants(cycle.stream().map(uid -> {
+                UserProfile up = profileMap.get(uid);
+                MatchDto.UserSummaryDto uDto = new MatchDto.UserSummaryDto();
+                uDto.setUserId(uid);
+                if (up != null) {
+                    uDto.setName(up.getFullName());
+                    if (up.getCurrentStation() != null) {
+                        uDto.setStationName(up.getCurrentStation().getName());
+                        uDto.setStationDistrict(up.getCurrentStation().getDistrict());
+                    } else {
+                        uDto.setStationName("Unknown Station");
+                        uDto.setStationDistrict("Unknown District");
+                    }
+                }
+
+                if (!uid.equals(user.getId())) {
+                    com.moonseptstudio.mutualt.model.MatchRequest out = outgoingRequests.get(uid);
+                    if (out != null) {
+                        uDto.setRequestStatus(out.getStatus());
+                        uDto.setRequestId(out.getId());
+                    } else {
+                        com.moonseptstudio.mutualt.model.MatchRequest in = incomingRequests.get(uid);
+                        if (in != null) {
+                            uDto.setRequestStatus(in.getStatus() + "_INCOMING");
+                            uDto.setRequestId(in.getId());
+                        }
+                    }
+                }
+                return uDto;
+            }).collect(java.util.stream.Collectors.toList()));
             return dto;
-        }).collect(Collectors.toList());
+        }).collect(java.util.stream.Collectors.toList());
     }
 
     @GetMapping("/all")

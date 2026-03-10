@@ -1,5 +1,6 @@
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\config\DataInitializer.java
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\config\SecurityConfig.java
+E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\config\WebSocketConfig.java
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\controller\AuthController.java
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\controller\FileController.java
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\controller\MatchController.java
@@ -7,6 +8,7 @@ E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\controller\
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\controller\MessageController.java
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\controller\MetadataController.java
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\controller\NotificationController.java
+E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\controller\PingController.java
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\controller\PreferenceController.java
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\controller\ProfileController.java
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\controller\StationController.java

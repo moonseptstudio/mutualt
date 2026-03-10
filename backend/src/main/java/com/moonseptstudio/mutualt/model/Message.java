@@ -33,5 +33,8 @@ public class Message {
 
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    @Column(columnDefinition = "boolean default false")
     private boolean isRead = false;
+
+    private LocalDateTime readAt;
 }

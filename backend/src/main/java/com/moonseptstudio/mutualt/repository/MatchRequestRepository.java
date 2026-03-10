@@ -13,4 +13,8 @@ public interface MatchRequestRepository extends JpaRepository<MatchRequest, Long
     boolean existsBySenderAndReceiverAndStatus(User sender, User receiver, String status);
 
     List<MatchRequest> findBySenderIdAndReceiverId(Long senderId, Long receiverId);
+
+    List<MatchRequest> findBySenderIdAndReceiverIdIn(Long senderId, List<Long> receiverIds);
+
+    List<MatchRequest> findByReceiverIdAndSenderIdIn(Long receiverId, List<Long> senderIds);
 }

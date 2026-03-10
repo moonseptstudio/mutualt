@@ -21,6 +21,8 @@ public class User {
 
     private String role; // e.g., 'USER', 'ADMIN'
 
+    private java.time.LocalDateTime lastSeen;
+
     @ManyToOne
     @JoinColumn(name = "package_id")
     private SubscriptionPackage subscriptionPackage;

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import apiClient from '../api/client';
 
 interface User {
     id: number;
@@ -35,6 +36,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         setIsLoading(false);
     }, []);
+
+    useEffect(() => {
+        if (!user) return;
+        
+        // Initial ping
+        apiClient.post('/ping').catch(console.error);
+        
+        // Ping every 1 minute to update lastSeen status
+        const interval = setInterval(() => {
+            apiClient.post('/ping').catch(console.error);
+        }, 60000);
+        
+        return () => clearInterval(interval);
+    }, [user]);
 
     const login = (userData: User, rememberMe: boolean = false) => {
         if (rememberMe) {

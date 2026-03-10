@@ -16,4 +16,6 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
 
     @Query("SELECT DISTINCT m.receiver FROM Message m WHERE m.sender = :user UNION SELECT DISTINCT m.sender FROM Message m WHERE m.receiver = :user")
     List<User> findChatPartners(@Param("user") User user);
+
+    long countByChatRoomAndIsReadFalseAndSenderNot(ChatRoom chatRoom, User sender);
 }

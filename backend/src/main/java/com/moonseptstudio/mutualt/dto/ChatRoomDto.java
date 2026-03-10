@@ -10,6 +10,7 @@ public class ChatRoomDto {
     private String type; // DIRECT, GROUP
     private List<UserSummaryDto> members;
     private MessageDto lastMessage;
+    private int unreadCount;
 
     @Data
     public static class UserSummaryDto {
@@ -18,5 +19,6 @@ public class ChatRoomDto {
         private String avatar;
         private String phoneNumber;
         private String email;
+        private java.time.LocalDateTime lastSeen;
     }
 }

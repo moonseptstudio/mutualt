@@ -8,4 +8,6 @@ import java.util.List;
 @Repository
 public interface TransferPreferenceRepository extends JpaRepository<TransferPreference, Long> {
     List<TransferPreference> findByUserIdOrderByPriorityAsc(Long userId);
+
+    List<TransferPreference> findByUserIdIn(List<Long> userIds);
 }

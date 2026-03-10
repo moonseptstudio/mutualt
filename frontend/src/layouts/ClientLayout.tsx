@@ -1,6 +1,7 @@
 import Header from '../components/common/Header';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import apiClient from '../api/client';
 import {
     LayoutDashboard,
     MapPin,
@@ -14,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-const SidebarItem = ({ icon: Icon, label, to, active }: any) => (
+const SidebarItem = ({ icon: Icon, label, to, active, badgeCount }: any) => (
     <Link
         to={to}
         className={`flex items-center space-x-3 px-4 py-3.5 rounded-2xl transition-all duration-300 group ${active
@@ -22,7 +23,14 @@ const SidebarItem = ({ icon: Icon, label, to, active }: any) => (
             : 'text-slate-500 hover:bg-primary-50 hover:text-primary-700'
             }`}
     >
-        <Icon size={18} strokeWidth={2.5} className={active ? 'text-white' : 'text-slate-400 group-hover:text-primary-600 transition-colors'} />
+        <div className="relative">
+            <Icon size={18} strokeWidth={2.5} className={active ? 'text-white' : 'text-slate-400 group-hover:text-primary-600 transition-colors'} />
+            {badgeCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[16px] text-center border-2 border-white leading-none">
+                    {badgeCount > 99 ? '99+' : badgeCount}
+                </span>
+            )}
+        </div>
         <span className="font-medium text-[12px] uppercase tracking-wider">{label}</span>
     </Link>
 );
@@ -33,6 +41,35 @@ const ClientLayout = () => {
     const { logout } = useAuth();
     const [globalSearchQuery, setGlobalSearchQuery] = useState('');
     const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
+    
+    // Notification states
+    const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+    const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
+
+    // Fetch counts periodically
+    useEffect(() => {
+        const fetchCounts = async () => {
+            try {
+                // Fetch rooms for unread message count
+                const roomsRes = await apiClient.get('/messages/rooms');
+                const unreadMsgs = roomsRes.data.reduce((acc: number, room: any) => acc + (room.unreadCount || 0), 0);
+                setUnreadMessagesCount(unreadMsgs);
+
+                // Fetch requests for pending count
+                const reqsRes = await apiClient.get('/requests/me');
+                const pendingReqs = reqsRes.data.incoming?.filter((req: any) => req.status === 'PENDING').length || 0;
+                setPendingRequestsCount(pendingReqs);
+            } catch (err) {
+                console.error("Failed to fetch notification counts", err);
+            }
+        };
+
+        fetchCounts(); // Initial fetch
+        
+        // Poll every 30 seconds
+        const interval = setInterval(fetchCounts, 30000);
+        return () => clearInterval(interval);
+    }, []);
 
     const confirmSignOut = () => {
         setIsSignOutModalOpen(true);
@@ -85,12 +122,14 @@ const ClientLayout = () => {
                         label="Requests"
                         to="/requests"
                         active={location.pathname === '/requests'}
+                        badgeCount={pendingRequestsCount}
                     />
                     <SidebarItem
                         icon={MessageSquare}
                         label="Messages"
                         to="/messages"
                         active={location.pathname === '/messages'}
+                        badgeCount={unreadMessagesCount}
                     />
                     <div className="h-px bg-slate-50 my-6 mx-4"></div>
                     <SidebarItem
