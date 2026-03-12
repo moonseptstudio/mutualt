@@ -19,4 +19,5 @@ public class UserProfileDto {
     private String biometricsStatus;
     private String profileImageUrl;
     private String serviceLetterUrl;
+    private String packageName;
 }

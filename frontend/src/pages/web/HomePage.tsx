@@ -65,10 +65,10 @@ const HomePage = () => {
           </span>
           <span className="text-blue-700 text-xs font-bold uppercase tracking-wider">New: Circular 3-Way Matches</span>
         </div>
-        <h1 className="text-5xl md:text-7xl font-semibold text-slate-900 mb-8 tracking-tighter leading-tight max-w-4xl mx-auto">
+        <h1 className="text-3xl sm:text-5xl md:text-7xl font-semibold text-slate-900 mb-6 sm:mb-8 tracking-tighter leading-tight max-w-4xl mx-auto px-2">
           Simplifying Mutual Transfers for <span className="text-blue-600">Government Employees.</span>
         </h1>
-        <p className="text-xl text-slate-600 max-w-2xl mx-auto mb-12 leading-relaxed">
+        <p className="text-base sm:text-xl text-slate-600 max-w-2xl mx-auto mb-10 sm:mb-12 leading-relaxed px-4">
           The ultimate platform for teachers, nurses, and doctors in Sri Lanka. Find your ideal station swap using our intelligent graph matching algorithm.
         </p>
         <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6">
@@ -88,22 +88,22 @@ const HomePage = () => {
 
       {/* Stats/Social Proof */}
       <section className="bg-slate-900 py-16 text-white mb-24 overflow-hidden relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center space-y-12 md:space-y-0">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 items-center">
           <div className="text-center md:text-left">
-            <p className="text-5xl font-medium mb-2 tracking-tight">1500+</p>
-            <p className="text-slate-400 text-sm font-bold uppercase tracking-wider">Registered Employees</p>
+            <p className="text-3xl sm:text-5xl font-medium mb-1 sm:mb-2 tracking-tight">1500+</p>
+            <p className="text-slate-400 text-[10px] sm:text-sm font-bold uppercase tracking-wider">Registered Employees</p>
           </div>
           <div className="text-center md:text-left">
-            <p className="text-5xl font-medium mb-2 tracking-tight">450+</p>
-            <p className="text-slate-400 text-sm font-bold uppercase tracking-wider">Successful Transfers</p>
+            <p className="text-3xl sm:text-5xl font-medium mb-1 sm:mb-2 tracking-tight">450+</p>
+            <p className="text-slate-400 text-[10px] sm:text-sm font-bold uppercase tracking-wider">Successful Transfers</p>
           </div>
           <div className="text-center md:text-left">
-            <p className="text-5xl font-medium mb-2 tracking-tight">25+</p>
-            <p className="text-slate-400 text-sm font-bold uppercase tracking-wider">Hospital Networks</p>
+            <p className="text-3xl sm:text-5xl font-medium mb-1 sm:mb-2 tracking-tight">25+</p>
+            <p className="text-slate-400 text-[10px] sm:text-sm font-bold uppercase tracking-wider">Hospital Networks</p>
           </div>
           <div className="text-center md:text-left">
-            <p className="text-5xl font-medium mb-2 tracking-tight">98%</p>
-            <p className="text-slate-400 text-sm font-bold uppercase tracking-wider">Matching Accuracy</p>
+            <p className="text-3xl sm:text-5xl font-medium mb-1 sm:mb-2 tracking-tight">98%</p>
+            <p className="text-slate-400 text-[10px] sm:text-sm font-bold uppercase tracking-wider">Matching Accuracy</p>
           </div>
         </div>
       </section>

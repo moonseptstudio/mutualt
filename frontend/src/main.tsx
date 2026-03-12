@@ -14,16 +14,19 @@ if (typeof (window as any).Buffer === 'undefined') {
   };
 }
 
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
+import React, { StrictMode } from 'react'
+import ReactDOM, { createRoot } from 'react-dom/client'
 import App from './App.tsx'
-import { AuthProvider } from './context/AuthContext.tsx'
+import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import './index.css'
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
     <AuthProvider>
-      <App />
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
     </AuthProvider>
-  </StrictMode>,
+  </React.StrictMode>,
 )

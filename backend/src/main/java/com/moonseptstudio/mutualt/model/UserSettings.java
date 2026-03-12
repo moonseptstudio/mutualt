@@ -23,4 +23,5 @@ public class UserSettings {
     private Boolean publicProfile = true;
     private Boolean regionalDiscovery = true;
     private Boolean darkMode = false;
+    private Boolean twoFactorEnabled = false;
 }

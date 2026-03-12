@@ -17,6 +17,9 @@ public class MatchRequestDto {
     private String cycleUserIds;
     private LocalDateTime createdAt;
 
+    private String senderProfileImageUrl;
+    private String receiverProfileImageUrl;
+
     // Contact info - populated if status is ACCEPTED
     private String senderPhone;
     private String senderEmail;

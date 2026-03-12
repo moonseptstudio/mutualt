@@ -81,6 +81,8 @@ public class MatchController {
                     .forEach(req -> incomingRequests.put(req.getSender().getId(), req));
         }
 
+        boolean hasPackage = user.getSubscriptionPackage() != null;
+
         return cycles.stream().map(cycle -> {
             MatchDto dto = new MatchDto();
             dto.setType(cycle.size() == 2 ? "Direct" : "Triple");
@@ -90,7 +92,16 @@ public class MatchController {
                 MatchDto.UserSummaryDto uDto = new MatchDto.UserSummaryDto();
                 uDto.setUserId(uid);
                 if (up != null) {
-                    uDto.setName(up.getFullName());
+                    logger.info("Processing participant uid={} for currentUser={} | hasPackage={}", uid, user.getId(), hasPackage);
+                    if (!hasPackage && !uid.equals(user.getId())) {
+                        logger.info("Obfuscating name for uid={}", uid);
+                        uDto.setName(obfuscateName(up.getFullName()));
+                        uDto.setProfileImageUrl(null);
+                    } else {
+                        logger.info("Not obfuscating name for uid={}", uid);
+                        uDto.setName(up.getFullName());
+                        uDto.setProfileImageUrl(up.getProfileImageUrl());
+                    }
                     if (up.getCurrentStation() != null) {
                         uDto.setStationName(up.getCurrentStation().getName());
                         uDto.setStationDistrict(up.getCurrentStation().getDistrict());
@@ -120,23 +131,34 @@ public class MatchController {
     }
 
     @GetMapping("/all")
-    public List<MatchDto> getAllSystemCycles() {
+    public List<MatchDto> getAllSystemCycles(Authentication authentication) {
+        User user = userRepository.findByUsername(authentication.getName()).orElseThrow();
+        boolean hasPackage = user.getSubscriptionPackage() != null;
+
         // Find all cycles for Doctors (Category 1) as a baseline
         List<List<Long>> cycles = matchingEngineService.findCycles(1L, 1L, 0L);
 
         return cycles.stream().map(cycle -> {
             MatchDto dto = new MatchDto();
             dto.setType(cycle.size() + "-Way");
-            dto.setParticipants(cycle.stream().map(this::toSummaryDto).collect(Collectors.toList()));
+            dto.setParticipants(cycle.stream().map(uid -> toSummaryDto(uid, user.getId(), hasPackage)).collect(Collectors.toList()));
             return dto;
         }).collect(Collectors.toList());
     }
 
-    private MatchDto.UserSummaryDto toSummaryDto(Long uid, Long currentUserId) {
+    private MatchDto.UserSummaryDto toSummaryDto(Long uid, Long currentUserId, boolean hasPackage) {
         UserProfile up = userProfileRepository.findByUserId(uid).orElseThrow();
         MatchDto.UserSummaryDto uDto = new MatchDto.UserSummaryDto();
         uDto.setUserId(uid);
-        uDto.setName(up.getFullName());
+        
+        if (!hasPackage && !uid.equals(currentUserId)) {
+            uDto.setName(obfuscateName(up.getFullName()));
+            uDto.setProfileImageUrl(null);
+        } else {
+            uDto.setName(up.getFullName());
+            uDto.setProfileImageUrl(up.getProfileImageUrl());
+        }
+
         if (up.getCurrentStation() != null) {
             uDto.setStationName(up.getCurrentStation().getName());
             uDto.setStationDistrict(up.getCurrentStation().getDistrict());
@@ -166,7 +188,9 @@ public class MatchController {
         return uDto;
     }
 
-    private MatchDto.UserSummaryDto toSummaryDto(Long uid) {
-        return toSummaryDto(uid, 0L);
+    private String obfuscateName(String name) {
+        if (name == null || name.length() <= 2) return name;
+        // Truncate name to first and last letter (e.g., "John Doe" -> "J...e")
+        return name.charAt(0) + "..." + name.charAt(name.length() - 1);
     }
 }

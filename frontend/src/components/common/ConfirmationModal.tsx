@@ -28,12 +28,11 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     const getIcon = () => {
         switch (type) {
             case 'danger':
-                return <AlertTriangle className="text-rose-500" size={32} />;
             case 'logout':
-                return <LogOut className="text-rose-500" size={32} />;
+                return <LogOut className="text-rose-500 dark:text-rose-400" size={32} />;
             case 'info':
             default:
-                return <Info className="text-primary-500" size={32} />;
+                return <Info className="text-primary-500 dark:text-primary-400" size={32} />;
         }
     };
 
@@ -41,10 +40,10 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         switch (type) {
             case 'danger':
             case 'logout':
-                return 'bg-rose-50';
+                return 'bg-rose-50 dark:bg-rose-900/20';
             case 'info':
             default:
-                return 'bg-primary-50';
+                return 'bg-primary-50 dark:bg-primary-900/20';
         }
     };
 
@@ -63,16 +62,16 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
             {/* Backdrop */}
             <div
-                className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+                className="absolute inset-0 bg-slate-900/60 dark:bg-black/60 dark:backdrop-blur-sm transition-opacity"
                 onClick={onClose}
             ></div>
 
             {/* Modal Content */}
-            <div className="relative w-full max-w-sm bg-white rounded-[32px] shadow-2xl p-6 sm:p-8 border border-white/20 animate-in zoom-in-95 duration-300 overflow-hidden">
+            <div className="relative w-full max-w-sm bg-[var(--bg-card)] rounded-[32px] shadow-2xl p-6 sm:p-8 border border-[var(--border-main)] animate-in zoom-in-95 duration-300 overflow-hidden">
                 {/* Close Button */}
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-full transition-all"
+                    className="absolute top-4 right-4 p-2 text-slate-400 hover:text-[var(--text-main)] hover:bg-[var(--bg-main)] rounded-full transition-all"
                 >
                     <X size={18} />
                 </button>
@@ -81,15 +80,15 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                     {getIcon()}
                 </div>
 
-                <h3 className="text-xl font-bold text-center text-slate-900 mb-2 tracking-tight">{title}</h3>
-                <p className="text-slate-500 text-center text-sm mb-8 leading-relaxed px-2">
+                <h3 className="text-xl font-bold text-center text-[var(--text-main)] mb-2 tracking-tight">{title}</h3>
+                <p className="text-[var(--text-muted)] text-center text-sm mb-8 leading-relaxed px-2">
                     {message}
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-3">
                     <button
                         onClick={onClose}
-                        className="flex-1 px-4 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-2xl text-xs uppercase tracking-widest transition-all cursor-pointer"
+                        className="flex-1 px-4 py-3.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-2xl text-xs uppercase tracking-widest transition-all cursor-pointer"
                     >
                         {cancelText}
                     </button>

@@ -7,9 +7,11 @@ import com.moonseptstudio.mutualt.dto.MessageDto;
 import com.moonseptstudio.mutualt.model.Message;
 import com.moonseptstudio.mutualt.model.User;
 import com.moonseptstudio.mutualt.model.UserProfile;
+import com.moonseptstudio.mutualt.model.Notification;
 import com.moonseptstudio.mutualt.repository.MessageRepository;
 import com.moonseptstudio.mutualt.repository.UserRepository;
 import com.moonseptstudio.mutualt.repository.UserProfileRepository;
+import com.moonseptstudio.mutualt.repository.NotificationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -43,13 +45,91 @@ public class MessageController {
     ChatRoomRepository chatRoomRepository;
 
     @Autowired
+    NotificationRepository notificationRepository;
+
+    @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
     @GetMapping("/rooms")
     public ResponseEntity<?> getMyChatRooms(Authentication authentication) {
         User user = userRepository.findByUsername(authentication.getName()).orElseThrow();
-        List<ChatRoomDto> rooms = chatRoomRepository.findByMember(user).stream()
-                .map(room -> convertRoomToDto(room, user)).collect(Collectors.toList());
+        boolean hasPackage = user.getSubscriptionPackage() != null;
+        
+        // 1. Fetch rooms (EntityGraph handles members)
+        List<ChatRoom> rawRooms = chatRoomRepository.findByMember(user);
+        if (rawRooms.isEmpty()) {
+            return ResponseEntity.ok(new ArrayList<>());
+        }
+
+        // 2. Collect all member user IDs to batch fetch profiles
+        List<Long> memberIds = rawRooms.stream()
+                .flatMap(r -> r.getMembers().stream())
+                .map(User::getId)
+                .distinct()
+                .collect(Collectors.toList());
+
+        Map<Long, UserProfile> profileMap = profileRepository.findByUserIdIn(memberIds).stream()
+                .collect(Collectors.toMap(p -> p.getUser().getId(), p -> p, (p1, p2) -> p1));
+
+        // 3. Batch fetch latest messages
+        Map<Long, Message> lastMessageMap = messageRepository.findLatestMessagesByRooms(rawRooms).stream()
+                .collect(Collectors.toMap(m -> m.getChatRoom().getId(), m -> m));
+
+        // 4. Batch fetch unread counts
+        Map<Long, Integer> unreadCountMap = messageRepository.countUnreadMessagesByRooms(rawRooms, user).stream()
+                .collect(Collectors.toMap(
+                    row -> (Long) row[0],
+                    row -> ((Long) row[1]).intValue()
+                ));
+
+        // 5. Convert to DTOs using pre-fetched data
+        List<ChatRoomDto> rooms = rawRooms.stream()
+                .map(room -> {
+                    ChatRoomDto dto = new ChatRoomDto();
+                    dto.setId(room.getId());
+                    dto.setType(room.getType());
+                    
+                    if ("DIRECT".equals(room.getType()) && !hasPackage) {
+                        dto.setName("Direct Chat");
+                    } else {
+                        dto.setName(room.getName());
+                    }
+
+                    dto.setMembers(room.getMembers().stream()
+                        .map(m -> {
+                            ChatRoomDto.UserSummaryDto summary = new ChatRoomDto.UserSummaryDto();
+                            summary.setId(m.getId());
+                            summary.setName(m.getUsername());
+                            summary.setLastSeen(m.getLastSeen());
+                            
+                            UserProfile p = profileMap.get(m.getId());
+                            if (p != null) {
+                                String name = p.getFullName();
+                                if (!hasPackage && !m.getId().equals(user.getId())) {
+                                    name = obfuscateName(name);
+                                    summary.setPhoneNumber(null);
+                                    summary.setEmail(null);
+                                    summary.setAvatar(null);
+                                } else {
+                                    summary.setPhoneNumber(p.getPhoneNumber());
+                                    summary.setEmail(p.getEmail());
+                                    summary.setAvatar(p.getProfileImageUrl());
+                                }
+                                summary.setName(name);
+                            } else if (!hasPackage && !m.getId().equals(user.getId())) {
+                                summary.setName(obfuscateName(m.getUsername()));
+                            }
+                            return summary;
+                        }).collect(Collectors.toList()));
+
+                    Message lastMsg = lastMessageMap.get(room.getId());
+                    if (lastMsg != null) {
+                        dto.setLastMessage(convertToDto(lastMsg, hasPackage, user.getId()));
+                    }
+
+                    dto.setUnreadCount(unreadCountMap.getOrDefault(room.getId(), 0));
+                    return dto;
+                }).collect(Collectors.toList());
 
         // Deduplicate by exact members
         Map<String, ChatRoomDto> uniqueRooms = new HashMap<>();
@@ -102,18 +182,31 @@ public class MessageController {
             return ResponseEntity.status(403).body("Not a member of this chat");
         }
 
-        List<MessageDto> history = messageRepository.findByChatRoomOrderByCreatedAtAsc(room).stream()
-                .map(msg -> {
-                    // Automatically mark as read if receiver is current user
-                    if (!msg.isRead() && msg.getSender() != null && !msg.getSender().getId().equals(user.getId())) {
-                        msg.setRead(true);
-                        msg.setReadAt(LocalDateTime.now());
-                        messageRepository.save(msg);
-                        // Notify sender that message was read
-                        messagingTemplate.convertAndSend("/topic/room/" + roomId, convertToDto(msg));
-                    }
-                    return convertToDto(msg);
-                }).collect(Collectors.toList());
+        List<Message> messages = messageRepository.findByChatRoomOrderByCreatedAtAsc(room);
+        boolean hasPkg = user.getSubscriptionPackage() != null;
+        
+        // Find unread messages received by current user
+        List<Message> unread = messages.stream()
+                .filter(msg -> !msg.isRead() && msg.getSender() != null && !msg.getSender().getId().equals(user.getId()))
+                .collect(Collectors.toList());
+
+        if (!unread.isEmpty()) {
+            LocalDateTime now = LocalDateTime.now();
+            unread.forEach(msg -> {
+                msg.setRead(true);
+                msg.setReadAt(now);
+            });
+            messageRepository.saveAll(unread);
+            
+            // Notify about read status
+            for (Message msg : unread) {
+                messagingTemplate.convertAndSend("/topic/room/" + roomId, convertToDto(msg, hasPkg, user.getId()));
+            }
+        }
+
+        List<MessageDto> history = messages.stream()
+                .map(msg -> convertToDto(msg, hasPkg, user.getId()))
+                .collect(Collectors.toList());
 
         updateLastSeen(user);
         return ResponseEntity.ok(history);
@@ -141,11 +234,18 @@ public class MessageController {
                         && !msg.getSender().getId().equals(user.getId()))
                 .collect(Collectors.toList());
 
-        for (Message msg : unreadMessages) {
-            msg.setRead(true);
-            msg.setReadAt(LocalDateTime.now());
-            messageRepository.save(msg);
-            messagingTemplate.convertAndSend("/topic/room/" + roomId, convertToDto(msg));
+        if (!unreadMessages.isEmpty()) {
+            LocalDateTime now = LocalDateTime.now();
+            unreadMessages.forEach(msg -> {
+                msg.setRead(true);
+                msg.setReadAt(now);
+            });
+            messageRepository.saveAll(unreadMessages);
+            
+            boolean hasPkg = user.getSubscriptionPackage() != null;
+            for (Message msg : unreadMessages) {
+                messagingTemplate.convertAndSend("/topic/room/" + roomId, convertToDto(msg, hasPkg, user.getId()));
+            }
         }
 
         return ResponseEntity.ok(Map.of("message", "Marked " + unreadMessages.size() + " messages as read"));
@@ -193,12 +293,25 @@ public class MessageController {
 
         messageRepository.save(message);
 
+        // Create notifications for other members
+        for (User member : room.getMembers()) {
+            if (!member.getId().equals(sender.getId())) {
+                Notification notif = new Notification();
+                notif.setUser(member);
+                notif.setTitle("New Message");
+                notif.setMessage(sender.getUsername() + " sent a message in " + room.getName());
+                notif.setType("SYSTEM");
+                notif.setCreatedAt(LocalDateTime.now());
+                notificationRepository.save(notif);
+            }
+        }
+
         updateLastSeen(sender);
 
         // Broadcast message to WebSocket topic
-        messagingTemplate.convertAndSend("/topic/room/" + roomId, convertToDto(message));
+        messagingTemplate.convertAndSend("/topic/room/" + roomId, convertToDto(message, true, sender.getId()));
 
-        return ResponseEntity.ok(convertToDto(message));
+        return ResponseEntity.ok(convertToDto(message, true, sender.getId()));
     }
 
     private void updateLastSeen(User user) {
@@ -206,7 +319,7 @@ public class MessageController {
         userRepository.save(user);
     }
 
-    private MessageDto convertToDto(Message msg) {
+    private MessageDto convertToDto(Message msg, boolean hasPackage, Long currentUserId) {
         MessageDto dto = new MessageDto();
         dto.setId(msg.getId());
         dto.setSenderId(msg.getSender().getId());
@@ -219,42 +332,21 @@ public class MessageController {
 
         UserProfile senderProfile = profileRepository.findByUserId(msg.getSender().getId()).orElse(null);
         if (senderProfile != null) {
-            dto.setSenderName(senderProfile.getFullName());
+            String name = senderProfile.getFullName();
+            if (!hasPackage && !msg.getSender().getId().equals(currentUserId)) {
+                name = obfuscateName(name);
+                dto.setSenderProfileImageUrl(null);
+            } else {
+                dto.setSenderProfileImageUrl(senderProfile.getProfileImageUrl());
+            }
+            dto.setSenderName(name);
         }
 
         return dto;
     }
 
-    private ChatRoomDto convertRoomToDto(ChatRoom room, User currentUser) {
-        ChatRoomDto dto = new ChatRoomDto();
-        dto.setId(room.getId());
-        dto.setName(room.getName());
-        dto.setType(room.getType());
-        dto.setMembers(room.getMembers().stream()
-                .map(this::convertUserToSummaryDto).collect(Collectors.toList()));
-
-        List<Message> messages = messageRepository.findByChatRoomOrderByCreatedAtAsc(room);
-        if (!messages.isEmpty()) {
-            dto.setLastMessage(convertToDto(messages.get(messages.size() - 1)));
-        }
-
-        dto.setUnreadCount((int) messageRepository.countByChatRoomAndIsReadFalseAndSenderNot(room, currentUser));
-
-        return dto;
-    }
-
-    private ChatRoomDto.UserSummaryDto convertUserToSummaryDto(User user) {
-        ChatRoomDto.UserSummaryDto summary = new ChatRoomDto.UserSummaryDto();
-        summary.setId(user.getId());
-        summary.setName(user.getUsername()); // Fallback
-        summary.setLastSeen(user.getLastSeen());
-        UserProfile profile = profileRepository.findByUserId(user.getId()).orElse(null);
-        if (profile != null) {
-            summary.setName(profile.getFullName());
-            summary.setPhoneNumber(profile.getPhoneNumber());
-            summary.setEmail(profile.getEmail());
-            // avatar logic if any
-        }
-        return summary;
+    private String obfuscateName(String name) {
+        if (name == null || name.length() <= 2) return name;
+        return name.charAt(0) + "..." + name.charAt(name.length() - 1);
     }
 }

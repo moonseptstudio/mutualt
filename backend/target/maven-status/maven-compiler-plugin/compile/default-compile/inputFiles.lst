@@ -8,12 +8,15 @@ E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\controller\
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\controller\MessageController.java
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\controller\MetadataController.java
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\controller\NotificationController.java
+E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\controller\PackageController.java
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\controller\PingController.java
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\controller\PreferenceController.java
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\controller\ProfileController.java
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\controller\StationController.java
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\controller\UploadController.java
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\controller\UserSettingsController.java
+E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\DbCheck.java
+E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\DbFix.java
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\dto\ChatRoomDto.java
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\dto\JwtResponse.java
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\dto\LoginRequest.java
@@ -21,6 +24,7 @@ E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\dto\MatchDt
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\dto\MatchRequestDto.java
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\dto\MessageDto.java
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\dto\MessageResponse.java
+E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\dto\PasswordChangeRequest.java
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\dto\SignupRequest.java
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\dto\UserProfileDto.java
 E:\MOONSEPT\mutualt\backend\src\main\java\com\moonseptstudio\mutualt\model\ChatRoom.java

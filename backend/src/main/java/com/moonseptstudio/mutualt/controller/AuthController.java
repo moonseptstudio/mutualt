@@ -3,14 +3,12 @@ package com.moonseptstudio.mutualt.controller;
 import com.moonseptstudio.mutualt.dto.JwtResponse;
 import com.moonseptstudio.mutualt.dto.LoginRequest;
 import com.moonseptstudio.mutualt.dto.MessageResponse;
+import com.moonseptstudio.mutualt.dto.PasswordChangeRequest;
 import com.moonseptstudio.mutualt.dto.SignupRequest;
 import com.moonseptstudio.mutualt.model.User;
 import com.moonseptstudio.mutualt.model.UserProfile;
-import com.moonseptstudio.mutualt.repository.GradeRepository;
-import com.moonseptstudio.mutualt.repository.JobCategoryRepository;
-import com.moonseptstudio.mutualt.repository.StationRepository;
-import com.moonseptstudio.mutualt.repository.UserProfileRepository;
-import com.moonseptstudio.mutualt.repository.UserRepository;
+import com.moonseptstudio.mutualt.model.SubscriptionPackage;
+import com.moonseptstudio.mutualt.repository.*;
 import com.moonseptstudio.mutualt.security.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -49,6 +47,9 @@ public class AuthController {
     @Autowired
     GradeRepository gradeRepository;
 
+    @Autowired
+    PackageRepository packageRepository;
+
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
         Authentication authentication = authenticationManager.authenticate(
@@ -62,7 +63,8 @@ public class AuthController {
         return ResponseEntity.ok(new JwtResponse(jwt,
                 user.getId(),
                 user.getUsername(),
-                user.getRole()));
+                user.getRole(),
+                user.getSubscriptionPackage() != null ? user.getSubscriptionPackage().getName() : null));
     }
 
     @PostMapping("/signup")
@@ -78,6 +80,10 @@ public class AuthController {
         user.setUsername(signUpRequest.getUsername());
         user.setPasswordHash(encoder.encode(signUpRequest.getPassword()));
         user.setRole("USER");
+        
+        SubscriptionPackage freePackage = packageRepository.findByName("FREE").orElse(null);
+        user.setSubscriptionPackage(freePackage);
+        
         userRepository.save(user);
 
         // 2. Create Profile
@@ -94,5 +100,35 @@ public class AuthController {
         userProfileRepository.save(profile);
 
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getMe(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401).body(new MessageResponse("Error: Not authenticated"));
+        }
+        
+        User user = userRepository.findByUsername(authentication.getName()).orElseThrow();
+        
+        return ResponseEntity.ok(new JwtResponse(
+                null, // No need to return token again
+                user.getId(),
+                user.getUsername(),
+                user.getRole(),
+                user.getSubscriptionPackage() != null ? user.getSubscriptionPackage().getName() : null));
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody PasswordChangeRequest request, Authentication authentication) {
+        User user = userRepository.findByUsername(authentication.getName()).orElseThrow();
+        
+        if (!encoder.matches(request.getOldPassword(), user.getPasswordHash())) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: Incorrect old password!"));
+        }
+        
+        user.setPasswordHash(encoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+        
+        return ResponseEntity.ok(new MessageResponse("Password changed successfully!"));
     }
 }

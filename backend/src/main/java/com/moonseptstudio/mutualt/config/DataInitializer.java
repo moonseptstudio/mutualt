@@ -1,6 +1,8 @@
 package com.moonseptstudio.mutualt.config;
 
 import com.moonseptstudio.mutualt.model.Station;
+import com.moonseptstudio.mutualt.model.SubscriptionPackage;
+import com.moonseptstudio.mutualt.repository.PackageRepository;
 import com.moonseptstudio.mutualt.repository.StationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -13,6 +15,9 @@ public class DataInitializer implements CommandLineRunner {
 
     @Autowired
     private StationRepository stationRepository;
+
+    @Autowired
+    private PackageRepository packageRepository;
 
     @Override
     public void run(String... args) throws Exception {
@@ -31,6 +36,13 @@ public class DataInitializer implements CommandLineRunner {
             };
             stationRepository.saveAll(Arrays.asList(stations));
             System.out.println("Sample station data initialized.");
+        }
+
+        if (packageRepository.count() == 0) {
+            SubscriptionPackage free = new SubscriptionPackage(null, "FREE", 0.0, false, true, "Standard basic features");
+            SubscriptionPackage premium = new SubscriptionPackage(null, "PREMIUM", 1500.0, true, false, "All features unlocked");
+            packageRepository.saveAll(Arrays.asList(free, premium));
+            System.out.println("Subscription packages initialized.");
         }
     }
 }

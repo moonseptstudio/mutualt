@@ -2,8 +2,11 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
-  Navigate
+  Navigate,
+  useLocation
 } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useAuth } from './context/AuthContext';
 import { Toaster } from 'react-hot-toast';
 
 // Layouts
@@ -36,23 +39,43 @@ import SystemCycles from './pages/admin/SystemCycles';
 
 import AdminLoginPage from './pages/web/AdminLoginPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import PublicRoute from './components/PublicRoute';
+
+const SessionSync = () => {
+  const { refreshSession, isAuthenticated } = useAuth();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      refreshSession();
+    }
+  }, [location.pathname, isAuthenticated]);
+
+  return null;
+};
 
 function App() {
   return (
     <Router>
+      <SessionSync />
       <Toaster position="top-right" />
       <Routes>
-        {/* Public Website Routes */}
+        {/* Truly Public Routes (Accessible to everyone) */}
         <Route element={<WebLayout />}>
-          <Route path="/" element={<HomePage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/pricing" element={<PricingPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
         </Route>
 
-        {/* Admin Login Route without WebLayout */}
-        <Route path="/admin/login" element={<AdminLoginPage />} />
+        {/* Guest-Only Routes (Redirect to dashboard if logged in) */}
+        <Route element={<PublicRoute />}>
+          <Route element={<WebLayout />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+          </Route>
+          {/* Admin Login Route without WebLayout */}
+          <Route path="/admin/login" element={<AdminLoginPage />} />
+        </Route>
 
         {/* Client/User Dashboard Routes */}
         <Route element={<ProtectedRoute allowedRoles={['USER']} />}>

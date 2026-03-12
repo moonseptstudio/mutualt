@@ -8,6 +8,7 @@ interface User {
     role: string;
     fullName?: string;
     profileImageUrl?: string;
+    packageName?: string;
 }
 
 interface AuthContextType {
@@ -16,9 +17,19 @@ interface AuthContextType {
     logout: () => void;
     isAuthenticated: boolean;
     isLoading: boolean;
+    refreshSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const isTokenExpired = (token: string) => {
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.exp * 1000 < Date.now();
+    } catch (e) {
+        return true;
+    }
+};
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
@@ -30,11 +41,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const sessionUser = sessionStorage.getItem('user');
 
         if (localUser) {
-            setUser(JSON.parse(localUser));
+            const parsedUser = JSON.parse(localUser);
+            if (isTokenExpired(parsedUser.token)) {
+                localStorage.removeItem('user');
+                setUser(null);
+            } else {
+                setUser(parsedUser);
+            }
         } else if (sessionUser) {
-            setUser(JSON.parse(sessionUser));
+            const parsedUser = JSON.parse(sessionUser);
+            if (isTokenExpired(parsedUser.token)) {
+                sessionStorage.removeItem('user');
+                setUser(null);
+            } else {
+                setUser(parsedUser);
+            }
         }
         setIsLoading(false);
+    }, []);
+
+    useEffect(() => {
+        const interceptor = apiClient.interceptors.response.use(
+            (response) => response,
+            (error) => {
+                if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+                    logout();
+                }
+                return Promise.reject(error);
+            }
+        );
+
+        return () => apiClient.interceptors.response.eject(interceptor);
     }, []);
 
     useEffect(() => {
@@ -68,8 +105,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
     };
 
+    const refreshSession = async () => {
+        try {
+            const response = await apiClient.get('/auth/me');
+            if (response.data) {
+                // Keep existing token if not provided in /me response
+                const currentToken = user?.token;
+                const updatedUser = { ...response.data };
+                if (!updatedUser.token && currentToken) {
+                    updatedUser.token = currentToken;
+                }
+                
+                // Update storage if user was already logged in
+                if (localStorage.getItem('user')) {
+                    localStorage.setItem('user', JSON.stringify(updatedUser));
+                } else if (sessionStorage.getItem('user')) {
+                    sessionStorage.setItem('user', JSON.stringify(updatedUser));
+                }
+                
+                setUser(updatedUser);
+            }
+        } catch (error) {
+            console.error("Session refresh failed", error);
+        }
+    };
+
     return (
-        <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, isLoading }}>
+        <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, isLoading, refreshSession }}>
             {children}
         </AuthContext.Provider>
     );

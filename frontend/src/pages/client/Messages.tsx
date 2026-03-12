@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useLocation, useOutletContext } from 'react-router-dom';
+import { useLocation, useOutletContext, useSearchParams } from 'react-router-dom';
 import apiClient from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -17,14 +17,34 @@ import {
 import toast from 'react-hot-toast';
 import { Client } from '@stomp/stompjs';
 import { formatDistanceToNow } from 'date-fns';
+import { getAvatarUrl } from '../../api/url';
+
+const formatName = (name: string) => {
+    if (!name) return '';
+    const trimmed = name.trim();
+    if (trimmed.length <= 2) return trimmed;
+    return `${trimmed[0]}***${trimmed[trimmed.length - 1]}`;
+};
 
 const Messages = () => {
     const { user } = useAuth();
     const location = useLocation();
-    const { globalSearchQuery }: any = useOutletContext();
+    const { globalSearchQuery, hasPackage }: any = useOutletContext();
     const scrollRef = useRef<HTMLDivElement>(null);
 
-    const [activeRoomId, setActiveRoomId] = useState<number | null>(null);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const activeRoomId = searchParams.get('room') ? Number(searchParams.get('room')) : null;
+
+    const setActiveRoomId = (id: number | null) => {
+        if (id) {
+            setSearchParams({ room: id.toString() });
+        } else {
+            const newParams = new URLSearchParams(searchParams);
+            newParams.delete('room');
+            setSearchParams(newParams);
+        }
+    };
+
     const [rooms, setRooms] = useState<any[]>([]);
     const [messages, setMessages] = useState<any[]>([]);
     const [newMessage, setNewMessage] = useState('');
@@ -35,6 +55,7 @@ const Messages = () => {
     const currentRoomIdRef = useRef<number | null>(null);
     const stompClientRef = useRef<Client | null>(null);
     const [refreshTime, setRefreshTime] = useState(Date.now());
+    const [sidebarSearchQuery, setSidebarSearchQuery] = useState('');
 
     // Force re-render relative times every minute
     useEffect(() => {
@@ -46,7 +67,7 @@ const Messages = () => {
 
     const fetchRooms = async (isBackground = false) => {
         try {
-            if (!isBackground) setLoadingRooms(true);
+            if (!isBackground && rooms.length === 0) setLoadingRooms(true);
             const response = await apiClient.get('/messages/rooms');
             
             setRooms(prevRooms => {
@@ -57,11 +78,8 @@ const Messages = () => {
                 return prevRooms;
             });
 
-            const params = new URLSearchParams(location.search);
-            const roomIdParam = params.get('room');
-            if (roomIdParam && !activeRoomId) {
-                setActiveRoomId(Number(roomIdParam));
-            } else if (!activeRoomId && response.data.length > 0) {
+            if (!searchParams.get('room') && !isBackground && response.data.length > 0) {
+                // Only auto-select first room on initial load if no room in URL and not a background update
                 setActiveRoomId(response.data[0].id);
             }
         } catch (err) {
@@ -90,7 +108,11 @@ const Messages = () => {
 
         const isRoomSwitch = currentRoomIdRef.current !== activeRoomId;
         if (isRoomSwitch) {
-            setMessages([]);
+            // Don't clear messages immediately to avoid jumpy UI
+            // unless the new ID is totally different
+            if (!currentRoomIdRef.current) {
+                setMessages([]);
+            }
             prevMessageCount.current = 0;
             currentRoomIdRef.current = activeRoomId;
         }
@@ -106,13 +128,18 @@ const Messages = () => {
                 const newMessages = response.data;
                 setMessages(prev => {
                     const sendingMessages = prev.filter(m => (m as any).sending);
-                    const combined = [...newMessages, ...sendingMessages];
-                    if (JSON.stringify(prev) === JSON.stringify(combined)) return prev;
-                    return combined;
+                    return [...newMessages, ...sendingMessages];
                 });
 
                 const room = rooms.find(r => r.id === activeRoomId);
                 if (room) setActiveRoom(room);
+                
+                // Immediate scroll attempt after setting messages
+                setTimeout(() => {
+                    if (scrollRef.current) {
+                        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+                    }
+                }, 100);
             } catch (err) {
                 console.error("Failed to fetch history", err);
             } finally {
@@ -184,11 +211,12 @@ const Messages = () => {
             const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
 
             if (prevMessageCount.current === 0 || (hasNewMessages && isNearBottom)) {
-                setTimeout(() => {
+                // Use requestAnimationFrame for smoother scrolling
+                requestAnimationFrame(() => {
                     if (scrollRef.current) {
                         scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
                     }
-                }, 50);
+                });
             }
 
             prevMessageCount.current = messages.length;
@@ -247,16 +275,18 @@ const Messages = () => {
     const partners = activeRoom?.members?.filter((m: any) => m.id !== user?.id) || [];
 
     return (
-        <div data-refresh={refreshTime} className="h-[calc(100vh-180px)] glass-card rounded-[32px] overflow-hidden flex animate-in fade-in slide-in-from-bottom-8 duration-700 bg-white/40 border-white">
-            <div className={`w-full md:w-80 border-r border-slate-100 flex flex-col bg-white/60 backdrop-blur-xl ${activeRoomId ? 'hidden md:flex' : 'flex'}`}>
-                <div className="p-6 border-b border-slate-100">
-                    <h3 className="text-xl font-bold text-slate-900 tracking-tight">Messages</h3>
-                    <div className="mt-4 relative group">
+        <div data-refresh={refreshTime} className="h-[calc(100vh-140px)] sm:h-[calc(100vh-180px)] glass-card rounded-2xl sm:rounded-[32px] overflow-hidden flex animate-in fade-in slide-in-from-bottom-8 duration-700 bg-[var(--bg-card)] dark:bg-[var(--bg-card)]/40 border border-[var(--border-main)]">
+            <div className={`w-full md:w-80 border-r border-[var(--border-main)] flex flex-col bg-[var(--bg-card)] dark:bg-[var(--bg-card)]/60 dark:backdrop-blur-xl ${activeRoomId ? 'hidden md:flex' : 'flex'}`}>
+                <div className="p-4 sm:p-6 border-b border-[var(--border-main)]">
+                    <h3 className="text-lg sm:text-xl font-bold text-[var(--text-main)] tracking-tight">Messages</h3>
+                    <div className="mt-3 sm:mt-4 relative group">
                         <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-500 transition-colors" />
                         <input
                             type="text"
                             placeholder="Search chats..."
-                            className="w-full bg-slate-100/50 border-none rounded-2xl py-2.5 pl-10 pr-4 text-xs font-medium focus:ring-2 focus:ring-primary-500/20 transition-all"
+                            value={sidebarSearchQuery}
+                            onChange={(e) => setSidebarSearchQuery(e.target.value)}
+                            className="w-full bg-slate-100 dark:bg-slate-800/50 border-none rounded-xl sm:rounded-2xl py-2 sm:py-2.5 pl-10 pr-4 text-xs font-medium focus:ring-2 focus:ring-primary-500/20 text-[var(--text-main)] transition-all"
                         />
                     </div>
                 </div>
@@ -268,42 +298,50 @@ const Messages = () => {
                         </div>
                     ) : rooms.length > 0 ? (
                         rooms.filter((room: any) => {
-                            if (!globalSearchQuery) return true;
-                            const term = globalSearchQuery.toLowerCase();
-                            return room.members.some((m: any) => m.name?.toLowerCase().includes(term));
+                            const term = (sidebarSearchQuery || globalSearchQuery || '').toLowerCase();
+                            if (!term) return true;
+                            
+                            // Search room name
+                            if (room.name?.toLowerCase().includes(term)) return true;
+                            
+                            // Search member names
+                            return room.members.some((m: any) => {
+                                const displayName = hasPackage ? m.name : formatName(m.name);
+                                return displayName.toLowerCase().includes(term);
+                            });
                         }).map((room) => {
                             const partner = room.members.find((m: any) => m.id !== user?.id) || room.members[0];
                             return (
                                 <button
                                     key={room.id}
                                     onClick={() => setActiveRoomId(room.id)}
-                                    className={`w-full p-5 flex items-center space-x-4 transition-all border-b border-slate-50/50 hover:bg-white ${activeRoomId === room.id ? 'bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] z-10' : ''}`}
+                                    className={`w-full p-4 sm:p-5 flex items-center space-x-3 sm:space-x-4 transition-all border-b border-[var(--border-main)]/50 hover:bg-[var(--bg-main)]/30 ${activeRoomId === room.id ? 'bg-[var(--bg-main)] shadow-[0_8px_30px_rgb(0,0,0,0.04)] z-10' : ''}`}
                                 >
                                     <div className="relative">
-                                        <div className="w-12 h-12 bg-slate-100 rounded-2xl overflow-hidden border border-white shadow-sm flex items-center justify-center">
+                                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-100 dark:bg-slate-800 rounded-xl sm:rounded-2xl overflow-hidden border border-[var(--border-main)] shadow-sm flex items-center justify-center">
                                             {room.type === 'GROUP' ? (
                                                 <Users size={20} className="text-primary-500" />
                                             ) : (
-                                                <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${partner.name}`} alt="avatar" />
+                                                <img src={getAvatarUrl(hasPackage ? partner.avatar : null, hasPackage ? partner.name : formatName(partner.name))} alt="avatar" />
                                             )}
                                         </div>
                                         {room.type !== 'GROUP' && partner.lastSeen && (new Date().getTime() - new Date(partner.lastSeen).getTime() < 5 * 60 * 1000) && (
-                                            <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-white shadow-sm"></div>
+                                            <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-[var(--bg-card)] shadow-sm"></div>
                                         )}
                                     </div>
                                     <div className="text-left flex-1 min-w-0">
                                         <div className="flex justify-between items-baseline">
-                                            <h4 className="font-bold text-slate-900 text-sm truncate">
-                                                {room.type === 'GROUP' ? 'Match Group Chat' : partner.name}
+                                            <h4 className="font-bold text-[var(--text-main)] text-sm truncate">
+                                                {room.type === 'GROUP' ? 'Match Group Chat' : (hasPackage ? partner.name : formatName(partner.name))}
                                             </h4>
                                             {room.lastMessage && (
-                                                <span className="text-[9px] text-slate-400 shrink-0 ml-2 font-medium">
+                                                <span className="text-[9px] text-[var(--text-muted)] shrink-0 ml-2 font-medium">
                                                     {new Date(room.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                 </span>
                                             )}
                                         </div>
                                         <div className="flex items-center justify-between mt-0.5">
-                                            <p className="text-[10px] text-slate-500 font-medium truncate shrink">
+                                            <p className="text-[10px] text-[var(--text-muted)] font-medium truncate shrink">
                                                 {room.type === 'GROUP' ? `${room.members.length} participants` : (
                                                     partner.lastSeen
                                                         ? ((new Date().getTime() - new Date(partner.lastSeen).getTime()) < 5 * 60 * 1000 ? <span className="text-emerald-500">Online</span> : `Last seen: ${formatDistanceToNow(new Date(partner.lastSeen), { addSuffix: true })}`)
@@ -322,33 +360,33 @@ const Messages = () => {
                         })
                     ) : (
                         <div className="p-10 text-center">
-                            <User size={32} className="mx-auto text-slate-200 mb-3" />
-                            <p className="text-xs text-slate-500 font-medium">No active chats yet.</p>
+                            <User size={32} className="mx-auto text-slate-300 dark:text-slate-700 mb-3" />
+                            <p className="text-xs text-[var(--text-muted)] font-medium">No active chats yet.</p>
                         </div>
                     )}
                 </div>
             </div>
 
             {activeRoomId ? (
-                <div className="flex-1 flex flex-col bg-white/40">
-                    <div className="p-5 flex items-center justify-between border-b border-slate-100 bg-white/80 backdrop-blur-xl z-20">
-                        <div className="flex items-center space-x-4 max-w-[80%]">
-                            <button onClick={() => setActiveRoomId(null)} className="md:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-full">
+                <div className="flex-1 flex flex-col bg-[var(--bg-main)] dark:bg-[var(--bg-main)]/40">
+                    <div className="p-3 sm:p-5 flex items-center justify-between border-b border-[var(--border-main)] bg-[var(--bg-card)] dark:bg-[var(--bg-card)]/80 dark:backdrop-blur-xl z-20">
+                        <div className="flex items-center space-x-2 sm:space-x-4 max-w-full">
+                            <button onClick={() => setActiveRoomId(null)} className="md:hidden p-2 text-slate-500 hover:bg-[var(--bg-main)] rounded-xl">
                                 <ChevronLeft size={20} />
                             </button>
-                            <div className="flex items-center space-x-3 overflow-hidden">
-                                <div className="w-10 h-10 bg-slate-100 rounded-[14px] overflow-hidden border border-white flex items-center justify-center shrink-0">
+                            <div className="flex items-center space-x-2 sm:space-x-3 overflow-hidden">
+                                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-slate-100 dark:bg-slate-800 rounded-lg sm:rounded-[14px] overflow-hidden border border-[var(--border-main)] flex items-center justify-center shrink-0">
                                     {activeRoom?.type === 'GROUP' ? (
                                         <Users size={18} className="text-primary-500" />
                                     ) : (
-                                        <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${partners[0]?.name}`} alt="avatar" />
+                                        <img src={getAvatarUrl(hasPackage ? partners[0]?.avatar : null, hasPackage ? partners[0]?.name : formatName(partners[0]?.name))} alt="avatar" />
                                     )}
                                 </div>
                                 <div className="min-w-0">
-                                    <h4 className="font-bold text-slate-900 text-base tracking-tight leading-none truncate">
-                                        {activeRoom?.type === 'GROUP' ? 'Transfer Group Chat' : partners[0]?.name}
+                                    <h4 className="font-bold text-[var(--text-main)] text-base tracking-tight leading-none truncate">
+                                        {activeRoom?.type === 'GROUP' ? 'Transfer Group Chat' : (hasPackage ? partners[0]?.name : formatName(partners[0]?.name))}
                                     </h4>
-                                    <p className="text-[10px] text-slate-500 font-medium truncate mt-1">
+                                    <p className="text-[10px] text-[var(--text-muted)] font-medium truncate mt-1">
                                         {activeRoom?.type !== 'GROUP' && partners[0]?.lastSeen && (
                                             (new Date().getTime() - new Date(partners[0].lastSeen).getTime()) < 5 * 60 * 1000
                                                 ? <span className="text-emerald-500">Online</span>
@@ -358,18 +396,22 @@ const Messages = () => {
                                 </div>
                             </div>
                         </div>
-                        <button className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all">
+                        <button className="p-2 text-slate-400 hover:text-[var(--text-main)] hover:bg-[var(--bg-main)] rounded-xl transition-all">
                             <MoreVertical size={20} />
                         </button>
                     </div>
 
                     <div
                         ref={scrollRef}
-                        className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar scroll-smooth"
+                        className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6 custom-scrollbar scroll-smooth"
                     >
                         {loadingHistory ? (
-                            <div className="flex items-center justify-center h-full opacity-50">
-                                <Loader2 className="animate-spin text-primary-500" />
+                            <div className="flex flex-col space-y-4 h-full">
+                                {[1, 2, 3, 4, 5].map(i => (
+                                    <div key={i} className={`flex ${i % 2 === 0 ? 'justify-end' : 'justify-start'} animate-pulse`}>
+                                        <div className={`w-2/3 h-12 bg-slate-100 dark:bg-slate-800 rounded-2xl ${i % 2 === 0 ? 'rounded-tr-none' : 'rounded-tl-none'}`} />
+                                    </div>
+                                ))}
                             </div>
                         ) : messages.length > 0 ? (
                             messages.map((msg, idx) => {
@@ -378,11 +420,16 @@ const Messages = () => {
                                     <div key={msg.id || idx} className={`flex ${isMe ? 'justify-end' : 'justify-start'} ${(msg as any).sending ? 'opacity-60 grayscale-[0.5]' : ''}`}>
                                         <div className={`flex flex-col max-w-[75%] ${isMe ? 'items-end' : 'items-start'}`}>
                                             {!isMe && activeRoom?.type === 'GROUP' && (
-                                                <span className="text-[9px] font-bold text-slate-400 mb-1 ml-2 uppercase tracking-widest">{msg.senderName}</span>
+                                                <div className="flex items-center space-x-2 mb-1 ml-2">
+                                                    <div className="w-5 h-5 rounded-full overflow-hidden border border-slate-100">
+                                                        <img src={getAvatarUrl(hasPackage ? msg.senderProfileImageUrl : null, hasPackage ? msg.senderName : formatName(msg.senderName))} alt="avatar" />
+                                                    </div>
+                                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{hasPackage ? msg.senderName : formatName(msg.senderName)}</span>
+                                                </div>
                                             )}
-                                            <div className={`px-5 py-3.5 rounded-3xl text-sm font-medium shadow-sm transition-all animate-in zoom-in-95 duration-200 ${isMe
+                                            <div className={`px-4 sm:px-5 py-2.5 sm:py-3.5 rounded-2xl sm:rounded-3xl text-sm font-medium shadow-sm transition-all animate-in zoom-in-95 duration-200 ${isMe
                                                 ? 'bg-primary-600 text-white rounded-tr-none'
-                                                : 'bg-white text-slate-800 rounded-tl-none border border-slate-50'
+                                                : 'bg-[var(--bg-card)] text-[var(--text-main)] rounded-tl-none border border-[var(--border-main)]/50'
                                                 }`}>
                                                 {msg.content}
                                             </div>
@@ -403,30 +450,30 @@ const Messages = () => {
                             })
                         ) : (
                             <div className="flex flex-col items-center justify-center h-full p-10 text-center">
-                                <div className="w-16 h-16 bg-primary-50 rounded-3xl flex items-center justify-center text-primary-500 mb-4 animate-bounce-slow">
+                                <div className="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-3xl flex items-center justify-center text-primary-500 mb-4 animate-bounce-slow">
                                     <MessageSquare size={32} />
                                 </div>
-                                <h5 className="font-bold text-slate-900">Say hello!</h5>
-                                <p className="text-xs text-slate-500 mt-1">Start your conversation in {activeRoom?.type === 'GROUP' ? 'the group' : partners[0]?.name}</p>
+                                <h5 className="font-bold text-[var(--text-main)]">Say hello!</h5>
+                                <p className="text-xs text-[var(--text-muted)] mt-1">Start your conversation in {activeRoom?.type === 'GROUP' ? 'the group' : (hasPackage ? partners[0]?.name : formatName(partners[0]?.name))}</p>
                             </div>
                         )}
                     </div>
 
-                    <form onSubmit={handleSendMessage} className="p-5 border-t border-slate-100 bg-white/80 backdrop-blur-xl">
-                        <div className="flex items-center space-x-3">
+                    <form onSubmit={handleSendMessage} className="p-3 sm:p-5 border-t border-[var(--border-main)] bg-[var(--bg-card)] dark:bg-[var(--bg-card)]/80 dark:backdrop-blur-xl">
+                        <div className="flex items-center space-x-2 sm:space-x-3">
                             <div className="grow relative">
                                 <input
                                     type="text"
                                     value={newMessage}
                                     onChange={(e) => setNewMessage(e.target.value)}
-                                    placeholder="Type your message here..."
-                                    className="w-full bg-slate-100/80 border-none rounded-2xl py-4 px-6 text-sm font-semibold focus:ring-4 focus:ring-primary-500/10 placeholder:text-slate-400 transition-all pr-12"
+                                    placeholder="Type a message..."
+                                    className="w-full bg-slate-100 dark:bg-slate-800/80 border-none rounded-xl sm:rounded-2xl py-3 sm:py-4 px-4 sm:px-6 text-sm font-semibold focus:ring-4 focus:ring-primary-500/10 text-[var(--text-main)] placeholder:text-slate-400 transition-all"
                                 />
                             </div>
                             <button
                                 type="submit"
                                 disabled={!newMessage.trim()}
-                                className="p-4 bg-primary-600 text-white rounded-2xl shadow-lg shadow-primary-600/30 hover:bg-primary-500 active:scale-95 disabled:opacity-50 disabled:active:scale-100 transition-all cursor-pointer"
+                                className="p-3 sm:p-4 bg-primary-600 text-white rounded-xl sm:rounded-2xl shadow-lg shadow-primary-600/30 hover:bg-primary-500 active:scale-95 disabled:opacity-50 disabled:active:scale-100 transition-all cursor-pointer"
                             >
                                 <Send size={20} />
                             </button>
@@ -434,13 +481,13 @@ const Messages = () => {
                     </form>
                 </div>
             ) : (
-                <div className="flex-1 flex flex-col items-center justify-center p-12 bg-white/20">
-                    <div className="p-8 bg-white/80 rounded-[40px] shadow-2xl shadow-slate-900/5 text-center max-w-sm border border-white">
-                        <div className="w-20 h-20 bg-primary-50 rounded-[28px] flex items-center justify-center text-primary-500 mx-auto mb-6">
+                <div className="flex-1 flex flex-col items-center justify-center p-12 bg-white/5 dark:bg-black/10">
+                    <div className="p-8 bg-[var(--bg-card)]/80 rounded-[40px] shadow-2xl shadow-slate-900/5 text-center max-w-sm border border-[var(--border-main)]">
+                        <div className="w-20 h-20 bg-primary-100 dark:bg-primary-900/30 rounded-[28px] flex items-center justify-center text-primary-500 mx-auto mb-6">
                             <MessageSquare size={40} />
                         </div>
-                        <h4 className="text-xl font-bold text-slate-900 tracking-tight">Select a conversation</h4>
-                        <p className="text-sm text-slate-500 font-medium mt-2">
+                        <h4 className="text-xl font-bold text-[var(--text-main)] tracking-tight">Select a conversation</h4>
+                        <p className="text-sm text-[var(--text-muted)] font-medium mt-2">
                             Connect with transfer partners to discuss your mutual transfer arrangements.
                         </p>
                     </div>

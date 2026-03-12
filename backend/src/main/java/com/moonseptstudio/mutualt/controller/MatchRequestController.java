@@ -6,9 +6,11 @@ import com.moonseptstudio.mutualt.repository.ChatRoomRepository;
 import com.moonseptstudio.mutualt.model.MatchRequest;
 import com.moonseptstudio.mutualt.model.User;
 import com.moonseptstudio.mutualt.model.UserProfile;
+import com.moonseptstudio.mutualt.model.Notification;
 import com.moonseptstudio.mutualt.repository.MatchRequestRepository;
 import com.moonseptstudio.mutualt.repository.UserRepository;
 import com.moonseptstudio.mutualt.repository.UserProfileRepository;
+import com.moonseptstudio.mutualt.repository.NotificationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -35,15 +37,20 @@ public class MatchRequestController {
     @Autowired
     ChatRoomRepository chatRoomRepository;
 
+    @Autowired
+    NotificationRepository notificationRepository;
+
     @GetMapping("/me")
     public ResponseEntity<?> getMyRequests(Authentication authentication) {
         User user = userRepository.findByUsername(authentication.getName()).orElseThrow();
 
+        boolean hasPackage = user.getSubscriptionPackage() != null;
+
         List<MatchRequestDto> incoming = requestRepository.findByReceiver(user).stream()
-                .map(this::convertToDto).collect(Collectors.toList());
+                .map(req -> convertToDto(req, hasPackage, user.getId())).collect(Collectors.toList());
 
         List<MatchRequestDto> outgoing = requestRepository.findBySender(user).stream()
-                .map(this::convertToDto).collect(Collectors.toList());
+                .map(req -> convertToDto(req, hasPackage, user.getId())).collect(Collectors.toList());
 
         return ResponseEntity.ok(Map.of("incoming", incoming, "outgoing", outgoing));
     }
@@ -53,6 +60,10 @@ public class MatchRequestController {
         User sender = userRepository.findByUsername(authentication.getName()).orElseThrow();
         Long receiverId = Long.valueOf(payload.get("receiverId").toString());
         User receiver = userRepository.findById(receiverId).orElseThrow();
+
+        if (sender.getSubscriptionPackage() == null) {
+            return ResponseEntity.status(403).body("You must purchase a package to send requests");
+        }
 
         if (sender.getId().equals(receiver.getId())) {
             return ResponseEntity.badRequest().body("Cannot send request to yourself");
@@ -72,6 +83,15 @@ public class MatchRequestController {
         request.setCreatedAt(LocalDateTime.now());
 
         requestRepository.save(request);
+
+        Notification notif = new Notification();
+        notif.setUser(receiver);
+        notif.setTitle("New Match Request");
+        notif.setMessage(sender.getUsername() + " sent you a new match request.");
+        notif.setType("MATCH");
+        notif.setCreatedAt(LocalDateTime.now());
+        notificationRepository.save(notif);
+
         return ResponseEntity.ok(convertToDto(request));
     }
 
@@ -140,7 +160,7 @@ public class MatchRequestController {
             }
         }
 
-        return ResponseEntity.ok(convertToDto(request));
+        return ResponseEntity.ok(convertToDto(request, user.getSubscriptionPackage() != null, user.getId()));
     }
 
     @PutMapping("/{id}/reject")
@@ -157,7 +177,7 @@ public class MatchRequestController {
         return ResponseEntity.ok(convertToDto(request));
     }
 
-    private MatchRequestDto convertToDto(MatchRequest req) {
+    private MatchRequestDto convertToDto(MatchRequest req, boolean hasPackage, Long currentUserId) {
         MatchRequestDto dto = new MatchRequestDto();
         dto.setId(req.getId());
         dto.setSenderId(req.getSender().getId());
@@ -171,12 +191,34 @@ public class MatchRequestController {
         UserProfile receiverProfile = profileRepository.findByUserId(req.getReceiver().getId()).orElse(null);
 
         if (senderProfile != null) {
-            dto.setSenderName(senderProfile.getFullName());
+            String name = senderProfile.getFullName();
+            if (!hasPackage && !req.getSender().getId().equals(currentUserId)) {
+                name = obfuscateName(name);
+            }
+            dto.setSenderName(name);
+
+            if (!hasPackage && !req.getSender().getId().equals(currentUserId)) {
+                dto.setSenderProfileImageUrl(null);
+            } else {
+                dto.setSenderProfileImageUrl(senderProfile.getProfileImageUrl());
+            }
+
             dto.setSenderStationName(
                     senderProfile.getCurrentStation() != null ? senderProfile.getCurrentStation().getName() : "N/A");
         }
         if (receiverProfile != null) {
-            dto.setReceiverName(receiverProfile.getFullName());
+            String name = receiverProfile.getFullName();
+            if (!hasPackage && !req.getReceiver().getId().equals(currentUserId)) {
+                name = obfuscateName(name);
+            }
+            dto.setReceiverName(name);
+
+            if (!hasPackage && !req.getReceiver().getId().equals(currentUserId)) {
+                dto.setReceiverProfileImageUrl(null);
+            } else {
+                dto.setReceiverProfileImageUrl(receiverProfile.getProfileImageUrl());
+            }
+
             dto.setReceiverStationName(
                     receiverProfile.getCurrentStation() != null ? receiverProfile.getCurrentStation().getName()
                             : "N/A");
@@ -185,15 +227,34 @@ public class MatchRequestController {
         // Populating contact info if accepted
         if ("ACCEPTED".equals(req.getStatus())) {
             if (senderProfile != null) {
-                dto.setSenderPhone(senderProfile.getPhoneNumber());
-                dto.setSenderEmail(senderProfile.getEmail());
+                if (!hasPackage && !req.getSender().getId().equals(currentUserId)) {
+                    // obfuscated
+                } else {
+                    dto.setSenderPhone(senderProfile.getPhoneNumber());
+                    dto.setSenderEmail(senderProfile.getEmail());
+                }
             }
             if (receiverProfile != null) {
-                dto.setReceiverPhone(receiverProfile.getPhoneNumber());
-                dto.setReceiverEmail(receiverProfile.getEmail());
+                if (!hasPackage && !req.getReceiver().getId().equals(currentUserId)) {
+                    // obfuscated
+                } else {
+                    dto.setReceiverPhone(receiverProfile.getPhoneNumber());
+                    dto.setReceiverEmail(receiverProfile.getEmail());
+                }
             }
         }
 
         return dto;
+    }
+
+    private MatchRequestDto convertToDto(MatchRequest req) {
+        // Fallback or admin endpoints might use this, assuming hasPackage = true for simplicity here.
+        // But let's avoid calling this without explicit user context.
+        return convertToDto(req, true, req.getSender().getId());
+    }
+
+    private String obfuscateName(String name) {
+        if (name == null || name.length() <= 2) return name;
+        return name.charAt(0) + "..." + name.charAt(name.length() - 1);
     }
 }

@@ -7,11 +7,22 @@ public class JwtResponse {
     private String username;
     private String role;
 
-    public JwtResponse(String token, Long id, String username, String role) {
+    private String packageName;
+
+    public JwtResponse(String token, Long id, String username, String role, String packageName) {
         this.token = token;
         this.id = id;
         this.username = username;
         this.role = role;
+        this.packageName = packageName;
+    }
+
+    public String getPackageName() {
+        return packageName;
+    }
+
+    public void setPackageName(String packageName) {
+        this.packageName = packageName;
     }
 
     public String getToken() {

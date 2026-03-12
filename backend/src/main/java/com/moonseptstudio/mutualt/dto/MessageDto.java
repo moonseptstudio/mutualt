@@ -11,6 +11,7 @@ public class MessageDto {
     private Long receiverId;
     private Long chatRoomId;
     private String content;
+    private String senderProfileImageUrl;
     private LocalDateTime createdAt;
     private boolean isRead;
 }

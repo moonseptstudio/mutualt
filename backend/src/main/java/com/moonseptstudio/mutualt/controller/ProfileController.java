@@ -44,6 +44,7 @@ public class ProfileController {
         dto.setBiometricsStatus(profile.getBiometricsStatus());
         dto.setProfileImageUrl(profile.getProfileImageUrl());
         dto.setServiceLetterUrl(profile.getServiceLetterUrl());
+        dto.setPackageName(user.getSubscriptionPackage() != null ? user.getSubscriptionPackage().getName() : null);
 
         return dto;
     }

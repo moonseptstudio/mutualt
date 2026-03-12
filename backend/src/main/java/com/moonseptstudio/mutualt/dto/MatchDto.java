@@ -13,6 +13,7 @@ public class MatchDto {
         private String name;
         private String stationName;
         private String stationDistrict;
+        private String profileImageUrl;
         private String requestStatus; // PENDING, ACCEPTED, etc.
         private Long requestId;
 
@@ -46,6 +47,14 @@ public class MatchDto {
 
         public void setStationDistrict(String stationDistrict) {
             this.stationDistrict = stationDistrict;
+        }
+
+        public String getProfileImageUrl() {
+            return profileImageUrl;
+        }
+
+        public void setProfileImageUrl(String profileImageUrl) {
+            this.profileImageUrl = profileImageUrl;
         }
 
         public String getRequestStatus() {

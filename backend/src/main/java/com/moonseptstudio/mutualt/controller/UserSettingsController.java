@@ -52,6 +52,8 @@ public class UserSettingsController {
             settings.setRegionalDiscovery(updatedSettings.getRegionalDiscovery());
         if (updatedSettings.getDarkMode() != null)
             settings.setDarkMode(updatedSettings.getDarkMode());
+        if (updatedSettings.getTwoFactorEnabled() != null)
+            settings.setTwoFactorEnabled(updatedSettings.getTwoFactorEnabled());
 
         return userSettingsRepository.save(settings);
     }
