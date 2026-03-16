@@ -18,12 +18,7 @@ import toast from 'react-hot-toast';
 import { getAvatarUrl } from '../../api/url';
 import UnlockFullAccessModal from '../../components/modals/UnlockFullAccessModal';
 
-const formatName = (name: string) => {
-    if (!name) return '';
-    const trimmed = name.trim();
-    if (trimmed.length <= 2) return trimmed;
-    return `${trimmed[0]}***${trimmed[trimmed.length - 1]}`;
-};
+
 
 const MatchRow = ({ match, currentUserId, onViewDetails, hasPackage, onUnlockRequire }: any) => {
     const isTriple = match.type === 'Triple';
@@ -59,11 +54,13 @@ const MatchRow = ({ match, currentUserId, onViewDetails, hasPackage, onUnlockReq
                 <div className="flex items-center space-x-5 min-w-[280px]">
                     <div className="relative shrink-0">
                         <div className={`w-12 h-12 sm:w-16 sm:h-16 bg-slate-50 dark:bg-slate-800 rounded-xl sm:rounded-3xl overflow-hidden border-2 border-[var(--bg-main)] shadow-sm relative z-10 transition-transform duration-500 group-hover:scale-110 ${otherPartner ? '-translate-x-1' : ''}`}>
-                            <img src={getAvatarUrl(hasPackage ? mainPartner.profileImageUrl : null, hasPackage ? mainPartner.name : formatName(mainPartner.name))} alt="avatar" />
+                            <img src={getAvatarUrl(mainPartner.profileImageUrl, mainPartner.name)} alt="avatar" />
+
                         </div>
                         {otherPartner && (
                             <div className="absolute -bottom-1 -right-1 w-9 h-9 sm:w-12 sm:h-12 bg-slate-100 dark:bg-slate-700 rounded-xl sm:rounded-2xl overflow-hidden border-2 border-[var(--bg-main)] shadow-md z-20 group-hover:translate-x-1 transition-transform duration-500">
-                                <img src={getAvatarUrl(hasPackage ? otherPartner.profileImageUrl : null, hasPackage ? otherPartner.name : formatName(otherPartner.name))} alt="avatar" />
+                                <img src={getAvatarUrl(otherPartner.profileImageUrl, otherPartner.name)} alt="avatar" />
+
                             </div>
                         )}
                         {!otherPartner && match.type === 'Triple' && (
@@ -76,9 +73,9 @@ const MatchRow = ({ match, currentUserId, onViewDetails, hasPackage, onUnlockReq
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                             <h4 className="text-lg font-bold text-[var(--text-main)] truncate tracking-tight">
-                                {hasPackage ? mainPartner.name : formatName(mainPartner.name)}
+                                {mainPartner.name}
                                 {otherPartner && <span className="text-[var(--text-muted)] font-normal mx-1.5">&</span>}
-                                {otherPartner && (hasPackage ? otherPartner.name : formatName(otherPartner.name))}
+                                {otherPartner && otherPartner.name}
                             </h4>
                         </div>
 
@@ -252,7 +249,8 @@ const Matches = () => {
                 cycleUserIds: cycleUserIds
             });
 
-            toast.success(`Request sent to ${hasPackage ? targetPartner.name : formatName(targetPartner.name)}!`, { icon: '🚀' });
+            toast.success(`Request sent to ${targetPartner.name}!`, { icon: '🚀' });
+
 
             // Refresh matches to get updated statuses
             await fetchMatches();
@@ -388,7 +386,7 @@ const Matches = () => {
                                         return sortedParticipants.map((p: any, index: number) => {
                                             const nextPartner = sortedParticipants[(index + 1) % sortedParticipants.length];
                                             const isCurrentUser = p.userId === user?.id;
-                                            const displayName = isCurrentUser ? p.name : (hasPackage ? p.name : formatName(p.name));
+                                            const displayName = isCurrentUser ? p.name : (hasPackage ? p.name : p.name);
                                             const displayImageUrl = isCurrentUser ? p.profileImageUrl : (hasPackage ? p.profileImageUrl : null);
 
                                             return (
@@ -444,7 +442,8 @@ const Matches = () => {
 
                                             if (target.requestStatus === 'PENDING') return "Request already sent to move to " + target.stationName;
                                             if (target.requestStatus === 'ACCEPTED') return "Match process established!";
-                                            if (target.requestStatus === 'PENDING_INCOMING') return "You have a pending request from " + (hasPackage ? target.name : formatName(target.name));
+                                            if (target.requestStatus === 'PENDING_INCOMING') return "You have a pending request from " + target.name;
+
 
                                             return "Ready to proceed?";
                                         })()}

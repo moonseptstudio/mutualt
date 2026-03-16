@@ -12,4 +12,5 @@ public class SignupRequest {
     private Long jobCategoryId;
     private Long gradeId;
     private Long currentStationId;
+    private String phoneNumber;
 }

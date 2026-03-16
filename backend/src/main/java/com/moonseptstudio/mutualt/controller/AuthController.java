@@ -1,15 +1,12 @@
 package com.moonseptstudio.mutualt.controller;
 
-import com.moonseptstudio.mutualt.dto.JwtResponse;
-import com.moonseptstudio.mutualt.dto.LoginRequest;
-import com.moonseptstudio.mutualt.dto.MessageResponse;
-import com.moonseptstudio.mutualt.dto.PasswordChangeRequest;
-import com.moonseptstudio.mutualt.dto.SignupRequest;
+import com.moonseptstudio.mutualt.dto.*;
 import com.moonseptstudio.mutualt.model.User;
 import com.moonseptstudio.mutualt.model.UserProfile;
 import com.moonseptstudio.mutualt.model.SubscriptionPackage;
 import com.moonseptstudio.mutualt.repository.*;
 import com.moonseptstudio.mutualt.security.JwtUtils;
+import com.moonseptstudio.mutualt.service.OtpService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -49,6 +46,9 @@ public class AuthController {
 
     @Autowired
     PackageRepository packageRepository;
+
+    @Autowired
+    OtpService otpService;
 
     @PostMapping("/signin")
     public ResponseEntity<?> authenticateUser(@RequestBody LoginRequest loginRequest) {
@@ -96,10 +96,19 @@ public class AuthController {
         profile.setJobCategory(jobCategoryRepository.findById(signUpRequest.getJobCategoryId()).orElse(null));
         profile.setGrade(gradeRepository.findById(signUpRequest.getGradeId()).orElse(null));
         profile.setCurrentStation(stationRepository.findById(signUpRequest.getCurrentStationId()).orElse(null));
+        profile.setPhoneNumber(signUpRequest.getPhoneNumber());
 
         userProfileRepository.save(profile);
 
-        return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
+        // 3. Trigger Registration OTP
+        try {
+            otpService.generateAndSendOtp(signUpRequest.getPhoneNumber(), "REGISTRATION");
+        } catch (Exception e) {
+            // Log error but don't fail registration
+            System.err.println("Error sending registration OTP: " + e.getMessage());
+        }
+
+        return ResponseEntity.ok(new MessageResponse("User registered successfully! Please verify your phone number."));
     }
 
     @GetMapping("/me")
@@ -130,5 +139,44 @@ public class AuthController {
         userRepository.save(user);
         
         return ResponseEntity.ok(new MessageResponse("Password changed successfully!"));
+    }
+
+    @PostMapping("/verify-registration")
+    public ResponseEntity<?> verifyRegistration(@RequestBody OtpVerificationRequest request) {
+        if (otpService.validateOtp(request.getPhoneNumber(), request.getOtpCode(), "REGISTRATION")) {
+            UserProfile profile = userProfileRepository.findByPhoneNumber(request.getPhoneNumber()).orElseThrow();
+            User user = profile.getUser();
+            user.setVerified(true);
+            userRepository.save(user);
+            return ResponseEntity.ok(new MessageResponse("Account verified successfully!"));
+        }
+        return ResponseEntity.badRequest().body(new MessageResponse("Error: Invalid or expired OTP!"));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+        UserProfile profile = userProfileRepository.findByPhoneNumber(request.getPhoneNumber()).orElse(null);
+        if (profile == null) {
+            return ResponseEntity.badRequest().body(new MessageResponse("Error: Phone number not found!"));
+        }
+
+        try {
+            otpService.generateAndSendOtp(request.getPhoneNumber(), "PASSWORD_RESET");
+            return ResponseEntity.ok(new MessageResponse("OTP sent to your phone number."));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(new MessageResponse("Error sending OTP: " + e.getMessage()));
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request) {
+        if (otpService.validateOtp(request.getPhoneNumber(), request.getOtpCode(), "PASSWORD_RESET")) {
+            UserProfile profile = userProfileRepository.findByPhoneNumber(request.getPhoneNumber()).orElseThrow();
+            User user = profile.getUser();
+            user.setPasswordHash(encoder.encode(request.getNewPassword()));
+            userRepository.save(user);
+            return ResponseEntity.ok(new MessageResponse("Password reset successfully!"));
+        }
+        return ResponseEntity.badRequest().body(new MessageResponse("Error: Invalid or expired OTP!"));
     }
 }

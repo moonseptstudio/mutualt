@@ -5,14 +5,21 @@ import {
     Plus,
     Trash2,
     Loader2,
-    AlertCircle
+    AlertCircle,
+    Edit2,
+    X,
+    Save
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import ConfirmModal from '../../components/ConfirmModal';
 
 const JobCategoryManagement = () => {
     const [categories, setCategories] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [newCategoryName, setNewCategoryName] = useState('');
+    const [deleteModal, setDeleteModal] = useState({ isOpen: false, categoryId: null as number | null });
+    const [editingId, setEditingId] = useState<number | null>(null);
+    const [editingName, setEditingName] = useState('');
     const [error, setError] = useState('');
 
     useEffect(() => {
@@ -46,14 +53,40 @@ const JobCategoryManagement = () => {
         }
     };
 
-    const handleDeleteCategory = async (id: number) => {
+    const handleStartEdit = (category: any) => {
+        setEditingId(category.id);
+        setEditingName(category.name);
+    };
+
+    const handleCancelEdit = () => {
+        setEditingId(null);
+        setEditingName('');
+    };
+
+    const handleSaveEdit = async (id: number) => {
+        if (!editingName.trim()) return;
         try {
-            await apiClient.delete(`/public/job-categories/${id}`);
-            setCategories(categories.filter(c => c.id !== id));
-            toast.success('Category deleted successfully');
+            await apiClient.put(`/public/job-categories/${id}`, { name: editingName });
+            setCategories(categories.map(c => c.id === id ? { ...c, name: editingName } : c));
+            setEditingId(null);
+            setEditingName('');
+            toast.success('Category updated successfully');
         } catch (err) {
+            toast.error('Failed to update category');
+        }
+    };
+
+    const handleDeleteCategory = async () => {
+        if (!deleteModal.categoryId) return;
+        try {
+            await apiClient.delete(`/public/job-categories/${deleteModal.categoryId}`);
+            setCategories(categories.filter(c => c.id !== deleteModal.categoryId));
+            toast.success('Category deleted successfully');
+        } catch (err: any) {
             console.error("Failed to delete category", err);
-            toast.error('Failed to delete category');
+            toast.error(err.response?.data?.message || 'Failed to delete category');
+        } finally {
+            setDeleteModal({ isOpen: false, categoryId: null });
         }
     };
 
@@ -66,7 +99,7 @@ const JobCategoryManagement = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2">
-                    <div className="glass-card rounded-[40px] overflow-hidden border-white">
+                    <div className="glass-card rounded-[40px] border-white">
                         <div className="overflow-x-auto">
                             {loading ? (
                                 <div className="p-20 text-center">
@@ -88,26 +121,56 @@ const JobCategoryManagement = () => {
                                                         <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 group-hover:bg-primary-50 group-hover:text-primary-600 transition-colors">
                                                             <Briefcase size={20} />
                                                         </div>
-                                                        <p className="font-semibold text-slate-900">{category.name}</p>
+                                                        {editingId === category.id ? (
+                                                            <input
+                                                                type="text"
+                                                                value={editingName}
+                                                                onChange={(e) => setEditingName(e.target.value)}
+                                                                className="px-4 py-2 bg-white border border-primary-300 rounded-xl outline-none focus:ring-4 focus:ring-primary-50 font-semibold text-slate-900"
+                                                                autoFocus
+                                                            />
+                                                        ) : (
+                                                            <p className="font-semibold text-slate-900 uppercase tracking-tight">{category.name}</p>
+                                                        )}
                                                     </div>
                                                 </td>
                                                 <td className="px-8 py-6 text-right">
-                                                    <button
-                                                        onClick={() => handleDeleteCategory(category.id)}
-                                                        className="p-2.5 hover:bg-rose-50 rounded-xl transition-all text-slate-300 hover:text-rose-600"
-                                                    >
-                                                        <Trash2 size={18} />
-                                                    </button>
+                                                    <div className="flex items-center justify-end space-x-2">
+                                                        {editingId === category.id ? (
+                                                            <>
+                                                                <button
+                                                                    onClick={() => handleSaveEdit(category.id)}
+                                                                    className="p-2.5 bg-slate-950 text-white rounded-xl hover:bg-primary-600 transition-all cursor-pointer"
+                                                                >
+                                                                    <Save size={18} />
+                                                                </button>
+                                                                <button
+                                                                    onClick={handleCancelEdit}
+                                                                    className="p-2.5 hover:bg-slate-100 text-slate-400 rounded-xl transition-all cursor-pointer"
+                                                                >
+                                                                    <X size={18} />
+                                                                </button>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <button
+                                                                    onClick={() => handleStartEdit(category)}
+                                                                    className="p-2.5 hover:bg-slate-100 rounded-xl transition-all text-slate-400 hover:text-primary-600 cursor-pointer"
+                                                                >
+                                                                    <Edit2 size={18} />
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => setDeleteModal({ isOpen: true, categoryId: category.id })}
+                                                                    className="p-2.5 hover:bg-rose-50 rounded-xl transition-all text-slate-200 hover:text-rose-600 cursor-pointer"
+                                                                >
+                                                                    <Trash2 size={18} />
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))}
-                                        {categories.length === 0 && (
-                                            <tr>
-                                                <td colSpan={2} className="px-8 py-20 text-center text-slate-400 font-medium italic">
-                                                    No categories found. Add one to get started.
-                                                </td>
-                                            </tr>
-                                        )}
                                     </tbody>
                                 </table>
                             )}
@@ -147,6 +210,16 @@ const JobCategoryManagement = () => {
                     </div>
                 </div>
             </div>
+
+            <ConfirmModal
+                isOpen={deleteModal.isOpen}
+                onClose={() => setDeleteModal({ isOpen: false, categoryId: null })}
+                onConfirm={handleDeleteCategory}
+                title="Delete Category"
+                message="Are you sure you want to delete this job category? This will affect transfer listings using this category."
+                confirmText="Delete Category"
+                type="danger"
+            />
         </div>
     );
 };

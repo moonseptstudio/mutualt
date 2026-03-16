@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import toast from 'react-hot-toast';
 import {
     ShieldCheck,
     ArrowRight,
@@ -99,13 +98,12 @@ const LoginPage = () => {
                                     <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">
                                         Password
                                     </label>
-                                    <button
-                                        type="button"
-                                        onClick={() => toast('Password reset feature is coming soon.', { icon: '🔧' })}
+                                    <Link
+                                        to="/forgot-password"
                                         className="text-xs font-bold text-blue-600 hover:text-blue-700 cursor-pointer"
                                     >
                                         Forgot?
-                                    </button>
+                                    </Link>
                                 </div>
                                 <div className="relative group">
                                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={20} />

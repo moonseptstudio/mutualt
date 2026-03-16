@@ -26,4 +26,6 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
 
     @Query("SELECT m FROM Message m WHERE m.id IN (SELECT MAX(m2.id) FROM Message m2 WHERE m2.chatRoom IN :rooms GROUP BY m2.chatRoom.id)")
     List<Message> findLatestMessagesByRooms(@Param("rooms") List<ChatRoom> rooms);
+    void deleteBySender(User sender);
+    void deleteByReceiver(User receiver);
 }

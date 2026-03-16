@@ -19,12 +19,7 @@ import { Client } from '@stomp/stompjs';
 import { formatDistanceToNow } from 'date-fns';
 import { getAvatarUrl } from '../../api/url';
 
-const formatName = (name: string) => {
-    if (!name) return '';
-    const trimmed = name.trim();
-    if (trimmed.length <= 2) return trimmed;
-    return `${trimmed[0]}***${trimmed[trimmed.length - 1]}`;
-};
+
 
 const Messages = () => {
     const { user } = useAuth();
@@ -306,7 +301,7 @@ const Messages = () => {
                             
                             // Search member names
                             return room.members.some((m: any) => {
-                                const displayName = hasPackage ? m.name : formatName(m.name);
+                                const displayName = m.name;
                                 return displayName.toLowerCase().includes(term);
                             });
                         }).map((room) => {
@@ -322,7 +317,7 @@ const Messages = () => {
                                             {room.type === 'GROUP' ? (
                                                 <Users size={20} className="text-primary-500" />
                                             ) : (
-                                                <img src={getAvatarUrl(hasPackage ? partner.avatar : null, hasPackage ? partner.name : formatName(partner.name))} alt="avatar" />
+                                                <img src={getAvatarUrl(partner.avatar, partner.name)} alt="avatar" />
                                             )}
                                         </div>
                                         {room.type !== 'GROUP' && partner.lastSeen && (new Date().getTime() - new Date(partner.lastSeen).getTime() < 5 * 60 * 1000) && (
@@ -332,7 +327,7 @@ const Messages = () => {
                                     <div className="text-left flex-1 min-w-0">
                                         <div className="flex justify-between items-baseline">
                                             <h4 className="font-bold text-[var(--text-main)] text-sm truncate">
-                                                {room.type === 'GROUP' ? 'Match Group Chat' : (hasPackage ? partner.name : formatName(partner.name))}
+                                                {room.type === 'GROUP' ? 'Match Group Chat' : partner.name}
                                             </h4>
                                             {room.lastMessage && (
                                                 <span className="text-[9px] text-[var(--text-muted)] shrink-0 ml-2 font-medium">
@@ -379,12 +374,12 @@ const Messages = () => {
                                     {activeRoom?.type === 'GROUP' ? (
                                         <Users size={18} className="text-primary-500" />
                                     ) : (
-                                        <img src={getAvatarUrl(hasPackage ? partners[0]?.avatar : null, hasPackage ? partners[0]?.name : formatName(partners[0]?.name))} alt="avatar" />
+                                        <img src={getAvatarUrl(partners[0]?.avatar, partners[0]?.name)} alt="avatar" />
                                     )}
                                 </div>
                                 <div className="min-w-0">
                                     <h4 className="font-bold text-[var(--text-main)] text-base tracking-tight leading-none truncate">
-                                        {activeRoom?.type === 'GROUP' ? 'Transfer Group Chat' : (hasPackage ? partners[0]?.name : formatName(partners[0]?.name))}
+                                        {activeRoom?.type === 'GROUP' ? 'Transfer Group Chat' : partners[0]?.name}
                                     </h4>
                                     <p className="text-[10px] text-[var(--text-muted)] font-medium truncate mt-1">
                                         {activeRoom?.type !== 'GROUP' && partners[0]?.lastSeen && (
@@ -422,9 +417,9 @@ const Messages = () => {
                                             {!isMe && activeRoom?.type === 'GROUP' && (
                                                 <div className="flex items-center space-x-2 mb-1 ml-2">
                                                     <div className="w-5 h-5 rounded-full overflow-hidden border border-slate-100">
-                                                        <img src={getAvatarUrl(hasPackage ? msg.senderProfileImageUrl : null, hasPackage ? msg.senderName : formatName(msg.senderName))} alt="avatar" />
+                                                        <img src={getAvatarUrl(msg.senderProfileImageUrl, msg.senderName)} alt="avatar" />
                                                     </div>
-                                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{hasPackage ? msg.senderName : formatName(msg.senderName)}</span>
+                                                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{msg.senderName}</span>
                                                 </div>
                                             )}
                                             <div className={`px-4 sm:px-5 py-2.5 sm:py-3.5 rounded-2xl sm:rounded-3xl text-sm font-medium shadow-sm transition-all animate-in zoom-in-95 duration-200 ${isMe
@@ -454,7 +449,7 @@ const Messages = () => {
                                     <MessageSquare size={32} />
                                 </div>
                                 <h5 className="font-bold text-[var(--text-main)]">Say hello!</h5>
-                                <p className="text-xs text-[var(--text-muted)] mt-1">Start your conversation in {activeRoom?.type === 'GROUP' ? 'the group' : (hasPackage ? partners[0]?.name : formatName(partners[0]?.name))}</p>
+                                <p className="text-xs text-[var(--text-muted)] mt-1">Start your conversation in {activeRoom?.type === 'GROUP' ? 'the group' : partners[0]?.name}</p>
                             </div>
                         )}
                     </div>

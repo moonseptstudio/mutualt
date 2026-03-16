@@ -16,12 +16,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useOutletContext } from 'react-router-dom';
 import { getAvatarUrl } from '../../api/url';
 
-const formatName = (name: string) => {
-    if (!name) return '';
-    const trimmed = name.trim();
-    if (trimmed.length <= 2) return trimmed;
-    return `${trimmed[0]}***${trimmed[trimmed.length - 1]}`;
-};
+
 
 const ClientDashboard = () => {
     const { user } = useAuth();
@@ -192,7 +187,7 @@ const ClientDashboard = () => {
                                     <h4 className="text-white/80 font-bold mb-4">
                                         Partner: {(() => {
                                             const partner = matches[0].participants.find((p: any) => p.userId !== user?.id);
-                                            return hasPackage ? partner?.name : formatName(partner?.name);
+                                            return partner?.name;
                                         })()}
                                     </h4>
                                     <p className="text-white/60 text-sm font-medium leading-relaxed mb-8">
@@ -209,7 +204,7 @@ const ClientDashboard = () => {
                                             {matches[0].participants.map((p: any, i: number) => {
                                                 const isCurrentUser = p.userId === user?.id;
                                                 const displayImageUrl = isCurrentUser ? p.profileImageUrl : (hasPackage ? p.profileImageUrl : null);
-                                                const displayName = isCurrentUser ? p.name : (hasPackage ? p.name : formatName(p.name));
+                                                const displayName = isCurrentUser ? p.name : (hasPackage ? p.name : p.name);
                                                 return (
                                                     <div key={i} className="w-10 h-10 rounded-xl border-2 border-white/20 bg-white/10 backdrop-blur-md flex items-center justify-center overflow-hidden">
                                                         <img src={getAvatarUrl(displayImageUrl, displayName)} alt="user" />
@@ -265,8 +260,8 @@ const ClientDashboard = () => {
                                             <div>
                                                 <p className="text-[13px] font-bold text-[var(--text-main)]">
                                                     {req.senderId === user?.id 
-                                                        ? `Request sent to ${hasPackage ? req.receiverName : formatName(req.receiverName)}` 
-                                                        : `Request from ${hasPackage ? req.senderName : formatName(req.senderName)}`}
+                                                        ? `Request sent to ${req.receiverName}` 
+                                                        : `Request from ${req.senderName}`}
                                                 </p>
                                                 <div className="flex items-center mt-1 space-x-2">
                                                     <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
@@ -310,11 +305,11 @@ const ClientDashboard = () => {
                                             className="flex items-center space-x-3 sm:space-x-4 p-2 sm:p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl sm:rounded-[20px] transition-all cursor-pointer group"
                                         >
                                             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-100 dark:bg-slate-800 rounded-xl sm:rounded-2xl overflow-hidden shadow-sm border border-[var(--border-main)] shrink-0">
-                                                <img src={getAvatarUrl(hasPackage ? partner.avatar : null, hasPackage ? partner.name : formatName(partner.name))} alt="avatar" />
+                                                <img src={getAvatarUrl(hasPackage ? partner.avatar : null, partner.name)} alt="avatar" />
                                             </div>
                                             <div className="grow min-w-0">
                                                 <p className="text-xs sm:text-sm font-bold text-[var(--text-main)] truncate leading-tight group-hover:text-primary-600 transition-colors">
-                                                    {room.type === 'GROUP' ? 'Match Group Chat' : (hasPackage ? partner.name : formatName(partner.name))}
+                                                    {room.type === 'GROUP' ? 'Match Group Chat' : (partner.name)}
                                                 </p>
                                                 <p className="text-[9px] sm:text-[10px] text-[var(--text-muted)] font-medium truncate mt-1 uppercase tracking-tighter">
                                                     {room.type === 'GROUP' ? `${room.members.length} members` : partner.stationName || 'Staff Member'}

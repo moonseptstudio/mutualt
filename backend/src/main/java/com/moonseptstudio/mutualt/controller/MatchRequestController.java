@@ -191,33 +191,23 @@ public class MatchRequestController {
         UserProfile receiverProfile = profileRepository.findByUserId(req.getReceiver().getId()).orElse(null);
 
         if (senderProfile != null) {
-            String name = senderProfile.getFullName();
-            if (!hasPackage && !req.getSender().getId().equals(currentUserId)) {
-                name = obfuscateName(name);
-            }
+            String name = (senderProfile.getFullName() != null && !senderProfile.getFullName().isEmpty()) 
+                ? senderProfile.getFullName() 
+                : req.getSender().getUsername();
             dto.setSenderName(name);
 
-            if (!hasPackage && !req.getSender().getId().equals(currentUserId)) {
-                dto.setSenderProfileImageUrl(null);
-            } else {
-                dto.setSenderProfileImageUrl(senderProfile.getProfileImageUrl());
-            }
+            dto.setSenderProfileImageUrl(senderProfile.getProfileImageUrl());
 
             dto.setSenderStationName(
                     senderProfile.getCurrentStation() != null ? senderProfile.getCurrentStation().getName() : "N/A");
         }
         if (receiverProfile != null) {
-            String name = receiverProfile.getFullName();
-            if (!hasPackage && !req.getReceiver().getId().equals(currentUserId)) {
-                name = obfuscateName(name);
-            }
+            String name = (receiverProfile.getFullName() != null && !receiverProfile.getFullName().isEmpty()) 
+                ? receiverProfile.getFullName() 
+                : req.getReceiver().getUsername();
             dto.setReceiverName(name);
 
-            if (!hasPackage && !req.getReceiver().getId().equals(currentUserId)) {
-                dto.setReceiverProfileImageUrl(null);
-            } else {
-                dto.setReceiverProfileImageUrl(receiverProfile.getProfileImageUrl());
-            }
+            dto.setReceiverProfileImageUrl(receiverProfile.getProfileImageUrl());
 
             dto.setReceiverStationName(
                     receiverProfile.getCurrentStation() != null ? receiverProfile.getCurrentStation().getName()
@@ -227,20 +217,12 @@ public class MatchRequestController {
         // Populating contact info if accepted
         if ("ACCEPTED".equals(req.getStatus())) {
             if (senderProfile != null) {
-                if (!hasPackage && !req.getSender().getId().equals(currentUserId)) {
-                    // obfuscated
-                } else {
-                    dto.setSenderPhone(senderProfile.getPhoneNumber());
-                    dto.setSenderEmail(senderProfile.getEmail());
-                }
+                dto.setSenderPhone(senderProfile.getPhoneNumber());
+                dto.setSenderEmail(senderProfile.getEmail());
             }
             if (receiverProfile != null) {
-                if (!hasPackage && !req.getReceiver().getId().equals(currentUserId)) {
-                    // obfuscated
-                } else {
-                    dto.setReceiverPhone(receiverProfile.getPhoneNumber());
-                    dto.setReceiverEmail(receiverProfile.getEmail());
-                }
+                dto.setReceiverPhone(receiverProfile.getPhoneNumber());
+                dto.setReceiverEmail(receiverProfile.getEmail());
             }
         }
 
@@ -253,8 +235,5 @@ public class MatchRequestController {
         return convertToDto(req, true, req.getSender().getId());
     }
 
-    private String obfuscateName(String name) {
-        if (name == null || name.length() <= 2) return name;
-        return name.charAt(0) + "..." + name.charAt(name.length() - 1);
-    }
+
 }

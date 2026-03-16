@@ -15,13 +15,6 @@ import {
 import toast from 'react-hot-toast';
 import { getAvatarUrl } from '../../api/url';
 
-const formatName = (name: string) => {
-    if (!name) return '';
-    const trimmed = name.trim();
-    if (trimmed.length <= 2) return trimmed;
-    return `${trimmed[0]}***${trimmed[trimmed.length - 1]}`;
-};
-
 const RequestCard = ({ request, type, onAction, onMessage, hasPackage }: any) => {
     const isIncoming = type === 'incoming';
     const partnerName = isIncoming ? request.senderName : request.receiverName;
@@ -41,11 +34,11 @@ const RequestCard = ({ request, type, onAction, onMessage, hasPackage }: any) =>
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center space-x-3 sm:space-x-5">
                     <div className="w-12 h-12 sm:w-14 sm:h-14 bg-slate-100 dark:bg-slate-800 rounded-xl sm:rounded-2xl overflow-hidden border-2 border-[var(--border-main)] shadow-sm shrink-0">
-                        <img src={getAvatarUrl(hasPackage ? (isIncoming ? request.senderProfileImageUrl : request.receiverProfileImageUrl) : null, hasPackage ? partnerName : formatName(partnerName))} alt="avatar" />
+                        <img src={getAvatarUrl(isIncoming ? request.senderProfileImageUrl : request.receiverProfileImageUrl, partnerName)} alt="avatar" />
                     </div>
                     <div>
                         <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                            <h4 className="text-base sm:text-lg font-bold text-[var(--text-main)]">{hasPackage ? partnerName : formatName(partnerName)}</h4>
+                            <h4 className="text-base sm:text-lg font-bold text-[var(--text-main)]">{partnerName}</h4>
                             <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getStatusColor(request.status)}`}>
                                 {request.status}
                             </span>

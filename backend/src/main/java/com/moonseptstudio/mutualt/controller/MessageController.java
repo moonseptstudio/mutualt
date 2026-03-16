@@ -89,11 +89,8 @@ public class MessageController {
                     dto.setId(room.getId());
                     dto.setType(room.getType());
                     
-                    if ("DIRECT".equals(room.getType()) && !hasPackage) {
-                        dto.setName("Direct Chat");
-                    } else {
-                        dto.setName(room.getName());
-                    }
+                    dto.setName(room.getName());
+
 
                     dto.setMembers(room.getMembers().stream()
                         .map(m -> {
@@ -104,20 +101,15 @@ public class MessageController {
                             
                             UserProfile p = profileMap.get(m.getId());
                             if (p != null) {
-                                String name = p.getFullName();
-                                if (!hasPackage && !m.getId().equals(user.getId())) {
-                                    name = obfuscateName(name);
-                                    summary.setPhoneNumber(null);
-                                    summary.setEmail(null);
-                                    summary.setAvatar(null);
-                                } else {
-                                    summary.setPhoneNumber(p.getPhoneNumber());
-                                    summary.setEmail(p.getEmail());
-                                    summary.setAvatar(p.getProfileImageUrl());
-                                }
+                                String name = (p.getFullName() != null && !p.getFullName().isEmpty()) 
+                                    ? p.getFullName() 
+                                    : m.getUsername();
+                                summary.setPhoneNumber(p.getPhoneNumber());
+                                summary.setEmail(p.getEmail());
+                                summary.setAvatar(p.getProfileImageUrl());
                                 summary.setName(name);
-                            } else if (!hasPackage && !m.getId().equals(user.getId())) {
-                                summary.setName(obfuscateName(m.getUsername()));
+                            } else {
+                                summary.setName(m.getUsername());
                             }
                             return summary;
                         }).collect(Collectors.toList()));
@@ -332,21 +324,15 @@ public class MessageController {
 
         UserProfile senderProfile = profileRepository.findByUserId(msg.getSender().getId()).orElse(null);
         if (senderProfile != null) {
-            String name = senderProfile.getFullName();
-            if (!hasPackage && !msg.getSender().getId().equals(currentUserId)) {
-                name = obfuscateName(name);
-                dto.setSenderProfileImageUrl(null);
-            } else {
-                dto.setSenderProfileImageUrl(senderProfile.getProfileImageUrl());
-            }
+            String name = (senderProfile.getFullName() != null && !senderProfile.getFullName().isEmpty()) 
+                ? senderProfile.getFullName() 
+                : msg.getSender().getUsername();
+            dto.setSenderProfileImageUrl(senderProfile.getProfileImageUrl());
             dto.setSenderName(name);
         }
 
         return dto;
     }
 
-    private String obfuscateName(String name) {
-        if (name == null || name.length() <= 2) return name;
-        return name.charAt(0) + "..." + name.charAt(name.length() - 1);
-    }
+
 }

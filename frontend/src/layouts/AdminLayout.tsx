@@ -87,25 +87,6 @@ const AdminLayout = () => {
                         to="/admin/stations"
                         active={location.pathname === '/admin/stations'}
                     />
-                    <SidebarItem
-                        icon={RefreshCw}
-                        label="Cycles"
-                        to="/admin/cycles"
-                        active={location.pathname === '/admin/cycles'}
-                    />
-                    <div className="h-px bg-slate-50 my-6 mx-4"></div>
-                    <SidebarItem
-                        icon={AlertTriangle}
-                        label="Escalations"
-                        to="/admin/escalations"
-                        active={location.pathname === '/admin/escalations'}
-                    />
-                    <SidebarItem
-                        icon={Settings}
-                        label="Settings"
-                        to="/admin/settings"
-                        active={location.pathname === '/admin/settings'}
-                    />
                 </nav>
 
                 <div className="p-6">

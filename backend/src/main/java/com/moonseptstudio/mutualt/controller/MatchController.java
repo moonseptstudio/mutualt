@@ -93,15 +93,11 @@ public class MatchController {
                 uDto.setUserId(uid);
                 if (up != null) {
                     logger.info("Processing participant uid={} for currentUser={} | hasPackage={}", uid, user.getId(), hasPackage);
-                    if (!hasPackage && !uid.equals(user.getId())) {
-                        logger.info("Obfuscating name for uid={}", uid);
-                        uDto.setName(obfuscateName(up.getFullName()));
-                        uDto.setProfileImageUrl(null);
-                    } else {
-                        logger.info("Not obfuscating name for uid={}", uid);
-                        uDto.setName(up.getFullName());
-                        uDto.setProfileImageUrl(up.getProfileImageUrl());
-                    }
+                    String displayName = (up.getFullName() != null && !up.getFullName().isEmpty()) 
+                        ? up.getFullName() 
+                        : up.getUser().getUsername();
+                    uDto.setName(displayName);
+                    uDto.setProfileImageUrl(up.getProfileImageUrl());
                     if (up.getCurrentStation() != null) {
                         uDto.setStationName(up.getCurrentStation().getName());
                         uDto.setStationDistrict(up.getCurrentStation().getDistrict());
@@ -151,13 +147,11 @@ public class MatchController {
         MatchDto.UserSummaryDto uDto = new MatchDto.UserSummaryDto();
         uDto.setUserId(uid);
         
-        if (!hasPackage && !uid.equals(currentUserId)) {
-            uDto.setName(obfuscateName(up.getFullName()));
-            uDto.setProfileImageUrl(null);
-        } else {
-            uDto.setName(up.getFullName());
-            uDto.setProfileImageUrl(up.getProfileImageUrl());
-        }
+        String displayName = (up.getFullName() != null && !up.getFullName().isEmpty()) 
+            ? up.getFullName() 
+            : up.getUser().getUsername();
+        uDto.setName(displayName);
+        uDto.setProfileImageUrl(up.getProfileImageUrl());
 
         if (up.getCurrentStation() != null) {
             uDto.setStationName(up.getCurrentStation().getName());
@@ -188,9 +182,5 @@ public class MatchController {
         return uDto;
     }
 
-    private String obfuscateName(String name) {
-        if (name == null || name.length() <= 2) return name;
-        // Truncate name to first and last letter (e.g., "John Doe" -> "J...e")
-        return name.charAt(0) + "..." + name.charAt(name.length() - 1);
-    }
+
 }

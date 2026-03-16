@@ -14,7 +14,9 @@ import {
     AlertCircle,
     ChevronDown,
     Eye,
-    EyeOff
+    EyeOff,
+    Phone,
+    KeyRound
 } from 'lucide-react';
 
 const RegisterPage = () => {
@@ -37,10 +39,13 @@ const RegisterPage = () => {
         fullName: '',
         email: '',
         nic: '',
+        phoneNumber: '',
         jobCategoryId: '',
         gradeId: '',
         currentStationId: ''
     });
+
+    const [otp, setOtp] = useState('');
 
     useEffect(() => {
         const fetchMetadata = async () => {
@@ -82,12 +87,32 @@ const RegisterPage = () => {
                 fullName: formData.fullName,
                 email: formData.email,
                 nic: formData.nic,
+                phoneNumber: formData.phoneNumber,
                 jobCategoryId: Number(formData.jobCategoryId),
                 gradeId: Number(formData.gradeId),
                 currentStationId: Number(formData.currentStationId)
             });
 
-            // Automatically login after registration
+            setStep(3);
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Registration failed. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleVerifyOtp = async (e: any) => {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+
+        try {
+            await apiClient.post('/auth/verify-registration', {
+                phoneNumber: formData.phoneNumber,
+                otpCode: otp
+            });
+
+            // Automatically login after verification
             const loginRes = await apiClient.post('/auth/signin', {
                 username: formData.nic,
                 password: formData.password
@@ -96,7 +121,7 @@ const RegisterPage = () => {
             login(loginRes.data);
             navigate('/dashboard');
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Registration failed. Please try again.');
+            setError(err.response?.data?.message || 'OTP verification failed. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -132,6 +157,10 @@ const RegisterPage = () => {
                                         <div className={`w-8 h-8 rounded-full ${step === 2 ? 'bg-blue-600' : 'bg-slate-700'} flex items-center justify-center text-xs font-medium`}>2</div>
                                         <span className="text-sm font-bold">Service Info</span>
                                     </div>
+                                    <div className={`flex items-center space-x-3 ${step === 3 ? 'opacity-100' : 'opacity-40'} transition-opacity`}>
+                                        <div className={`w-8 h-8 rounded-full ${step === 3 ? 'bg-blue-600' : 'bg-slate-700'} flex items-center justify-center text-xs font-medium`}>3</div>
+                                        <span className="text-sm font-bold">Verification</span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -141,7 +170,7 @@ const RegisterPage = () => {
                         </div>
 
                         <div className="md:w-2/3 p-10 bg-white">
-                            <form onSubmit={handleRegister} className="space-y-6">
+                            <form onSubmit={step === 3 ? handleVerifyOtp : handleRegister} className="space-y-6">
                                 {error && (
                                     <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-center space-x-3 text-rose-600 animate-in fade-in slide-in-from-top-2">
                                         <AlertCircle size={20} />
@@ -195,9 +224,23 @@ const RegisterPage = () => {
                                                     />
                                                 </div>
                                             </div>
+                                            <div>
+                                                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 ml-1 block">Phone Number</label>
+                                                <div className="relative group">
+                                                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                                    <input
+                                                        type="tel"
+                                                        value={formData.phoneNumber}
+                                                        placeholder="94777123456"
+                                                        onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                                                        className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 focus:bg-white outline-none transition-all font-medium"
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                ) : (
+                                ) : step === 2 ? (
                                     <div className="animate-in fade-in slide-in-from-right-4 duration-300">
                                         <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-6">Step 2: Professional Service</h3>
                                         <div className="space-y-4">
@@ -302,14 +345,39 @@ const RegisterPage = () => {
                                             </div>
                                         </div>
                                     </div>
+                                ) : (
+                                    <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+                                        <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-6">Step 3: Phone Verification</h3>
+                                        <p className="text-sm text-slate-500 mb-6">
+                                            We've sent a 6-digit verification code to <span className="font-bold text-slate-900">{formData.phoneNumber}</span>. 
+                                            Please enter it below to verify your account.
+                                        </p>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 ml-1 block">Verification Code</label>
+                                                <div className="relative group">
+                                                    <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                                    <input
+                                                        type="text"
+                                                        maxLength={6}
+                                                        value={otp}
+                                                        placeholder="000000"
+                                                        onChange={(e) => setOtp(e.target.value)}
+                                                        className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 focus:bg-white outline-none transition-all font-medium text-center tracking-[1em] text-lg"
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 )}
 
 
                                 <div className="pt-6 flex items-center space-x-4">
-                                    {step === 2 && (
+                                    {(step === 2 || (step === 3 && !loading)) && (
                                         <button
                                             type="button"
-                                            onClick={() => setStep(1)}
+                                            onClick={() => setStep(step - 1)}
                                             className="px-6 py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all"
                                         >
                                             Back
@@ -319,7 +387,8 @@ const RegisterPage = () => {
                                         disabled={loading}
                                         className="grow py-4 bg-blue-600 text-white font-medium rounded-2xl shadow-xl shadow-blue-500/20 hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center justify-center disabled:opacity-50"
                                     >
-                                        {loading ? "Registering..." : (step === 1 ? "Next Step" : "Complete Registration")}
+                                        {loading ? (step === 3 ? "Verifying..." : "Registering...") : 
+                                         (step === 1 ? "Next Step" : step === 2 ? "Complete Registration" : "Verify OTP")}
                                         {!loading && <ArrowRight className="ml-2" size={20} />}
                                     </button>
                                 </div>

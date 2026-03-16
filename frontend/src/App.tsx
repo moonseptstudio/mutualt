@@ -20,6 +20,7 @@ import AboutPage from './pages/web/AboutPage';
 import PricingPage from './pages/web/PricingPage';
 import LoginPage from './pages/web/LoginPage';
 import RegisterPage from './pages/web/RegisterPage';
+import ForgotPasswordPage from './pages/web/ForgotPasswordPage';
 
 // Client Pages
 import ClientDashboard from './pages/client/ClientDashboard';
@@ -35,7 +36,6 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import UserManagement from './pages/admin/UserManagement';
 import StationManagement from './pages/admin/StationManagement';
 import JobCategoryManagement from './pages/admin/JobCategoryManagement';
-import SystemCycles from './pages/admin/SystemCycles';
 
 import AdminLoginPage from './pages/web/AdminLoginPage';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -72,6 +72,7 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           </Route>
           {/* Admin Login Route without WebLayout */}
           <Route path="/admin/login" element={<AdminLoginPage />} />
@@ -97,7 +98,6 @@ function App() {
             <Route path="/admin/users" element={<UserManagement />} />
             <Route path="/admin/categories" element={<JobCategoryManagement />} />
             <Route path="/admin/stations" element={<StationManagement />} />
-            <Route path="/admin/cycles" element={<SystemCycles />} />
           </Route>
         </Route>
 

@@ -17,4 +17,6 @@ public interface MatchRequestRepository extends JpaRepository<MatchRequest, Long
     List<MatchRequest> findBySenderIdAndReceiverIdIn(Long senderId, List<Long> receiverIds);
 
     List<MatchRequest> findByReceiverIdAndSenderIdIn(Long receiverId, List<Long> senderIds);
+    void deleteBySender(User sender);
+    void deleteByReceiver(User receiver);
 }

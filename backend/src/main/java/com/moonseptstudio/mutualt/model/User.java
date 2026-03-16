@@ -26,4 +26,7 @@ public class User {
     @ManyToOne
     @JoinColumn(name = "package_id")
     private SubscriptionPackage subscriptionPackage;
+
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean verified = false;
 }
