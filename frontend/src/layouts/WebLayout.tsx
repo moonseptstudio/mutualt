@@ -12,13 +12,12 @@ const WebLayout = () => {
     const location = useLocation();
 
     useEffect(() => {
-        const container = document.getElementById('snap-root');
-        if (!container) return;
-
-        // Initialize Lenis for smooth scrolling targeting the container
+        // Force light mode for web pages
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+        
+        // Initialize Lenis for smooth scrolling on the window
         const lenis = new Lenis({
-            wrapper: container,
-            content: container,
             duration: 1.2,
             easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
             orientation: 'vertical',
@@ -67,7 +66,7 @@ const WebLayout = () => {
     ];
 
     return (
-        <div id="snap-root" className="snap-container bg-[#f8fafc]">
+        <div id="snap-root" className="bg-[#f8fafc] min-h-screen">
             {/* Global Scroll Progress Bar */}
             <motion.div
                 className="fixed top-0 left-0 right-0 h-1 bg-linear-to-r from-blue-500 to-violet-500 z-60 origin-left"
@@ -173,7 +172,7 @@ const WebLayout = () => {
             <Outlet />
 
             {/* ─── FOOTER ─── */}
-            <footer className="snap-section-auto relative overflow-hidden">
+            <footer className="relative overflow-hidden">
                 {/* Top gradient border */}
                 <div className="h-px bg-linear-to-r from-transparent via-blue-200/60 to-transparent" />
                 
@@ -223,7 +222,7 @@ const WebLayout = () => {
                     {/* Bottom bar */}
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-8 border-t border-slate-100 text-center">
                         <p className="text-xs text-slate-400">
-                            &copy; {new Date().getFullYear()} MutualTransfer.lk. All rights reserved. Made with 💙 for Sri Lanka.
+                            &copy; {new Date().getFullYear()} MutualTransfer.lk by MoonSept. All rights reserved.
                         </p>
                     </div>
                 </div>

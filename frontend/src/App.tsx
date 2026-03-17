@@ -36,6 +36,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import UserManagement from './pages/admin/UserManagement';
 import StationManagement from './pages/admin/StationManagement';
 import JobCategoryManagement from './pages/admin/JobCategoryManagement';
+import FieldManagement from './pages/admin/FieldManagement';
 
 import AdminLoginPage from './pages/web/AdminLoginPage';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -96,6 +97,7 @@ function App() {
           <Route element={<AdminLayout />}>
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/users" element={<UserManagement />} />
+            <Route path="/admin/fields" element={<FieldManagement />} />
             <Route path="/admin/categories" element={<JobCategoryManagement />} />
             <Route path="/admin/stations" element={<StationManagement />} />
           </Route>

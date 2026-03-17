@@ -23,4 +23,8 @@ public class Station {
     private String province;
 
     private String hierarchyLevel; // e.g., 'National Hospital', 'Base Hospital'
+
+    @ManyToOne
+    @JoinColumn(name = "field_id")
+    private Field field;
 }

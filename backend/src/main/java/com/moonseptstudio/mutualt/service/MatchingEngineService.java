@@ -24,11 +24,11 @@ public class MatchingEngineService {
     @Autowired
     private TransferPreferenceRepository preferenceRepository;
 
-    public Map<Long, List<Long>> buildGraphForCategory(Long jobCategoryId, Long gradeId) {
+    public Map<Long, List<Long>> buildGraphForCategory(Long jobCategoryId) {
         Map<Long, List<Long>> adj = new HashMap<>();
 
         // 1. Get all relevant profiles in one go
-        List<UserProfile> profiles = userProfileRepository.findByJobCategoryIdAndGradeId(jobCategoryId, gradeId);
+        List<UserProfile> profiles = userProfileRepository.findByJobCategoryId(jobCategoryId);
 
         Map<Long, List<Long>> stationToUsers = new HashMap<>(); // stationId -> list of userIds
         List<Long> userIds = new ArrayList<>();
@@ -76,8 +76,8 @@ public class MatchingEngineService {
         return adj;
     }
 
-    public List<List<Long>> findCycles(Long jobCategoryId, Long gradeId, Long startUserId) {
-        Map<Long, List<Long>> adj = buildGraphForCategory(jobCategoryId, gradeId);
+    public List<List<Long>> findCycles(Long jobCategoryId, Long startUserId) {
+        Map<Long, List<Long>> adj = buildGraphForCategory(jobCategoryId);
 
         List<List<Long>> cycles = new ArrayList<>();
         Set<String> seenCycleHashes = new HashSet<>();

@@ -13,8 +13,10 @@ public class UserAdminDto {
     private Long id;
     private String username;
     private String fullName;
+    private String fieldName;
     private String role;
     private String packageName;
     private boolean verified;
     private LocalDateTime lastSeen;
+    private LocalDateTime subscriptionEndDate;
 }

@@ -61,6 +61,14 @@ const ClientLayout = () => {
     const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     
+    // Restore preferred theme for dashboard
+    useEffect(() => {
+        const root = window.document.documentElement;
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        root.classList.remove('light', 'dark');
+        root.classList.add(savedTheme);
+    }, []);
+    
     // Notification states
     const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
     const [pendingRequestsCount, setPendingRequestsCount] = useState(0);

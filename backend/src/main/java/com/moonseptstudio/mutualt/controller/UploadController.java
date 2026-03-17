@@ -42,21 +42,6 @@ public class UploadController {
         return ResponseEntity.ok(fileUrl);
     }
 
-    @PostMapping("/service-letter")
-    public ResponseEntity<?> uploadServiceLetter(@RequestParam("file") MultipartFile file,
-            Authentication authentication) throws IOException {
-        String fileName = saveFile(file, "documents");
-        String fileUrl = "/api/public/files/" + fileName;
-
-        User user = userRepository.findByUsername(authentication.getName()).orElseThrow();
-        UserProfile profile = userProfileRepository.findByUserId(user.getId()).orElseThrow();
-        profile.setServiceLetterUrl(fileUrl);
-        profile.setServiceLetterStatus("REVIEWING");
-        profile.setVerificationLevel(2);
-        userProfileRepository.save(profile);
-
-        return ResponseEntity.ok(fileUrl);
-    }
 
     private String saveFile(MultipartFile file, String subDir) throws IOException {
         Path root = Paths.get(uploadDir, subDir);

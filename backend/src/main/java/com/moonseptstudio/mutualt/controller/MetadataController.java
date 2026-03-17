@@ -17,10 +17,10 @@ import java.util.stream.Collectors;
 public class MetadataController {
 
     @Autowired
-    JobCategoryRepository jobCategoryRepository;
+    FieldRepository fieldRepository;
 
     @Autowired
-    GradeRepository gradeRepository;
+    JobCategoryRepository jobCategoryRepository;
 
     @Autowired
     StationRepository stationRepository;
@@ -31,22 +31,68 @@ public class MetadataController {
     @Autowired
     UserProfileRepository userProfileRepository;
 
+    @GetMapping("/fields")
+    public List<Field> getFields() {
+        return fieldRepository.findAll();
+    }
+
+    @PostMapping("/fields")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Field createField(@RequestBody Field field) {
+        return fieldRepository.save(field);
+    }
+
+    @Transactional
+    @DeleteMapping("/fields/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public org.springframework.http.ResponseEntity<?> deleteField(@PathVariable Long id) {
+        try {
+            fieldRepository.deleteById(id);
+            fieldRepository.flush();
+            return org.springframework.http.ResponseEntity.ok().build();
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            return org.springframework.http.ResponseEntity.badRequest().body(Map.of("message", "This field cannot be deleted because it is being used by job categories or stations."));
+        } catch (Exception e) {
+            return org.springframework.http.ResponseEntity.internalServerError().body(Map.of("message", "Error deleting field: " + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/fields/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Field updateField(@PathVariable Long id, @RequestBody Field fieldDetails) {
+        return fieldRepository.findById(id).map(field -> {
+            field.setName(fieldDetails.getName());
+            return fieldRepository.save(field);
+        }).orElseThrow(() -> new RuntimeException("Field not found with id " + id));
+    }
+
     @GetMapping("/job-categories")
-    public List<JobCategory> getJobCategories() {
+    public List<JobCategory> getJobCategories(@RequestParam(required = false) Long fieldId) {
+        if (fieldId != null) {
+            return jobCategoryRepository.findByField_Id(fieldId);
+        }
         List<JobCategory> categories = jobCategoryRepository.findAll();
         System.out.println("Fetching Job Categories: found " + categories.size());
         return categories;
     }
 
-    @GetMapping("/grades")
-    public List<Grade> getGrades() {
-        List<Grade> grades = gradeRepository.findAll();
-        System.out.println("Fetching Grades: found " + grades.size());
-        return grades;
+
+
+    @GetMapping("/districts")
+    public List<String> getDistricts() {
+        return stationRepository.findDistinctDistricts();
     }
 
     @GetMapping("/stations")
-    public List<Station> getStations() {
+    public List<Station> getStations(@RequestParam(required = false) String district,
+                                     @RequestParam(required = false) Long fieldId) {
+        if (district != null && fieldId != null) {
+            return stationRepository.findByDistrictAndField_Id(district, fieldId);
+        } else if (district != null) {
+            return stationRepository.findByDistrict(district);
+        } else if (fieldId != null) {
+            return stationRepository.findByField_Id(fieldId);
+        }
         List<Station> stations = stationRepository.findAll();
         System.out.println("Fetching Stations: found " + stations.size());
         return stations;
@@ -78,39 +124,14 @@ public class MetadataController {
     public JobCategory updateJobCategory(@PathVariable Long id, @RequestBody JobCategory categoryDetails) {
         return jobCategoryRepository.findById(id).map(category -> {
             category.setName(categoryDetails.getName());
+            if (categoryDetails.getField() != null) {
+                category.setField(categoryDetails.getField());
+            }
             return jobCategoryRepository.save(category);
         }).orElseThrow(() -> new RuntimeException("Job Category not found with id " + id));
     }
 
-    @PostMapping("/grades")
-    @PreAuthorize("hasRole('ADMIN')")
-    public Grade createGrade(@RequestBody Grade grade) {
-        return gradeRepository.save(grade);
-    }
 
-    @Transactional
-    @DeleteMapping("/grades/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public org.springframework.http.ResponseEntity<?> deleteGrade(@PathVariable Long id) {
-        try {
-            gradeRepository.deleteById(id);
-            gradeRepository.flush();
-            return org.springframework.http.ResponseEntity.ok().build();
-        } catch (org.springframework.dao.DataIntegrityViolationException e) {
-            return org.springframework.http.ResponseEntity.badRequest().body(Map.of("message", "This grade cannot be deleted because it is being used by one or more users."));
-        } catch (Exception e) {
-            return org.springframework.http.ResponseEntity.internalServerError().body(Map.of("message", "Error deleting grade: " + e.getMessage()));
-        }
-    }
-
-    @PutMapping("/grades/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public Grade updateGrade(@PathVariable Long id, @RequestBody Grade gradeDetails) {
-        return gradeRepository.findById(id).map(grade -> {
-            grade.setName(gradeDetails.getName());
-            return gradeRepository.save(grade);
-        }).orElseThrow(() -> new RuntimeException("Grade not found with id " + id));
-    }
 
     @PostMapping("/stations")
     @PreAuthorize("hasRole('ADMIN')")
@@ -141,6 +162,9 @@ public class MetadataController {
             station.setDistrict(stationDetails.getDistrict());
             station.setProvince(stationDetails.getProvince());
             station.setHierarchyLevel(stationDetails.getHierarchyLevel());
+            if (stationDetails.getField() != null) {
+                station.setField(stationDetails.getField());
+            }
             return stationRepository.save(station);
         }).orElseThrow(() -> new RuntimeException("Station not found with id " + id));
     }

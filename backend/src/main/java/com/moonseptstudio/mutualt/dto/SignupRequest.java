@@ -10,7 +10,6 @@ public class SignupRequest {
     private String email;
     private String nic;
     private Long jobCategoryId;
-    private Long gradeId;
     private Long currentStationId;
     private String phoneNumber;
 }

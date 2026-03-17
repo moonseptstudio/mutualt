@@ -29,4 +29,7 @@ public class User {
 
     @Column(nullable = false, columnDefinition = "boolean default false")
     private boolean verified = false;
+
+    private java.time.LocalDateTime subscriptionEndDate;
+    private java.time.LocalDateTime createdAt = java.time.LocalDateTime.now();
 }

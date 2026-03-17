@@ -41,13 +41,13 @@ public class MatchController {
         User user = userRepository.findByUsername(authentication.getName()).orElseThrow();
         UserProfile profile = userProfileRepository.findByUserId(user.getId()).orElseThrow();
 
-        if (profile.getJobCategory() == null || profile.getGrade() == null) {
-            logger.warn("User {} has no job category or grade set", authentication.getName());
+        if (profile.getJobCategory() == null) {
+            logger.warn("User {} has no job category set", authentication.getName());
             return List.of();
         }
 
         List<List<Long>> cycles = matchingEngineService.findCycles(profile.getJobCategory().getId(),
-                profile.getGrade().getId(), profile.getUser().getId());
+                profile.getUser().getId());
 
         logger.info("Found {} cycles for user {}", cycles.size(), authentication.getName());
 
@@ -132,7 +132,7 @@ public class MatchController {
         boolean hasPackage = user.getSubscriptionPackage() != null;
 
         // Find all cycles for Doctors (Category 1) as a baseline
-        List<List<Long>> cycles = matchingEngineService.findCycles(1L, 1L, 0L);
+        List<List<Long>> cycles = matchingEngineService.findCycles(1L, 0L);
 
         return cycles.stream().map(cycle -> {
             MatchDto dto = new MatchDto();

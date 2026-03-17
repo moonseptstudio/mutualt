@@ -13,10 +13,10 @@ import java.util.Arrays;
 public class DataSeeder implements CommandLineRunner {
 
     @Autowired
-    private JobCategoryRepository jobCategoryRepository;
+    private FieldRepository fieldRepository;
 
     @Autowired
-    private GradeRepository gradeRepository;
+    private JobCategoryRepository jobCategoryRepository;
 
     @Autowired
     private StationRepository stationRepository;
@@ -36,11 +36,22 @@ public class DataSeeder implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         seedPackages();
+        seedFields();
         seedJobCategories();
-        seedGrades();
         seedStations();
         seedAdminUser();
         seedTestUser();
+    }
+
+    private void seedFields() {
+        if (fieldRepository.count() == 0) {
+            fieldRepository.saveAll(Arrays.asList(
+                    new Field(null, "Health"),
+                    new Field(null, "Education"),
+                    new Field(null, "Postal")
+            ));
+            System.out.println("Seeded Fields.");
+        }
     }
 
     private void seedAdminUser() {
@@ -60,7 +71,6 @@ public class DataSeeder implements CommandLineRunner {
             profile.setNic("ADMIN001");
             profile.setEmail("admin@mutualt.com");
             profile.setJobCategory(jobCategoryRepository.findAll().get(0));
-            profile.setGrade(gradeRepository.findAll().get(0));
             profile.setCurrentStation(stationRepository.findAll().get(0));
             userProfileRepository.save(profile);
 
@@ -87,36 +97,29 @@ public class DataSeeder implements CommandLineRunner {
 
     private void seedJobCategories() {
         if (jobCategoryRepository.count() == 0) {
+            Field health = fieldRepository.findByName("Health").orElseThrow();
             jobCategoryRepository.saveAll(Arrays.asList(
-                    new JobCategory(null, "Medical Officer"),
-                    new JobCategory(null, "Nursing Officer"),
-                    new JobCategory(null, "Pharmacist"),
-                    new JobCategory(null, "Public Health Inspector")));
+                    new JobCategory(null, "Medical Officer", health),
+                    new JobCategory(null, "Nursing Officer", health),
+                    new JobCategory(null, "Pharmacist", health),
+                    new JobCategory(null, "Public Health Inspector", health)));
             System.out.println("Seeded Job Categories.");
         }
     }
 
-    private void seedGrades() {
-        if (gradeRepository.count() == 0) {
-            gradeRepository.saveAll(Arrays.asList(
-                    new Grade(null, "Grade I"),
-                    new Grade(null, "Grade II"),
-                    new Grade(null, "Preliminary Grade"),
-                    new Grade(null, "Specialist")));
-            System.out.println("Seeded Grades.");
-        }
-    }
+
 
     private void seedStations() {
         if (stationRepository.count() == 0) {
+            Field health = fieldRepository.findByName("Health").orElseThrow();
             stationRepository.saveAll(Arrays.asList(
-                    new Station(null, "National Hospital Sri Lanka", "Colombo", "Western", "National Hospital"),
-                    new Station(null, "Teaching Hospital Kandy", "Kandy", "Central", "Teaching Hospital"),
-                    new Station(null, "Teaching Hospital Karapitiya", "Galle", "Southern", "Teaching Hospital"),
-                    new Station(null, "Teaching Hospital Matara", "Matara", "Southern", "Teaching Hospital"),
-                    new Station(null, "Teaching Hospital Jaffna", "Jaffna", "Northern", "Teaching Hospital"),
-                    new Station(null, "GH Matale", "Matale", "Central", "General Hospital"),
-                    new Station(null, "Base Hospital Panadura", "Kalutara", "Western", "Base Hospital")));
+                    new Station(null, "National Hospital Sri Lanka", "Colombo", "Western", "National Hospital", health),
+                    new Station(null, "Teaching Hospital Kandy", "Kandy", "Central", "Teaching Hospital", health),
+                    new Station(null, "Teaching Hospital Karapitiya", "Galle", "Southern", "Teaching Hospital", health),
+                    new Station(null, "Teaching Hospital Matara", "Matara", "Southern", "Teaching Hospital", health),
+                    new Station(null, "Teaching Hospital Jaffna", "Jaffna", "Northern", "Teaching Hospital", health),
+                    new Station(null, "GH Matale", "Matale", "Central", "General Hospital", health),
+                    new Station(null, "Base Hospital Panadura", "Kalutara", "Western", "Base Hospital", health)));
             System.out.println("Seeded Stations.");
         }
     }
@@ -138,7 +141,6 @@ public class DataSeeder implements CommandLineRunner {
             profile.setNic("990011223V");
             profile.setEmail("test1@example.com");
             profile.setJobCategory(jobCategoryRepository.findAll().get(0));
-            profile.setGrade(gradeRepository.findAll().get(0));
             profile.setCurrentStation(stationRepository.findAll().get(0));
             userProfileRepository.save(profile);
 

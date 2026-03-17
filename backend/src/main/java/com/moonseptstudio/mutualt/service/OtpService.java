@@ -19,6 +19,9 @@ public class OtpService {
     @Autowired
     private SmsService smsService;
 
+    @Autowired
+    private EmailService emailService;
+
     private static final int OTP_EXPIRY_MINUTES = 10;
 
     @Transactional
@@ -42,8 +45,41 @@ public class OtpService {
         smsService.sendSms(phoneNumber, message);
     }
 
+    @Transactional
+    public void generateAndSendEmailOtp(String email, String type) {
+        // 1. Generate 6 digit OTP
+        String otpCode = String.format("%06d", new Random().nextInt(1000000));
+
+        // 2. Delete existing tokens for this email and type
+        otpTokenRepository.deleteByEmailAndType(email, type);
+
+        // 3. Save new token
+        OtpToken token = new OtpToken();
+        token.setEmail(email);
+        token.setOtpCode(otpCode);
+        token.setExpiryTime(LocalDateTime.now().plusMinutes(OTP_EXPIRY_MINUTES));
+        token.setType(type);
+        otpTokenRepository.save(token);
+
+        // 4. Send Email
+        emailService.sendOtpEmail(email, otpCode);
+    }
+
     public boolean validateOtp(String phoneNumber, String otpCode, String type) {
         Optional<OtpToken> tokenOpt = otpTokenRepository.findByPhoneNumberAndOtpCodeAndType(phoneNumber, otpCode, type);
+
+        if (tokenOpt.isPresent()) {
+            OtpToken token = tokenOpt.get();
+            if (token.getExpiryTime().isAfter(LocalDateTime.now())) {
+                otpTokenRepository.delete(token);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean validateEmailOtp(String email, String otpCode, String type) {
+        Optional<OtpToken> tokenOpt = otpTokenRepository.findByEmailAndOtpCodeAndType(email, otpCode, type);
 
         if (tokenOpt.isPresent()) {
             OtpToken token = tokenOpt.get();

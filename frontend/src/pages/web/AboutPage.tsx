@@ -38,6 +38,32 @@ const FloatingShapes = () => {
     );
 };
 
+/* ─── Scroll-linked Section Animation Wrapper ─── */
+const ScrollAnimatedSection = ({ children, className = "", id, ref: externalRef }: { children: React.ReactNode, className?: string, id?: string, ref?: React.RefObject<HTMLDivElement> }) => {
+  const internalRef = useRef<HTMLDivElement>(null);
+  const targetRef = externalRef || internalRef;
+  
+  const { scrollYProgress } = useScroll({
+    target: targetRef,
+    offset: ["start end", "end start"]
+  });
+
+  const opacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0, 1, 1, 0]);
+  const scale = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0.95, 1, 1, 0.95]);
+  const y = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [40, 0, 0, -40]);
+
+  return (
+    <motion.div
+      ref={targetRef}
+      id={id}
+      style={{ opacity, scale, y }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
 const ValueCard = ({ icon: Icon, title, description }: any) => {
   return (
     <motion.div 
@@ -54,20 +80,29 @@ const ValueCard = ({ icon: Icon, title, description }: any) => {
   );
 };
 
+import { useRef } from 'react';
+
 const AboutPage = () => {
+    const heroRef = useRef<HTMLDivElement>(null);
+    const { scrollYProgress: heroScroll } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
+    const heroY = useTransform(heroScroll, [0, 1], [0, 150]);
+    const heroScale = useTransform(heroScroll, [0, 1], [1, 0.9]);
+    const heroOpacity = useTransform(heroScroll, [0, 0.8], [1, 0]);
+
     return (
         <div className="relative">
             {/* Hero Section */}
-            <section className="snap-section relative mesh-gradient-bg overflow-hidden flex items-center justify-center pt-20">
+            <section ref={heroRef} className="relative mesh-gradient-bg overflow-hidden flex flex-col justify-center min-h-screen pt-24">
                 <FloatingShapes />
                 <motion.div 
                   initial="hidden"
                   whileInView="visible"
                   viewport={{ once: true }}
                   variants={staggerContainer}
+                  style={{ y: heroY, scale: heroScale, opacity: heroOpacity }}
                   className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10"
                 >
-                    <motion.div variants={fadeInUp} className="inline-block px-4 py-1.5 bg-blue-50 text-blue-600 text-xs font-bold uppercase tracking-wider rounded-full mb-6">
+                    <motion.div variants={fadeInUp} className="inline-block px-4 py-1.5 bg-blue-50 text-blue-600 text-xs font-bold uppercase tracking-wider rounded-full mb-6 text-center mx-auto">
                         About Us
                     </motion.div>
                     <motion.h1 variants={fadeInUp} className="text-4xl md:text-6xl font-extrabold text-slate-900 mb-8 tracking-tight">
@@ -80,7 +115,7 @@ const AboutPage = () => {
             </section>
 
             {/* Content Section */}
-            <section className="snap-section bg-white perspective-2000 overflow-hidden">
+            <ScrollAnimatedSection className="bg-white perspective-2000 overflow-hidden py-24">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                         <motion.div
@@ -137,10 +172,10 @@ const AboutPage = () => {
                         </motion.div>
                     </div>
                 </div>
-            </section>
+            </ScrollAnimatedSection>
 
             {/* Values */}
-            <section className="snap-section mesh-gradient-bg relative perspective-2000 overflow-hidden">
+            <ScrollAnimatedSection className="mesh-gradient-bg relative perspective-2000 overflow-hidden py-24">
                 <FloatingShapes />
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                     <motion.div 
@@ -183,10 +218,10 @@ const AboutPage = () => {
                         />
                     </motion.div>
                 </div>
-            </section>
+            </ScrollAnimatedSection>
 
             {/* CTA */}
-            <section className="snap-section bg-white perspective-2000 overflow-hidden flex items-center justify-center">
+            <ScrollAnimatedSection className="bg-white perspective-2000 overflow-hidden flex items-center justify-center py-24">
                 <motion.div 
                   initial={{ opacity: 0, y: 50 }}
                   whileInView={{ opacity: 1, y: 0 }}
@@ -213,7 +248,7 @@ const AboutPage = () => {
                         </div>
                     </div>
                 </motion.div>
-            </section>
+            </ScrollAnimatedSection>
         </div>
     );
 };

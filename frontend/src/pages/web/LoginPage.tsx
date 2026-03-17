@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import apiClient from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { isValidNic } from '../../utils/validation';
 
 const LoginPage = () => {
     const [nic, setNic] = useState('');
@@ -28,6 +29,12 @@ const LoginPage = () => {
         e.preventDefault();
         setError('');
         setLoading(true);
+
+        if (!isValidNic(nic)) {
+            setError("Please enter a valid Sri Lankan NIC number (9 digits + V or 12 digits)");
+            setLoading(false);
+            return;
+        }
 
         try {
             const response = await apiClient.post('/auth/signin', {
@@ -50,7 +57,7 @@ const LoginPage = () => {
     };
 
     return (
-        <div className="min-h-[80vh] flex items-center justify-center p-6 bg-slate-50 relative overflow-hidden">
+        <div className="min-h-screen flex items-center justify-center p-6 bg-slate-50 relative overflow-hidden pt-24">
             {/* Abstract Background */}
             <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20">
                 <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-400 blur-[120px] rounded-full"></div>
@@ -86,7 +93,7 @@ const LoginPage = () => {
                                         type="text"
                                         value={nic}
                                         onChange={(e) => setNic(e.target.value)}
-                                        placeholder="991234567V"
+                                        placeholder="891005567V"
                                         className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none focus:border-blue-500 focus:bg-white transition-all text-slate-900 font-medium"
                                         required
                                     />
@@ -98,12 +105,36 @@ const LoginPage = () => {
                                     <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">
                                         Password
                                     </label>
-                                    <Link
-                                        to="/forgot-password"
-                                        className="text-xs font-bold text-blue-600 hover:text-blue-700 cursor-pointer"
-                                    >
-                                        Forgot?
-                                    </Link>
+                                    {nic ? (
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                if (!isValidNic(nic)) {
+                                                    setError("Please enter a valid Sri Lankan NIC number first.");
+                                                    setLoading(false);
+                                                    return;
+                                                }
+                                                try {
+                                                    await apiClient.get(`/auth/phone-hint?nic=${nic}`);
+                                                    navigate(`/forgot-password?nic=${nic}`);
+                                                } catch (err: any) {
+                                                    setError(err.response?.data?.message || 'This NIC is not registered.');
+                                                } finally {
+                                                    setLoading(false);
+                                                }
+                                            }}
+                                            className="text-xs font-bold text-blue-600 hover:text-blue-700 cursor-pointer"
+                                        >
+                                            Forgot?
+                                        </button>
+                                    ) : (
+                                        <span 
+                                            title="Enter NIC first"
+                                            className="text-xs font-bold text-slate-300 cursor-not-allowed"
+                                        >
+                                            Forgot?
+                                        </span>
+                                    )}
                                 </div>
                                 <div className="relative group">
                                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={20} />

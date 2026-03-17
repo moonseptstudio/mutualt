@@ -15,4 +15,8 @@ public class JobCategory {
 
     @Column(unique = true, nullable = false)
     private String name;
+
+    @ManyToOne
+    @JoinColumn(name = "field_id")
+    private Field field;
 }

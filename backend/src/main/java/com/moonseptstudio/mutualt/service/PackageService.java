@@ -30,10 +30,32 @@ public class PackageService {
                 .orElse(true);
     }
 
-    public void upgradeUserToPremium(Long userId) {
+    public void upgradeUserToPremium(Long userId, int durationMonths) {
         User user = userRepository.findById(userId).orElseThrow();
         SubscriptionPackage premium = packageRepository.findByName("PREMIUM").orElseThrow();
+        
         user.setSubscriptionPackage(premium);
+        
+        java.time.LocalDateTime currentEnd = user.getSubscriptionEndDate();
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        
+        if (currentEnd != null && currentEnd.isAfter(now)) {
+            user.setSubscriptionEndDate(currentEnd.plusMonths(durationMonths));
+        } else {
+            user.setSubscriptionEndDate(now.plusMonths(durationMonths));
+        }
+        
         userRepository.save(user);
+    }
+
+    @jakarta.transaction.Transactional
+    public void processExpiredSubscriptions() {
+        SubscriptionPackage free = packageRepository.findByName("FREE").orElseThrow();
+        userRepository.findBySubscriptionPackageNameAndSubscriptionEndDateBefore("PREMIUM", java.time.LocalDateTime.now())
+                .forEach(user -> {
+                    user.setSubscriptionPackage(free);
+                    user.setSubscriptionEndDate(null);
+                    userRepository.save(user);
+                });
     }
 }

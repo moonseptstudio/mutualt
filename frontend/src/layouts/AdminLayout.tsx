@@ -9,7 +9,8 @@ import {
     RefreshCw,
     Settings,
     Bell,
-    AlertTriangle
+    AlertTriangle,
+    Layers
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -74,6 +75,12 @@ const AdminLayout = () => {
                         label="Users"
                         to="/admin/users"
                         active={location.pathname === '/admin/users'}
+                    />
+                    <SidebarItem
+                        icon={Layers}
+                        label="Fields"
+                        to="/admin/fields"
+                        active={location.pathname === '/admin/fields'}
                     />
                     <SidebarItem
                         icon={ShieldCheck}

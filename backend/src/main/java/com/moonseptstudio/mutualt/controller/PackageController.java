@@ -23,9 +23,14 @@ public class PackageController {
     private UserRepository userRepository;
 
     @PostMapping("/buy")
-    public ResponseEntity<?> buyPremium(Authentication authentication) {
+    public ResponseEntity<?> buyPremium(Authentication authentication, @org.springframework.web.bind.annotation.RequestBody Map<String, Integer> payload) {
         User user = userRepository.findByUsername(authentication.getName()).orElseThrow();
-        packageService.upgradeUserToPremium(user.getId());
-        return ResponseEntity.ok(Map.of("message", "Upgraded successfully", "packageName", "PREMIUM"));
+        int durationMonths = payload.getOrDefault("duration", 1);
+        packageService.upgradeUserToPremium(user.getId(), durationMonths);
+        return ResponseEntity.ok(Map.of(
+            "message", "Upgraded successfully", 
+            "packageName", "PREMIUM",
+            "duration", durationMonths
+        ));
     }
 }

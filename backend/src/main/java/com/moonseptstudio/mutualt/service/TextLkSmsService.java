@@ -1,6 +1,7 @@
 package com.moonseptstudio.mutualt.service;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -46,11 +47,14 @@ public class TextLkSmsService implements SmsService {
         HttpEntity<Map<String, String>> entity = new HttpEntity<>(body, headers);
 
         try {
-            ResponseEntity<Map> rawResponse = restTemplate.postForEntity(API_URL, entity, Map.class);
+            ResponseEntity<Map<String, Object>> rawResponse = restTemplate.exchange(
+                API_URL,
+                HttpMethod.POST,
+                entity,
+                new ParameterizedTypeReference<Map<String, Object>>() {}
+            );
             if (rawResponse.getStatusCode() == HttpStatus.OK) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> bodyResponse = (Map<String, Object>) rawResponse.getBody();
-                return bodyResponse;
+                return rawResponse.getBody();
             } else {
                 Map<String, Object> error = new HashMap<>();
                 error.put("status", "error");

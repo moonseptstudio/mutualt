@@ -29,10 +29,6 @@ public class UserProfile {
     private JobCategory jobCategory;
 
     @ManyToOne
-    @JoinColumn(name = "grade_id")
-    private Grade grade;
-
-    @ManyToOne
     @JoinColumn(name = "current_station_id")
     private Station currentStation;
 
@@ -41,8 +37,6 @@ public class UserProfile {
     @Column(columnDefinition = "int default 1")
     private Integer verificationLevel = 1;
 
-    private String serviceLetterStatus = "PENDING"; // PENDING, REVIEWING, COMPLETED
     private String biometricsStatus = "PENDING"; // PENDING, COMPLETED
     private String profileImageUrl;
-    private String serviceLetterUrl;
 }

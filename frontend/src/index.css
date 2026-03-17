@@ -116,6 +116,14 @@ h6,
       inset 0 1px 0 rgba(255, 255, 255, 0.8);
   }
 
+  .dark .glass-panel {
+    background: rgba(15, 23, 42, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
   .glass-panel-strong {
     background: rgba(255, 255, 255, 0.8);
     backdrop-filter: blur(32px) saturate(200%);
@@ -125,6 +133,14 @@ h6,
       0 20px 60px rgba(99, 102, 241, 0.08),
       0 4px 16px rgba(0, 0, 0, 0.04),
       inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+
+  .dark .glass-panel-strong {
+    background: rgba(15, 23, 42, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 
+      0 20px 60px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
 
   /* Mesh Gradient Background */
@@ -251,6 +267,125 @@ h6,
   .perspective-2000 {
     perspective: 2000px;
   }
+
+  /* ── Premium Home Page Utilities ── */
+
+  /* Animated gradient border */
+  .gradient-border-animated {
+    position: relative;
+    z-index: 0;
+  }
+  .gradient-border-animated::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    background: linear-gradient(
+      var(--border-angle, 0deg),
+      #3b82f6, #8b5cf6, #06b6d4, #10b981, #3b82f6
+    );
+    z-index: -1;
+    animation: border-dance 4s linear infinite;
+  }
+  .gradient-border-animated::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: white;
+    z-index: -1;
+  }
+
+  /* Particle field background */
+  .particle-field {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .particle-field .particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.4), rgba(139, 92, 246, 0.4));
+    border-radius: 50%;
+    animation: particle-float var(--duration, 8s) var(--delay, 0s) ease-in-out infinite;
+  }
+
+  /* Testimonial auto-scroll carousel */
+  .testimonial-track {
+    display: flex;
+    gap: 1.5rem;
+    animation: slide-left 30s linear infinite;
+    width: max-content;
+  }
+  .testimonial-track:hover {
+    animation-play-state: paused;
+  }
+
+  /* Wave section divider */
+  .wave-divider {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    overflow: hidden;
+    line-height: 0;
+  }
+  .wave-divider svg {
+    display: block;
+    width: calc(100% + 1px);
+    height: 60px;
+  }
+
+  /* Magnetic hover effect */
+  .magnetic-hover {
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease;
+  }
+  .magnetic-hover:hover {
+    transform: translateY(-4px) scale(1.02);
+  }
+
+  /* Glow ring on stat cards */
+  .stat-glow {
+    box-shadow: 
+      0 0 0 1px rgba(99, 102, 241, 0.1),
+      0 0 40px rgba(99, 102, 241, 0.06);
+    transition: box-shadow 0.5s ease;
+  }
+  .stat-glow:hover {
+    box-shadow: 
+      0 0 0 1px rgba(99, 102, 241, 0.2),
+      0 0 60px rgba(99, 102, 241, 0.12);
+  }
+
+  /* Bento grid for features */
+  .bento-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: minmax(280px, auto);
+    gap: 1.5rem;
+  }
+  .bento-large {
+    grid-column: span 2;
+    grid-row: span 2;
+  }
+
+  @media (max-width: 1024px) {
+    .bento-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .bento-grid {
+      grid-template-columns: 1fr;
+    }
+    .bento-large {
+      grid-column: span 1;
+      grid-row: span 1;
+    }
+  }
 }
 
 /* === KEYFRAMES === */
@@ -334,6 +469,34 @@ h6,
 @keyframes gradient-x {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
+}
+
+@keyframes border-dance {
+  0% { --border-angle: 0deg; }
+  100% { --border-angle: 360deg; }
+}
+
+@keyframes particle-float {
+  0%, 100% { 
+    transform: translateY(0) translateX(0) scale(1); 
+    opacity: 0;
+  }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  50% { 
+    transform: translateY(calc(var(--ty, -200px))) translateX(calc(var(--tx, 50px))) scale(1.5); 
+  }
+}
+
+@keyframes slide-left {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@property --border-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
 }
 
 /* Staggered reveal animations */

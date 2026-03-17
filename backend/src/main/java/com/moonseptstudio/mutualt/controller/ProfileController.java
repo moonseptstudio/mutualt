@@ -5,6 +5,7 @@ import com.moonseptstudio.mutualt.model.User;
 import com.moonseptstudio.mutualt.model.UserProfile;
 import com.moonseptstudio.mutualt.repository.UserProfileRepository;
 import com.moonseptstudio.mutualt.repository.UserRepository;
+import com.moonseptstudio.mutualt.util.PhoneUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -29,9 +30,16 @@ public class ProfileController {
         dto.setUsername(user.getUsername());
         dto.setEmail(profile.getEmail());
         dto.setNic(profile.getNic());
-        dto.setJobCategoryName(profile.getJobCategory() != null ? profile.getJobCategory().getName() : null);
-        dto.setGradeName(profile.getGrade() != null ? profile.getGrade().getName() : null);
-
+        
+        if (profile.getJobCategory() != null) {
+            dto.setJobCategoryName(profile.getJobCategory().getName());
+            if (profile.getJobCategory().getField() != null) {
+                dto.setFieldId(profile.getJobCategory().getField().getId());
+                dto.setFieldName(profile.getJobCategory().getField().getName());
+            }
+        }
+        
+        
         if (profile.getCurrentStation() != null) {
             dto.setCurrentStationId(profile.getCurrentStation().getId());
             dto.setCurrentStationName(profile.getCurrentStation().getName());
@@ -40,11 +48,10 @@ public class ProfileController {
 
         dto.setPhoneNumber(profile.getPhoneNumber());
         dto.setVerificationLevel(profile.getVerificationLevel());
-        dto.setServiceLetterStatus(profile.getServiceLetterStatus());
         dto.setBiometricsStatus(profile.getBiometricsStatus());
         dto.setProfileImageUrl(profile.getProfileImageUrl());
-        dto.setServiceLetterUrl(profile.getServiceLetterUrl());
         dto.setPackageName(user.getSubscriptionPackage() != null ? user.getSubscriptionPackage().getName() : null);
+        dto.setSubscriptionEndDate(user.getSubscriptionEndDate());
 
         return dto;
     }
@@ -58,10 +65,11 @@ public class ProfileController {
             profile.setEmail(updateDto.getEmail());
         }
         if (updateDto.getPhoneNumber() != null) {
-            profile.setPhoneNumber(updateDto.getPhoneNumber());
-        }
-        if (updateDto.getProfileImageUrl() != null) {
-            profile.setProfileImageUrl(updateDto.getProfileImageUrl());
+            String normalized = PhoneUtils.normalize(updateDto.getPhoneNumber());
+            if (normalized == null) {
+                throw new RuntimeException("Invalid phone number format! Please use +94 7XXXXXXXX.");
+            }
+            profile.setPhoneNumber(normalized);
         }
 
         userProfileRepository.save(profile);
@@ -73,12 +81,9 @@ public class ProfileController {
         User user = userRepository.findByUsername(authentication.getName()).orElseThrow();
         UserProfile profile = userProfileRepository.findByUserId(user.getId()).orElseThrow();
 
-        if ("serviceLetter".equalsIgnoreCase(docType)) {
-            profile.setServiceLetterStatus("REVIEWING");
-            profile.setVerificationLevel(2); // Bump level on submission
-        } else if ("biometrics".equalsIgnoreCase(docType)) {
+        if ("biometrics".equalsIgnoreCase(docType)) {
             profile.setBiometricsStatus("COMPLETED");
-            profile.setVerificationLevel(3); // Bump level on biometric completion
+            profile.setVerificationLevel(2); // Bump to level 2 on biometric completion
         }
 
         userProfileRepository.save(profile);

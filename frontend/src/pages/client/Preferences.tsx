@@ -36,14 +36,22 @@ const Preferences = () => {
         const loadPageData = async () => {
             setLoading(true);
             try {
-                // Fetch user profile to get current station
+                // Fetch user profile to get current station and field string
                 const profileRes = await apiClient.get('/profile/me');
-                if (profileRes.data && profileRes.data.currentStationId) {
-                    setCurrentStationId(profileRes.data.currentStationId);
+                let userFieldId: number | null = null;
+                
+                if (profileRes.data) {
+                    if (profileRes.data.currentStationId) {
+                        setCurrentStationId(profileRes.data.currentStationId);
+                    }
+                    if (profileRes.data.fieldId) {
+                        userFieldId = profileRes.data.fieldId;
+                    }
                 }
 
-                // Fetch stations (Public)
-                const stationsRes = await apiClient.get('/public/stations');
+                // Fetch stations filtered by the user's field
+                const stationsUrl = userFieldId ? `/public/stations?fieldId=${userFieldId}` : '/public/stations';
+                const stationsRes = await apiClient.get(stationsUrl);
                 setAllStations(stationsRes.data);
 
                 // Fetch preferences (Protected)

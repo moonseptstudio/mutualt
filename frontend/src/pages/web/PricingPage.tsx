@@ -43,6 +43,32 @@ const FloatingShapes = () => {
     );
 };
 
+/* ─── Scroll-linked Section Animation Wrapper ─── */
+const ScrollAnimatedSection = ({ children, className = "", id, ref: externalRef }: { children: React.ReactNode, className?: string, id?: string, ref?: React.RefObject<HTMLDivElement> }) => {
+  const internalRef = useRef<HTMLDivElement>(null);
+  const targetRef = externalRef || internalRef;
+  
+  const { scrollYProgress } = useScroll({
+    target: targetRef,
+    offset: ["start end", "end start"]
+  });
+
+  const opacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0, 1, 1, 0]);
+  const scale = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0.95, 1, 1, 0.95]);
+  const y = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [40, 0, 0, -40]);
+
+  return (
+    <motion.div
+      ref={targetRef}
+      id={id}
+      style={{ opacity, scale, y }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
 const PricingCard = ({ name, price, description, features, highlighted, onAction, actionLabel }: any) => {
   return (
     <motion.div 
@@ -89,36 +115,37 @@ const PricingCard = ({ name, price, description, features, highlighted, onAction
   );
 };
 
+import { useRef } from 'react';
+
 const PricingPage = () => {
     const { isAuthenticated, login, user } = useAuth();
     const navigate = useNavigate();
     const [isUpgrading, setIsUpgrading] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [selectedPlan, setSelectedPlan] = useState<{name: string, price: string, duration: number} | null>(null);
 
-    const handleUpgradeRequest = () => {
+    const handleUpgradeRequest = (plan: {name: string, price: string, duration: number}) => {
         if (!isAuthenticated) {
             navigate('/register');
             return;
         }
 
-        if (user?.packageName === 'PREMIUM') {
-            toast.success("You are already on the Premium plan!");
-            navigate('/dashboard');
-            return;
-        }
 
+
+        setSelectedPlan(plan);
         setShowPaymentModal(true);
     };
 
     const handlePaymentSuccess = async () => {
+        if (!selectedPlan) return;
         setShowPaymentModal(false);
-        await performUpgrade();
+        await performUpgrade(selectedPlan.duration);
     };
 
-    const performUpgrade = async () => {
+    const performUpgrade = async (durationMonths: number) => {
         try {
             setIsUpgrading(true);
-            await apiClient.post('/packages/buy');
+            await apiClient.post('/packages/buy', { duration: durationMonths });
             
             if (user) {
                 login({ ...user, packageName: 'PREMIUM' });
@@ -134,28 +161,28 @@ const PricingPage = () => {
         }
     };
 
+    const pricingRef = useRef<HTMLDivElement>(null);
+    useScroll({ target: pricingRef, offset: ["start start", "end start"] });
+
     return (
         <div className="relative">
             <PaymentModal 
                 isOpen={showPaymentModal}
                 onClose={() => setShowPaymentModal(false)}
                 onPaymentSuccess={handlePaymentSuccess}
-                packageName="Premium"
-                price="1,500"
+                packageName={selectedPlan?.name || "Premium"}
+                price={selectedPlan?.price || "0"}
             />
 
             {/* Pricing Cards Section */}
-            <section className="snap-section relative mesh-gradient-bg overflow-hidden flex items-center pt-20">
+            <section ref={pricingRef} className="relative mesh-gradient-bg overflow-hidden flex flex-col justify-center min-h-screen pt-24 pb-24">
                 <FloatingShapes />
                 <motion.div 
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true }}
-                  variants={staggerContainer}
+                  
                   className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"
                 >
                     <div className="text-center max-w-3xl mx-auto mb-20">
-                        <motion.div variants={fadeInUp} className="inline-block px-4 py-1.5 bg-blue-50 text-blue-600 text-xs font-bold uppercase tracking-wider rounded-full mb-6">
+                        <motion.div variants={fadeInUp} className="inline-block px-4 py-1.5 bg-blue-50 text-blue-600 text-xs font-bold uppercase tracking-wider rounded-full mb-6 mx-auto text-center">
                             Pricing
                         </motion.div>
                         <motion.h1 variants={fadeInUp} className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6 tracking-tight">
@@ -168,45 +195,85 @@ const PricingPage = () => {
 
                     <motion.div 
                         variants={staggerContainer}
-                        className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto"
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto"
                     >
                         <PricingCard
                             name="Basic"
                             price="0"
-                            description="Perfect for finding a partner in the same hospital or direct swap."
+                            description="Standard basic features for simple swaps"
                             features={[
-                                "2-Way Direct Matching",
+                                "2-Way Direct Matching Only",
+                                "View-Only (Cannot Send Requests)",
+                                "Hidden Contact Details",
                                 "NIC Identity Verification",
-                                "Station Preference (Up to 3)",
+                                "Station Preferences (Up to 3)",
                                 "Search & Filter Vacancies",
                                 "Dashboard Access (with Ads)"
                             ]}
                             highlighted={false}
-                            onAction={() => !isAuthenticated ? navigate('/register') : navigate('/dashboard')}
-                            actionLabel={!isAuthenticated ? "Start for Free" : "Current Plan"}
+                            onAction={() => navigate('/register')}
+                            actionLabel="Start for Free"
                         />
                         <PricingCard
-                            name="Premium"
-                            price="1,500"
-                            description="Our most popular plan for complex circular transfers."
+                            name="Premium (1 Month)"
+                            price="440"
+                            description="Best for quick direct & 3-way swaps"
                             features={[
+                                "Direct Messaging Option",
+                                "Unlimited Match Requests",
                                 "2-Way & 3-Way Dynamic Matching",
-                                "Unlimited Station Preferences",
-                                "Priority Status in Search",
-                                "No Advertisements",
-                                "Dashboard Match History",
-                                "Priority Customer Support"
+                                "Full Profile Visibility",
+                                "Station Preferences (Up to 3)",
+                                "Advanced Search & Filters",
+                                "No Advertisements (Ad-Free)",
+                                "Premium Customer Support"
+                            ]}
+                            highlighted={false}
+                            onAction={() => handleUpgradeRequest({name: "Premium (1 Month)", price: "440", duration: 1})}
+                            actionLabel={isUpgrading ? "Upgrading..." : (user?.packageName === 'PREMIUM' ? "Extend 1 Month" : "Buy 1 Month")}
+                        />
+                        <PricingCard
+                            name="Premium (2 Months)"
+                            price="690"
+                            description="Save more with 2 months access"
+                            features={[
+                                "Direct Messaging Option",
+                                "Unlimited Match Requests",
+                                "2-Way & 3-Way Dynamic Matching",
+                                "Full Profile Visibility",
+                                "Station Preferences (Up to 3)",
+                                "Advanced Search & Filters",
+                                "No Advertisements (Ad-Free)",
+                                "Premium Customer Support"
+                            ]}
+                            highlighted={false}
+                            onAction={() => handleUpgradeRequest({name: "Premium (2 Months)", price: "690", duration: 2})}
+                            actionLabel={isUpgrading ? "Upgrading..." : (user?.packageName === 'PREMIUM' ? "Extend 2 Months" : "Buy 2 Months")}
+                        />
+                        <PricingCard
+                            name="Premium (3 Months)"
+                            price="990"
+                            description="Maximum value for long-term search"
+                            features={[
+                                "Direct Messaging Option",
+                                "Unlimited Match Requests",
+                                "2-Way & 3-Way Dynamic Matching",
+                                "Full Profile Visibility",
+                                "Station Preferences (Up to 3)",
+                                "Advanced Search & Filters",
+                                "No Advertisements (Ad-Free)",
+                                "Premium Customer Support"
                             ]}
                             highlighted={true}
-                            onAction={handleUpgradeRequest}
-                            actionLabel={isUpgrading ? "Upgrading..." : (user?.packageName === 'PREMIUM' ? "Plan Active" : (isAuthenticated ? "Upgrade to Premium" : "Get Started"))}
+                            onAction={() => handleUpgradeRequest({name: "Premium (3 Months)", price: "990", duration: 3})}
+                            actionLabel={isUpgrading ? "Upgrading..." : (user?.packageName === 'PREMIUM' ? "Extend 3 Months" : "Buy 3 Months")}
                         />
                     </motion.div>
                 </motion.div>
             </section>
 
             {/* FAQ Section */}
-            <section className="snap-section bg-white perspective-2000 overflow-hidden flex items-center">
+            <ScrollAnimatedSection className="bg-white perspective-2000 overflow-hidden flex items-center py-24">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                     <motion.div 
                         initial="hidden"
@@ -222,12 +289,12 @@ const PricingPage = () => {
                                 <p className="text-sm text-slate-600 font-sans leading-relaxed">Yes, you can upgrade from Basic to Premium at any time from your dashboard settings.</p>
                             </motion.div>
                             <motion.div variants={fadeInUp} className="group">
-                                <h4 className="font-bold text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">What happens after 1,500 LKR?</h4>
-                                <p className="text-sm text-slate-600 font-sans leading-relaxed">Premium is a one-time fee. There are no monthly subscriptions or recurring charges.</p>
+                                <h4 className="font-bold text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">What happens after the duration ends?</h4>
+                                <p className="text-sm text-slate-600 font-sans leading-relaxed">Your account will automatically revert to the Basic (Free) plan. You can renew your premium access at any time.</p>
                             </motion.div>
                             <motion.div variants={fadeInUp} className="group">
-                                <h4 className="font-bold text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">Is my NIC data safe?</h4>
-                                <p className="text-sm text-slate-600 font-sans leading-relaxed">All data is encrypted and only used for verifying your eligibility as a government employee.</p>
+                                <h4 className="font-bold text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">Is there a recurring charge?</h4>
+                                <p className="text-sm text-slate-600 font-sans leading-relaxed">No, these are one-time payments for the specified duration. We do not store your card for recurring billing.</p>
                             </motion.div>
                             <motion.div variants={fadeInUp} className="group">
                                 <h4 className="font-bold text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">How long is the listing active?</h4>
@@ -236,10 +303,10 @@ const PricingPage = () => {
                         </div>
                     </motion.div>
                 </div>
-            </section>
+            </ScrollAnimatedSection>
 
             {/* CTA Section */}
-            <section className="snap-section mesh-gradient-bg flex items-center justify-center">
+            <ScrollAnimatedSection className="mesh-gradient-bg flex items-center justify-center py-24">
                 <FloatingShapes />
                 <motion.div 
                     initial={{ opacity: 0, scale: 0.9 }}
@@ -257,7 +324,7 @@ const PricingPage = () => {
                         <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" size={20} />
                     </Link>
                 </motion.div>
-            </section>
+            </ScrollAnimatedSection>
         </div>
     );
 };
