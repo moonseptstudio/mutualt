@@ -494,7 +494,7 @@ const HomePage = () => {
               <motion.div 
                 animate={{ y: [0, -6, 0], rotate: [0, 3, 0] }}
                 transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-                className="absolute top-[25%] -right-16 glass-panel-strong py-2 px-4 rounded-xl shadow-lg"
+                className="absolute top-[15%] right-16 glass-panel-strong py-2 px-4 rounded-xl shadow-lg"
               >
                 <div className="flex items-center gap-2">
                   <Shield className="text-violet-500" size={16} />
