@@ -1,10 +1,12 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { RefreshCw, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 import toast from 'react-hot-toast';
 import { useState, useEffect } from 'react';
 import { motion, useScroll, useSpring } from 'framer-motion';
 import Lenis from 'lenis';
 import 'lenis/dist/lenis.css';
+import logoImg from '../assets/logos/logo.jpg';
 
 const WebLayout = () => {
     const [scrolled, setScrolled] = useState(false);
@@ -83,9 +85,7 @@ const WebLayout = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
                     {/* Logo */}
                     <Link to="/" className="flex items-center space-x-2.5 group">
-                        <div className="w-9 h-9 bg-linear-to-br from-blue-500 to-violet-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:shadow-blue-500/40 transition-shadow duration-300">
-                            <RefreshCw className="text-white w-4.5 h-4.5" />
-                        </div>
+                        <img src={logoImg} alt="Mutual Transfer Logo" className="w-9 h-9 rounded-xl object-cover shadow-lg shadow-blue-500/20 group-hover:shadow-blue-500/40 transition-shadow duration-300" />
                         <span className="text-xl font-bold shimmer-text">
                             MutualTransfer.lk
                         </span>
@@ -115,6 +115,7 @@ const WebLayout = () => {
 
                     {/* Auth Buttons */}
                     <div className="hidden md:flex items-center space-x-3">
+                        <LanguageSwitcher />
                         <Link
                             to="/login"
                             className="px-5 py-2.5 text-sm font-semibold text-slate-700 hover:text-blue-600 rounded-xl transition-colors duration-300"
@@ -141,6 +142,12 @@ const WebLayout = () => {
                 {/* Mobile Nav */}
                 {mobileMenu && (
                     <div className="md:hidden glass-panel-strong mt-2 mx-4 rounded-2xl p-4 animate-reveal-up">
+                        <div className="flex items-center justify-center space-x-2 border-b border-slate-100 pb-4 mb-2">
+                            <img src={logoImg} alt="Mutual Transfer Logo" className="w-8 h-8 rounded-xl object-cover shadow-sm" />
+                            <span className="text-lg font-bold shimmer-text">
+                                MutualTransfer.lk
+                            </span>
+                        </div>
                         <nav className="flex flex-col space-y-2">
                             {navLinks.map(link => (
                                 <Link
@@ -156,6 +163,9 @@ const WebLayout = () => {
                                 </Link>
                             ))}
                             <div className="border-t border-slate-100 pt-3 mt-2 flex flex-col space-y-2">
+                                <div className="px-4 py-2 flex justify-center">
+                                    <LanguageSwitcher />
+                                </div>
                                 <Link to="/login" className="px-4 py-3 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 text-center">
                                     Login
                                 </Link>
@@ -181,9 +191,7 @@ const WebLayout = () => {
                         {/* Brand */}
                         <div>
                             <div className="flex items-center space-x-2.5 mb-5">
-                                <div className="w-8 h-8 bg-linear-to-br from-blue-500 to-violet-500 rounded-xl flex items-center justify-center">
-                                    <RefreshCw className="text-white w-4 h-4" />
-                                </div>
+                                <img src={logoImg} alt="Mutual Transfer Logo" className="w-8 h-8 rounded-xl object-cover" />
                                 <span className="text-lg font-bold shimmer-text">MutualTransfer.lk</span>
                             </div>
                             <p className="text-sm leading-relaxed text-slate-500 max-w-xs">

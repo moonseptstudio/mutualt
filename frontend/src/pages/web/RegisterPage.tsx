@@ -19,8 +19,11 @@ import {
     KeyRound
 } from 'lucide-react';
 import { isValidNic } from '../../utils/validation';
+import { useTranslation } from 'react-i18next';
+
 
 const RegisterPage = () => {
+    const { t } = useTranslation();
     const [step, setStep] = useState(1);
     const [fields, setFields] = useState<any[]>([]);
     const [categories, setCategories] = useState<any[]>([]);
@@ -120,11 +123,11 @@ const RegisterPage = () => {
 
     const getStationLabel = () => {
         const field = fields.find(f => f.id === Number(selectedFieldId));
-        if (!field) return "Station";
-        if (field.name === 'Health') return "Hospital / Institution";
-        if (field.name === 'Education') return "School / College";
-        if (field.name === 'Postal') return "Post Office / Center";
-        return "Station";
+        if (!field) return t('register.station');
+        if (field.name === 'Health') return t('register.hospital');
+        if (field.name === 'Education') return t('register.school');
+        if (field.name === 'Postal') return t('register.post_office');
+        return t('register.station');
     };
 
     const handleRegister = async (e: any) => {
@@ -133,7 +136,7 @@ const RegisterPage = () => {
 
         if (step === 1) {
             if (!isValidNic(formData.nic)) {
-                setError("Please enter a valid Sri Lankan NIC number (9 digits + V or 12 digits)");
+                setError(t('register.error_invalid_nic'));
                 return;
             }
             setStep(2);
@@ -141,7 +144,7 @@ const RegisterPage = () => {
         }
 
         if (formData.password !== formData.confirmPassword) {
-            setError("Passwords do not match");
+            setError(t('register.error_password_mismatch'));
             return;
         }
 
@@ -162,7 +165,7 @@ const RegisterPage = () => {
             setResendTimer(60);
             setCanResend(false);
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Registration failed. Please try again.');
+            setError(err.response?.data?.message || t('register.error_failed'));
         } finally {
             setLoading(false);
         }
@@ -187,7 +190,7 @@ const RegisterPage = () => {
             setResendTimer(60);
             setCanResend(false);
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Failed to resend OTP.');
+            setError(err.response?.data?.message || t('register.error_resend_failed'));
         } finally {
             setLoading(false);
         }
@@ -213,7 +216,7 @@ const RegisterPage = () => {
             login(loginRes.data);
             navigate('/dashboard');
         } catch (err: any) {
-            setError(err.response?.data?.message || 'OTP verification failed. Please try again.');
+            setError(err.response?.data?.message || t('register.error_verify_failed'));
         } finally {
             setLoading(false);
         }
@@ -238,28 +241,27 @@ const RegisterPage = () => {
                                 <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mb-8">
                                     <ShieldCheck size={28} className="text-white" />
                                 </div>
-                                <h2 className="text-2xl font-medium mb-4 leading-tight tracking-tight">Join the Network</h2>
+                                <h2 className="text-2xl font-medium mb-4 leading-tight tracking-tight">{t('register.sidebar_title')}</h2>
                                 <p className="text-slate-400 text-sm leading-relaxed mb-10">
-                                    Register with your official details to start matching with potential transfer partners.
+                                    {t('register.sidebar_subtitle')}
                                 </p>
                                 <div className="space-y-6">
                                     <div className="flex items-center space-x-3 opacity-100 transition-opacity">
                                         <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-medium">1</div>
-                                        <span className="text-sm font-bold">Personal Info</span>
+                                        <span className="text-sm font-bold">{t('register.step1_label')}</span>
                                     </div>
                                     <div className={`flex items-center space-x-3 ${step === 2 ? 'opacity-100' : 'opacity-40'} transition-opacity`}>
                                         <div className={`w-8 h-8 rounded-full ${step === 2 ? 'bg-blue-600' : 'bg-slate-700'} flex items-center justify-center text-xs font-medium`}>2</div>
-                                        <span className="text-sm font-bold">Service Info</span>
+                                        <span className="text-sm font-bold">{t('register.step2_label')}</span>
                                     </div>
                                     <div className={`flex items-center space-x-3 ${step === 3 ? 'opacity-100' : 'opacity-40'} transition-opacity`}>
                                         <div className={`w-8 h-8 rounded-full ${step === 3 ? 'bg-blue-600' : 'bg-slate-700'} flex items-center justify-center text-xs font-medium`}>3</div>
-                                        <span className="text-sm font-bold">Verification</span>
+                                        <span className="text-sm font-bold">{t('register.step3_label')}</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="mt-12 text-xs text-slate-500 font-bold uppercase tracking-wider leading-loose">
-                                Verified by <br /> Government Systems
+                            <div className="mt-12 text-xs text-slate-500 font-bold uppercase tracking-wider leading-loose" dangerouslySetInnerHTML={{ __html: t('register.verified_by') }}>
                             </div>
                         </div>
 
@@ -274,10 +276,10 @@ const RegisterPage = () => {
 
                                 {step === 1 ? (
                                     <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-                                        <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-6">Step 1: Personal Details</h3>
+                                        <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-6">{t('register.step1_title')}</h3>
                                         <div className="space-y-4">
                                             <div>
-                                                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 ml-1 block">Full Name</label>
+                                                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 ml-1 block">{t('register.full_name_label')}</label>
                                                 <div className="relative group">
                                                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                                     <input
@@ -291,7 +293,7 @@ const RegisterPage = () => {
                                                 </div>
                                             </div>
                                             <div>
-                                                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 ml-1 block">NIC Number</label>
+                                                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 ml-1 block">{t('register.nic_label')}</label>
                                                 <div className="relative group">
                                                     <Fingerprint className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                                     <input
@@ -305,7 +307,7 @@ const RegisterPage = () => {
                                                 </div>
                                             </div>
                                             <div>
-                                                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 ml-1 block">Email Address</label>
+                                                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 ml-1 block">{t('register.email_label')}</label>
                                                 <div className="relative group">
                                                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                                     <input
@@ -319,7 +321,7 @@ const RegisterPage = () => {
                                                 </div>
                                             </div>
                                             <div>
-                                                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 ml-1 block">Phone Number</label>
+                                                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 ml-1 block">{t('register.phone_label')}</label>
                                                 <div className="relative group flex items-center">
                                                     <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center space-x-2 text-slate-400">
                                                         <Phone size={18} />
@@ -341,18 +343,18 @@ const RegisterPage = () => {
                                                     />
                                                 </div>
                                                 {formData.phoneNumber && formData.phoneNumber.length > 2 && !formData.phoneNumber.startsWith('947') && (
-                                                    <p className="text-xs text-rose-500 mt-1 ml-1 font-medium">Mobile numbers must start with 7</p>
+                                                    <p className="text-xs text-rose-500 mt-1 ml-1 font-medium">{t('register.error_mobile_start')}</p>
                                                 )}
                                             </div>
                                         </div>
                                     </div>
                                 ) : step === 2 ? (
                                     <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-                                        <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-6">Step 2: Professional Service</h3>
+                                        <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-6">{t('register.step2_title')}</h3>
                                         <div className="space-y-4">
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div>
-                                                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 ml-1 block">Field</label>
+                                                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 ml-1 block">{t('register.field_label')}</label>
                                                     <div className="relative group">
                                                         <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                                         <select
@@ -364,7 +366,7 @@ const RegisterPage = () => {
                                                             className="w-full pl-12 pr-10 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 focus:bg-white outline-none transition-all font-medium appearance-none"
                                                             required
                                                         >
-                                                            <option value="">Select Field</option>
+                                                            <option value="">{t('register.select_field')}</option>
                                                             {fields.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
                                                         </select>
                                                         <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
@@ -373,7 +375,7 @@ const RegisterPage = () => {
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 ml-1 block">Job Category</label>
+                                                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 ml-1 block">{t('register.job_category_label')}</label>
                                                     <div className="relative group">
                                                         <select
                                                             value={formData.jobCategoryId}
@@ -382,7 +384,7 @@ const RegisterPage = () => {
                                                             required
                                                             disabled={!selectedFieldId}
                                                         >
-                                                            <option value="">Select Category</option>
+                                                            <option value="">{t('register.select_category')}</option>
                                                             {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                                         </select>
                                                         <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
@@ -393,7 +395,7 @@ const RegisterPage = () => {
                                             </div>
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div>
-                                                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 ml-1 block">District</label>
+                                                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 ml-1 block">{t('register.district_label')}</label>
                                                     <div className="relative group">
                                                         <Hospital className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                                         <select
@@ -405,7 +407,7 @@ const RegisterPage = () => {
                                                             className="w-full pl-12 pr-10 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-blue-500 focus:bg-white outline-none transition-all font-medium appearance-none"
                                                             required
                                                         >
-                                                            <option value="">Select District</option>
+                                                            <option value="">{t('register.select_district')}</option>
                                                             {districts.map(d => <option key={d} value={d}>{d}</option>)}
                                                         </select>
                                                         <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
@@ -414,7 +416,7 @@ const RegisterPage = () => {
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 ml-1 block">Current {getStationLabel()}</label>
+                                                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 ml-1 block">{t('register.current_station_label', { label: getStationLabel() })}</label>
                                                     <div className="relative group">
                                                         <select
                                                             value={formData.currentStationId}
@@ -424,7 +426,7 @@ const RegisterPage = () => {
                                                             disabled={!selectedDistrict || !selectedFieldId}
                                                         >
                                                             <option value="">
-                                                                {!selectedFieldId ? 'Select Field first' : !selectedDistrict ? 'Select District first' : `Select ${getStationLabel()}`}
+                                                                {!selectedFieldId ? t('register.select_field_first') : !selectedDistrict ? t('register.select_district_first') : t('register.select_station', { label: getStationLabel() })}
                                                             </option>
                                                             {stations.map(s => <option key={s.id} value={s.id}>{s.name} ({s.hierarchyLevel})</option>)}
                                                         </select>
@@ -436,7 +438,7 @@ const RegisterPage = () => {
                                             </div>
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div>
-                                                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 ml-1 block">Password</label>
+                                                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 ml-1 block">{t('register.password_label')}</label>
                                                     <div className="relative group">
                                                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                                         <input
@@ -458,7 +460,7 @@ const RegisterPage = () => {
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 ml-1 block">Confirm Password</label>
+                                                    <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 ml-1 block">{t('register.confirm_password_label')}</label>
                                                     <div className="relative group">
                                                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                                         <input
@@ -484,14 +486,14 @@ const RegisterPage = () => {
                                     </div>
                                 ) : (
                                     <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-                                        <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-6">Step 3: Phone Verification</h3>
+                                        <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-6">{t('register.step3_title')}</h3>
                                         <p className="text-sm text-slate-500 mb-6">
-                                            We've sent a 6-digit verification code to <span className="font-bold text-slate-900">+{formData.phoneNumber}</span>. 
-                                            Please enter it below to verify your account.
+                                            {t('register.otp_sent_to')} <span className="font-bold text-slate-900">+{formData.phoneNumber}</span>. 
+                                            {t('register.otp_instruction')}
                                         </p>
                                         <div className="space-y-4">
                                             <div>
-                                                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 ml-1 block">Verification Code</label>
+                                                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 ml-1 block">{t('register.otp_label')}</label>
                                                 <div className="relative group">
                                                     <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                                     <input
@@ -511,10 +513,10 @@ const RegisterPage = () => {
                                                         disabled={!canResend || loading}
                                                         className="text-sm font-bold text-blue-600 hover:text-blue-700 disabled:text-slate-400 transition-colors flex items-center space-x-1"
                                                     >
-                                                        <span>Resend OTP</span>
+                                                        <span>{t('register.resend_otp')}</span>
                                                         {!canResend && (
                                                             <span className="text-slate-400 font-medium ml-1">
-                                                                (in {resendTimer}s)
+                                                                {t('register.resend_in', { seconds: resendTimer })}
                                                             </span>
                                                         )}
                                                     </button>
@@ -532,21 +534,21 @@ const RegisterPage = () => {
                                             onClick={() => setStep(step - 1)}
                                             className="px-6 py-4 bg-slate-100 text-slate-600 font-bold rounded-2xl hover:bg-slate-200 transition-all"
                                         >
-                                            Back
+                                            {t('register.back')}
                                         </button>
                                     )}
                                     <button
                                         disabled={loading}
                                         className="grow py-4 bg-blue-600 text-white font-medium rounded-2xl shadow-xl shadow-blue-500/20 hover:bg-blue-700 hover:-translate-y-1 transition-all flex items-center justify-center disabled:opacity-50"
                                     >
-                                        {loading ? (step >= 3 ? "Verifying..." : "Registering...") : 
-                                         (step === 1 ? "Next Step" : step === 2 ? "Complete Registration" : "Verify Phone")}
+                                        {loading ? (step >= 3 ? t('register.verifying') : t('register.registering')) : 
+                                         (step === 1 ? t('register.next_step') : step === 2 ? t('register.complete_registration') : t('register.verify_phone'))}
                                         {!loading && <ArrowRight className="ml-2" size={20} />}
                                     </button>
                                 </div>
 
                                 <p className="text-center text-slate-500 text-sm mt-8">
-                                    Already have an account? <Link to="/login" className="text-blue-600 font-bold hover:underline">Sign In</Link>
+                                    {t('register.already_have_account')} <Link to="/login" className="text-blue-600 font-bold hover:underline">{t('register.sign_in')}</Link>
                                 </p>
                             </form>
                         </div>

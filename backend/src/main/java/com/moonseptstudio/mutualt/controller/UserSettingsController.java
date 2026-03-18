@@ -42,6 +42,8 @@ public class UserSettingsController {
 
         if (updatedSettings.getInstantMatchAlerts() != null)
             settings.setInstantMatchAlerts(updatedSettings.getInstantMatchAlerts());
+        if (updatedSettings.getInstantMessageAlerts() != null)
+            settings.setInstantMessageAlerts(updatedSettings.getInstantMessageAlerts());
         if (updatedSettings.getCycleDetectionAlerts() != null)
             settings.setCycleDetectionAlerts(updatedSettings.getCycleDetectionAlerts());
         if (updatedSettings.getSystemUpdatesAlerts() != null)

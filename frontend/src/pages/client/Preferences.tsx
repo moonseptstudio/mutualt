@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import apiClient from '../../api/client';
+import { useTranslation } from 'react-i18next';
 import { useOutletContext } from 'react-router-dom';
 import {
     Search,
@@ -7,15 +8,16 @@ import {
     Trash2,
     Plus,
     Info,
-    Loader2,
     Filter,
     X,
     MapPin
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import PageLoader from '../../components/common/PageLoader';
 import ConfirmationModal from '../../components/common/ConfirmationModal';
 
 const Preferences = () => {
+    const { t } = useTranslation();
     const { globalSearchQuery }: any = useOutletContext();
     const [allStations, setAllStations] = useState<any[]>([]);
     const [preferences, setPreferences] = useState<any[]>([]);
@@ -74,10 +76,10 @@ const Preferences = () => {
         try {
             const response = await apiClient.post('/preferences', { stationId });
             setPreferences([...preferences, response.data]);
-            toast.success('Station added to preferences!');
+            toast.success(t('preferences.toast_added'));
         } catch (err) {
             console.error("Error adding preference", err);
-            toast.error('Failed to add station.');
+            toast.error(t('preferences.toast_add_failed'));
         }
     };
 
@@ -91,11 +93,11 @@ const Preferences = () => {
         try {
             await apiClient.delete(`/preferences/${preferenceToDelete}`);
             setPreferences(preferences.filter(p => p.id !== preferenceToDelete));
-            toast.success('Preference removed successfully.');
+            toast.success(t('preferences.toast_removed'));
         } catch (err: any) {
             console.error("Error removing preference", err);
             const errMsg = err.response?.data?.message || err.response?.data || err.message || 'Unknown error';
-            toast.error(`Failed to remove preference: ${errMsg}`);
+            toast.error(t('preferences.toast_remove_failed', { error: errMsg }));
         } finally {
             setIsDeleteModalOpen(false);
             setPreferenceToDelete(null);
@@ -155,27 +157,21 @@ const Preferences = () => {
 
     const districts = Array.from(new Set(allStations.map(s => s.district))).sort();
 
-    if (loading) {
-        return (
-            <div className="flex items-center justify-center p-20">
-                <Loader2 className="animate-spin text-primary-600" size={40} />
-            </div>
-        );
-    }
+    if (loading) return <PageLoader />;
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 space-y-8 pb-10">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl sm:text-4xl font-semibold text-[var(--text-main)] tracking-tight leading-tight">Transfer Preferences</h1>
-                    <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-2 font-medium">Rank your target stations by priority to optimize matching.</p>
+                    <h1 className="text-2xl sm:text-4xl font-semibold text-[var(--text-main)] tracking-tight leading-tight">{t('preferences.title')}</h1>
+                    <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-2 font-medium">{t('preferences.subtitle')}</p>
                 </div>
                 <button
                     onClick={() => setIsModalOpen(true)}
                     className="flex items-center justify-center space-x-2 px-6 py-3 sm:py-3.5 bg-primary-600 text-white rounded-xl sm:rounded-2xl font-semibold text-xs sm:text-sm hover:bg-primary-700 transition-all cursor-pointer"
                 >
                     <Plus size={18} />
-                    <span>Add Preference</span>
+                    <span>{t('preferences.add_button')}</span>
                 </button>
             </div>
 
@@ -184,11 +180,11 @@ const Preferences = () => {
                     <div className="glass-card rounded-[32px] p-6 sm:p-8 border-[var(--border-main)] bg-[var(--bg-card)]/40 shadow-xl shadow-slate-200/40">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 px-1 sm:px-2 border-b border-[var(--border-main)]/50 pb-4">
                             <div>
-                                <h3 className="font-bold text-[var(--text-main)] text-base sm:text-lg tracking-tight">Ranked Selection</h3>
-                                <p className="text-[10px] sm:text-xs font-medium text-[var(--text-muted)] mt-1">Drag and drop to reorder your prioritized list</p>
+                                <h3 className="font-bold text-[var(--text-main)] text-base sm:text-lg tracking-tight">{t('preferences.ranked_selection')}</h3>
+                                <p className="text-[10px] sm:text-xs font-medium text-[var(--text-muted)] mt-1">{t('preferences.reorder_hint')}</p>
                             </div>
                             <span className="mt-3 sm:mt-0 w-fit px-3 py-1 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 text-[10px] sm:text-xs font-bold rounded-lg border border-primary-100 dark:border-primary-800">
-                                {preferences.length} Selected
+                                {t('preferences.selected_count', { count: preferences.length })}
                             </span>
                         </div>
 
@@ -222,7 +218,7 @@ const Preferences = () => {
                                         <button
                                             onClick={() => confirmRemovePreference(item.id)}
                                             className="p-2 sm:p-3 text-slate-300 hover:text-white hover:bg-rose-500 rounded-lg sm:rounded-xl transition-all cursor-pointer shrink-0"
-                                            title="Remove Preference"
+                                            title={t('preferences.remove_tooltip')}
                                         >
                                             <Trash2 size={18} />
                                         </button>
@@ -233,14 +229,14 @@ const Preferences = () => {
                                     <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
                                         <MapPin size={24} className="text-slate-300 dark:text-slate-700" />
                                     </div>
-                                    <h4 className="text-[var(--text-main)] font-semibold mb-2">No preferences added yet</h4>
-                                    <p className="text-sm text-[var(--text-muted)] max-w-sm mx-auto mb-6">You haven't added any hospitals to your transfer preferences. Click the button below to start building your list.</p>
+                                    <h4 className="text-[var(--text-main)] font-semibold mb-2">{t('preferences.no_prefs_title')}</h4>
+                                    <p className="text-sm text-[var(--text-muted)] max-w-sm mx-auto mb-6">{t('preferences.no_prefs_subtitle')}</p>
                                     <button
                                         onClick={() => setIsModalOpen(true)}
                                         className="inline-flex items-center justify-center space-x-2 px-6 py-3 bg-[var(--text-main)] text-[var(--bg-main)] rounded-xl font-medium text-sm hover:opacity-90 hover:shadow-lg transition-all cursor-pointer"
                                     >
                                         <Plus size={16} />
-                                        <span>Add First Station</span>
+                                        <span>{t('preferences.add_first')}</span>
                                     </button>
                                 </div>
                             )}
@@ -251,22 +247,22 @@ const Preferences = () => {
                 <div className="space-y-6">
                     <div className="bg-slate-900 dark:bg-slate-800/80 rounded-[32px] p-8 text-white relative overflow-hidden shadow-2xl shadow-slate-900/20">
                         <div className="relative z-10 flex flex-col items-start">
-                            <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md mb-6 inline-flex border border-white/10">
+                             <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md mb-6 inline-flex border border-white/10">
                                 <Info size={24} className="text-primary-400" />
                             </div>
-                            <h4 className="text-xl font-semibold tracking-tight mb-3">Priority Matching Logic</h4>
+                            <h4 className="text-xl font-semibold tracking-tight mb-3">{t('preferences.info_title')}</h4>
                             <p className="text-white/60 text-sm font-medium leading-relaxed mb-6">
-                                Our algorithm heavily prioritizes finding matches for your #1 ranked station. It will look for direct, 3-way, and complex routes.
+                                {t('preferences.info_desc')}
                             </p>
                             <div className="w-full h-px bg-white/10 mb-6"></div>
                             <ul className="space-y-3">
                                 <li className="flex items-start space-x-3 text-sm text-white/80 font-medium">
                                     <div className="mt-1 w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></div>
-                                    <span>Selecting multiple stations increases match probability by up to 45%.</span>
+                                    <span>{t('preferences.prob_hint')}</span>
                                 </li>
                                 <li className="flex items-start space-x-3 text-sm text-white/80 font-medium">
                                     <div className="mt-1 w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"></div>
-                                    <span>Your current station is automatically excluded from Discovery.</span>
+                                    <span>{t('preferences.exclude_hint')}</span>
                                 </li>
                             </ul>
                         </div>
@@ -285,8 +281,8 @@ const Preferences = () => {
                         {/* Modal Header */}
                         <div className="p-6 sm:p-8 flex items-center justify-between border-b border-[var(--border-main)]/50 bg-[var(--bg-card)]/80 backdrop-blur-xl z-20 sticky top-0">
                             <div>
-                                <h2 className="text-2xl font-bold text-[var(--text-main)] tracking-tight">Discover Stations</h2>
-                                <p className="text-sm font-medium text-[var(--text-muted)] mt-1">Find and add hospitals to your preference list</p>
+                                <h2 className="text-2xl font-bold text-[var(--text-main)] tracking-tight">{t('preferences.discover_title')}</h2>
+                                <p className="text-sm font-medium text-[var(--text-muted)] mt-1">{t('preferences.discover_subtitle')}</p>
                             </div>
                             <button
                                 onClick={() => setIsModalOpen(false)}
@@ -303,21 +299,21 @@ const Preferences = () => {
                                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                     <input
                                         type="text"
-                                        placeholder="Search station name or district..."
+                                        placeholder={t('preferences.search_placeholder')}
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         className="w-full pl-12 pr-4 py-4 bg-[var(--bg-main)]/50 border border-[var(--border-main)] rounded-2xl text-sm font-medium text-[var(--text-main)] focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all outline-none shadow-sm"
                                     />
                                 </div>
 
-                                <div className="relative">
+                                 <div className="relative">
                                     <Filter size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                                     <select
                                         value={districtFilter}
                                         onChange={(e) => setDistrictFilter(e.target.value)}
                                         className="w-full pl-12 pr-10 py-4 bg-[var(--bg-main)]/50 border border-[var(--border-main)] rounded-2xl text-sm font-medium text-[var(--text-main)] focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all outline-none appearance-none cursor-pointer shadow-sm"
                                     >
-                                        <option value="" className="bg-[var(--bg-card)]">All Districts</option>
+                                        <option value="" className="bg-[var(--bg-card)]">{t('preferences.all_districts')}</option>
                                         {districts.map(d => (
                                             <option key={d} value={d} className="bg-[var(--bg-card)]">{d}</option>
                                         ))}
@@ -328,15 +324,15 @@ const Preferences = () => {
                                 </div>
                             </div>
 
-                            <div className="space-y-4">
+                             <div className="space-y-4">
                                 <div className="flex items-center justify-between mb-2">
-                                    <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest pl-2 border-l-2 border-primary-500">Available Results ({filteredStations.length})</p>
+                                    <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest pl-2 border-l-2 border-primary-500">{t('preferences.available_results', { count: filteredStations.length })}</p>
                                     {(searchQuery || districtFilter || globalSearchQuery) && (
                                         <button
                                             onClick={() => { setSearchQuery(''); setDistrictFilter(''); }}
                                             className="text-[10px] font-bold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20 px-3 py-1.5 rounded-lg uppercase hover:bg-primary-100 dark:hover:bg-primary-900/40 transition-colors"
                                         >
-                                            Clear Filters
+                                            {t('preferences.clear_filters')}
                                         </button>
                                     )}
                                 </div>
@@ -348,24 +344,23 @@ const Preferences = () => {
                                             return (
                                                 <div key={station.id} className={`p-4 bg-[var(--bg-card)] rounded-2xl border border-[var(--border-main)]/60 ${!isCurrentStation ? 'hover:border-primary-300 dark:hover:border-primary-700 hover:shadow-md group' : 'opacity-70'} transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4`}>
                                                     <div>
-                                                        <div className="flex items-center gap-2 mb-1">
+                                                         <div className="flex items-center gap-2 mb-1">
                                                             <p className={`font-bold text-[15px] leading-tight transition-colors ${isCurrentStation ? 'text-slate-500' : 'text-[var(--text-main)] group-hover:text-primary-600 dark:group-hover:text-primary-400'}`}>{station.name}</p>
                                                             {isCurrentStation && (
-                                                                <span className="shrink-0 px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-bold rounded-md uppercase tracking-wide">Current</span>
+                                                                <span className="shrink-0 px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-bold rounded-md uppercase tracking-wide">{t('preferences.current_label')}</span>
                                                             )}
                                                         </div>
                                                         <p className="text-xs text-[var(--text-muted)] font-medium truncate flex items-center">
                                                             <MapPin size={12} className="mr-1" />
                                                             {station.district} • {station.province}
                                                         </p>
-                                                    </div>
-                                                    <button
+                                                    </div>                                                     <button
                                                         onClick={() => !isCurrentStation && handleAddPreference(station.id)}
                                                         disabled={isCurrentStation}
                                                         className={`shrink-0 flex items-center justify-center space-x-2 px-5 py-2.5 border rounded-xl text-sm font-semibold transition-all shadow-sm ${isCurrentStation ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-50 hover:bg-primary-600 border-slate-100 hover:border-transparent text-slate-700 hover:text-white cursor-pointer'}`}
                                                     >
                                                         <Plus size={16} />
-                                                        <span>{isCurrentStation ? 'Your Station' : 'Add'}</span>
+                                                        <span>{isCurrentStation ? t('preferences.your_station') : t('preferences.add_label')}</span>
                                                     </button>
                                                 </div>
                                             )
@@ -376,8 +371,8 @@ const Preferences = () => {
                                         <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
                                             <Search size={24} className="text-slate-300 dark:text-slate-700" />
                                         </div>
-                                        <p className="text-[var(--text-main)] font-semibold mb-1">No stations found</p>
-                                        <p className="text-[var(--text-muted)] text-sm max-w-xs mx-auto">We couldn't find any stations matching your search criteria.</p>
+                                        <p className="text-[var(--text-main)] font-semibold mb-1">{t('preferences.no_results_title')}</p>
+                                        <p className="text-[var(--text-muted)] text-sm max-w-xs mx-auto">{t('preferences.no_results_subtitle')}</p>
                                     </div>
                                 )}
                             </div>
@@ -389,9 +384,9 @@ const Preferences = () => {
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}
                 onConfirm={executeRemovePreference}
-                title="Remove Preference?"
-                message="Are you sure you want to remove this station from your preferences? This action cannot be undone."
-                confirmText="Remove"
+                title={t('preferences.remove_confirm_title')}
+                message={t('preferences.remove_confirm_msg')}
+                confirmText={t('preferences.remove_label')}
                 type="danger"
             />
         </div>

@@ -18,6 +18,7 @@ public class UserSettings {
     private User user;
 
     private Boolean instantMatchAlerts = true;
+    private Boolean instantMessageAlerts = true;
     private Boolean cycleDetectionAlerts = true;
     private Boolean systemUpdatesAlerts = false;
     private Boolean publicProfile = true;

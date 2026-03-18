@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useLocation, useOutletContext, useSearchParams } from 'react-router-dom';
 import apiClient from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { useTranslation } from 'react-i18next';
+import PageLoader from '../../components/common/PageLoader';
 import {
     Send,
     User,
@@ -22,6 +24,7 @@ import { getAvatarUrl } from '../../api/url';
 
 
 const Messages = () => {
+    const { t } = useTranslation();
     const { user } = useAuth();
     const location = useLocation();
     const { globalSearchQuery, hasPackage }: any = useOutletContext();
@@ -79,7 +82,7 @@ const Messages = () => {
             }
         } catch (err) {
             console.error("Failed to load chat rooms", err);
-            if (!isBackground) toast.error("Failed to load conversations");
+            if (!isBackground) toast.error(t('messages.failed_load'));
         } finally {
             if (!isBackground) setLoadingRooms(false);
         }
@@ -258,7 +261,7 @@ const Messages = () => {
             setMessages(prev => prev.map(m => m.id === tempId ? response.data : m));
         } catch (err) {
             console.error("Failed to send message", err);
-            toast.error("Message failed to send");
+            toast.error(t('messages.failed_send'));
             // Remove the optimistic message on failure
             setMessages(prev => prev.filter(m => m.id !== tempId));
             // Restore the message in input so user can try again
@@ -270,15 +273,15 @@ const Messages = () => {
     const partners = activeRoom?.members?.filter((m: any) => m.id !== user?.id) || [];
 
     return (
-        <div data-refresh={refreshTime} className="h-[calc(100vh-140px)] sm:h-[calc(100vh-180px)] glass-card rounded-2xl sm:rounded-[32px] overflow-hidden flex animate-in fade-in slide-in-from-bottom-8 duration-700 bg-[var(--bg-card)] dark:bg-[var(--bg-card)]/40 border border-[var(--border-main)]">
+        <div data-refresh={refreshTime} className="h-[calc(100vh-140px)] sm:h-[calc(100vh-180px)] glass-card rounded-2xl sm:rounded-[32px] overflow-hidden flex animate-in fade-in slide-in-from-bottom-8 duration-700 bg-(--bg-card) dark:bg-(--bg-card)/40 border border-(--border-main)">
             <div className={`w-full md:w-80 border-r border-[var(--border-main)] flex flex-col bg-[var(--bg-card)] dark:bg-[var(--bg-card)]/60 dark:backdrop-blur-xl ${activeRoomId ? 'hidden md:flex' : 'flex'}`}>
                 <div className="p-4 sm:p-6 border-b border-[var(--border-main)]">
-                    <h3 className="text-lg sm:text-xl font-bold text-[var(--text-main)] tracking-tight">Messages</h3>
+                    <h3 className="text-lg sm:text-xl font-bold text-[var(--text-main)] tracking-tight">{t('messages.title')}</h3>
                     <div className="mt-3 sm:mt-4 relative group">
                         <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-500 transition-colors" />
                         <input
                             type="text"
-                            placeholder="Search chats..."
+                            placeholder={t('messages.search_placeholder')}
                             value={sidebarSearchQuery}
                             onChange={(e) => setSidebarSearchQuery(e.target.value)}
                             className="w-full bg-slate-100 dark:bg-slate-800/50 border-none rounded-xl sm:rounded-2xl py-2 sm:py-2.5 pl-10 pr-4 text-xs font-medium focus:ring-2 focus:ring-primary-500/20 text-[var(--text-main)] transition-all"
@@ -288,8 +291,8 @@ const Messages = () => {
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
                     {loadingRooms ? (
-                        <div className="flex items-center justify-center h-20">
-                            <Loader2 className="animate-spin text-primary-500" size={24} />
+                        <div className="flex items-center justify-center h-32">
+                            <PageLoader fullScreen={false} />
                         </div>
                     ) : rooms.length > 0 ? (
                         rooms.filter((room: any) => {
@@ -327,7 +330,7 @@ const Messages = () => {
                                     <div className="text-left flex-1 min-w-0">
                                         <div className="flex justify-between items-baseline">
                                             <h4 className="font-bold text-[var(--text-main)] text-sm truncate">
-                                                {room.type === 'GROUP' ? 'Match Group Chat' : partner.name}
+                                                {room.type === 'GROUP' ? t('messages.group_chat') : partner.name}
                                             </h4>
                                             {room.lastMessage && (
                                                 <span className="text-[9px] text-[var(--text-muted)] shrink-0 ml-2 font-medium">
@@ -337,10 +340,10 @@ const Messages = () => {
                                         </div>
                                         <div className="flex items-center justify-between mt-0.5">
                                             <p className="text-[10px] text-[var(--text-muted)] font-medium truncate shrink">
-                                                {room.type === 'GROUP' ? `${room.members.length} participants` : (
+                                                {room.type === 'GROUP' ? t('messages.participants', { count: room.members.length }) : (
                                                     partner.lastSeen
-                                                        ? ((new Date().getTime() - new Date(partner.lastSeen).getTime()) < 5 * 60 * 1000 ? <span className="text-emerald-500">Online</span> : `Last seen: ${formatDistanceToNow(new Date(partner.lastSeen), { addSuffix: true })}`)
-                                                        : 'Offline'
+                                                        ? ((new Date().getTime() - new Date(partner.lastSeen).getTime()) < 5 * 60 * 1000 ? <span className="text-emerald-500">{t('messages.online')}</span> : t('messages.last_seen', { time: formatDistanceToNow(new Date(partner.lastSeen), { addSuffix: true }) }))
+                                                        : t('messages.offline')
                                                 )}
                                             </p>
                                             {room.unreadCount > 0 && (
@@ -356,7 +359,7 @@ const Messages = () => {
                     ) : (
                         <div className="p-10 text-center">
                             <User size={32} className="mx-auto text-slate-300 dark:text-slate-700 mb-3" />
-                            <p className="text-xs text-[var(--text-muted)] font-medium">No active chats yet.</p>
+                            <p className="text-xs text-[var(--text-muted)] font-medium">{t('messages.no_chats')}</p>
                         </div>
                     )}
                 </div>
@@ -379,13 +382,13 @@ const Messages = () => {
                                 </div>
                                 <div className="min-w-0">
                                     <h4 className="font-bold text-[var(--text-main)] text-base tracking-tight leading-none truncate">
-                                        {activeRoom?.type === 'GROUP' ? 'Transfer Group Chat' : partners[0]?.name}
+                                        {activeRoom?.type === 'GROUP' ? t('messages.transfer_group') : partners[0]?.name}
                                     </h4>
                                     <p className="text-[10px] text-[var(--text-muted)] font-medium truncate mt-1">
                                         {activeRoom?.type !== 'GROUP' && partners[0]?.lastSeen && (
                                             (new Date().getTime() - new Date(partners[0].lastSeen).getTime()) < 5 * 60 * 1000
-                                                ? <span className="text-emerald-500">Online</span>
-                                                : `Last seen ${formatDistanceToNow(new Date(partners[0].lastSeen), { addSuffix: true })}`
+                                                ? <span className="text-emerald-500">{t('messages.online')}</span>
+                                                : t('messages.last_seen', { time: formatDistanceToNow(new Date(partners[0].lastSeen), { addSuffix: true }) })
                                         )}
                                     </p>
                                 </div>
@@ -401,13 +404,7 @@ const Messages = () => {
                         className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6 custom-scrollbar scroll-smooth"
                     >
                         {loadingHistory ? (
-                            <div className="flex flex-col space-y-4 h-full">
-                                {[1, 2, 3, 4, 5].map(i => (
-                                    <div key={i} className={`flex ${i % 2 === 0 ? 'justify-end' : 'justify-start'} animate-pulse`}>
-                                        <div className={`w-2/3 h-12 bg-slate-100 dark:bg-slate-800 rounded-2xl ${i % 2 === 0 ? 'rounded-tr-none' : 'rounded-tl-none'}`} />
-                                    </div>
-                                ))}
-                            </div>
+                            <PageLoader fullScreen={false} />
                         ) : messages.length > 0 ? (
                             messages.map((msg, idx) => {
                                 const isMe = msg.senderId === user?.id;
@@ -448,8 +445,8 @@ const Messages = () => {
                                 <div className="w-16 h-16 bg-primary-100 dark:bg-primary-900/30 rounded-3xl flex items-center justify-center text-primary-500 mb-4 animate-bounce-slow">
                                     <MessageSquare size={32} />
                                 </div>
-                                <h5 className="font-bold text-[var(--text-main)]">Say hello!</h5>
-                                <p className="text-xs text-[var(--text-muted)] mt-1">Start your conversation in {activeRoom?.type === 'GROUP' ? 'the group' : partners[0]?.name}</p>
+                                <h5 className="font-bold text-[var(--text-main)]">{t('messages.say_hello')}</h5>
+                                <p className="text-xs text-[var(--text-muted)] mt-1">{t('messages.start_convo', { name: activeRoom?.type === 'GROUP' ? 'the group' : partners[0]?.name })}</p>
                             </div>
                         )}
                     </div>
@@ -461,7 +458,7 @@ const Messages = () => {
                                     type="text"
                                     value={newMessage}
                                     onChange={(e) => setNewMessage(e.target.value)}
-                                    placeholder="Type a message..."
+                                    placeholder={t('messages.type_placeholder')}
                                     className="w-full bg-slate-100 dark:bg-slate-800/80 border-none rounded-xl sm:rounded-2xl py-3 sm:py-4 px-4 sm:px-6 text-sm font-semibold focus:ring-4 focus:ring-primary-500/10 text-[var(--text-main)] placeholder:text-slate-400 transition-all"
                                 />
                             </div>
@@ -481,9 +478,9 @@ const Messages = () => {
                         <div className="w-20 h-20 bg-primary-100 dark:bg-primary-900/30 rounded-[28px] flex items-center justify-center text-primary-500 mx-auto mb-6">
                             <MessageSquare size={40} />
                         </div>
-                        <h4 className="text-xl font-bold text-[var(--text-main)] tracking-tight">Select a conversation</h4>
+                        <h4 className="text-xl font-bold text-[var(--text-main)] tracking-tight">{t('messages.select_convo')}</h4>
                         <p className="text-sm text-[var(--text-muted)] font-medium mt-2">
-                            Connect with transfer partners to discuss your mutual transfer arrangements.
+                            {t('messages.select_convo_desc')}
                         </p>
                     </div>
                 </div>

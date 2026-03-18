@@ -13,6 +13,7 @@ import com.moonseptstudio.mutualt.repository.UserProfileRepository;
 import com.moonseptstudio.mutualt.repository.NotificationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,6 +40,9 @@ public class MatchRequestController {
 
     @Autowired
     NotificationRepository notificationRepository;
+
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
     @GetMapping("/me")
     public ResponseEntity<?> getMyRequests(Authentication authentication) {
@@ -92,6 +96,13 @@ public class MatchRequestController {
         notif.setCreatedAt(LocalDateTime.now());
         notificationRepository.save(notif);
 
+        // Broadcast notification to receiver
+        messagingTemplate.convertAndSend("/topic/user/" + receiver.getId() + "/notifications", Map.of(
+            "type", "MATCH_REQUEST",
+            "senderName", sender.getUsername(),
+            "content", sender.getUsername() + " sent you a new match request."
+        ));
+
         return ResponseEntity.ok(convertToDto(request));
     }
 
@@ -106,6 +117,22 @@ public class MatchRequestController {
 
         request.setStatus("ACCEPTED");
         requestRepository.save(request);
+
+        // Notify the sender that their request was accepted
+        Notification responseNotif = new Notification();
+        responseNotif.setUser(request.getSender());
+        responseNotif.setTitle("Match Request Accepted");
+        responseNotif.setMessage(user.getUsername() + " accepted your match request.");
+        responseNotif.setType("MATCH");
+        responseNotif.setCreatedAt(LocalDateTime.now());
+        notificationRepository.save(responseNotif);
+
+        // Broadcast notification to the original sender
+        messagingTemplate.convertAndSend("/topic/user/" + request.getSender().getId() + "/notifications", Map.of(
+            "type", "MATCH_ACCEPTED",
+            "senderName", user.getUsername(),
+            "content", user.getUsername() + " accepted your match request."
+        ));
 
         // CREATE CHAT ROOM
         if ("TRIPLE".equals(request.getMatchType())) {

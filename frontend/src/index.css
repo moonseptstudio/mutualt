@@ -16,13 +16,13 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 .dark {
-  /* Dark Mode Variables - Keeping premium transparent look */
+  /* Dark Mode Variables - Slightly more solid for better legibility */
   --bg-main: #020617; /* slate-950 */
-  --bg-card: rgba(15, 23, 42, 0.8); /* slate-900/80 */
+  --bg-card: #0f172a; /* slate-900 solid */
   --text-main: #f1f5f9; /* slate-100 */
   --text-muted: #94a3b8; /* slate-400 */
-  --border-main: rgba(30, 41, 59, 0.5); /* slate-800/50 */
-  --shadow-main: rgba(0, 0, 0, 0.3);
+  --border-main: rgba(30, 41, 59, 0.8); /* slate-800/80 */
+  --shadow-main: rgba(0, 0, 0, 0.5);
 }
 
 body {
@@ -93,7 +93,7 @@ h6,
   }
 
   .glass-dark {
-    @apply bg-slate-900/90 backdrop-blur-xl border border-slate-800 shadow-2xl;
+    @apply bg-slate-900/95 backdrop-blur-xl border border-slate-800 shadow-2xl;
   }
 
   .premium-gradient {
@@ -136,7 +136,7 @@ h6,
   }
 
   .dark .glass-panel-strong {
-    background: rgba(15, 23, 42, 0.9);
+    background: rgba(15, 23, 42, 0.98);
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 
       0 20px 60px rgba(0, 0, 0, 0.4),

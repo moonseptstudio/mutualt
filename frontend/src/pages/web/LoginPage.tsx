@@ -13,8 +13,11 @@ import {
 import apiClient from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { isValidNic } from '../../utils/validation';
+import { useTranslation } from 'react-i18next';
+
 
 const LoginPage = () => {
+    const { t } = useTranslation();
     const [nic, setNic] = useState('');
     const [password, setPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
@@ -31,7 +34,7 @@ const LoginPage = () => {
         setLoading(true);
 
         if (!isValidNic(nic)) {
-            setError("Please enter a valid Sri Lankan NIC number (9 digits + V or 12 digits)");
+            setError(t('login.error_invalid_nic'));
             setLoading(false);
             return;
         }
@@ -43,14 +46,14 @@ const LoginPage = () => {
             });
 
             if (response.data.role === 'ADMIN') {
-                setError('Please use the dedicated Admin Portal to log in.');
+                setError(t('login.error_admin_portal'));
                 return;
             }
 
             login(response.data, rememberMe);
             navigate('/dashboard');
         } catch (err: any) {
-            setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+            setError(err.response?.data?.message || t('login.error_failed'));
         } finally {
             setLoading(false);
         }
@@ -70,8 +73,8 @@ const LoginPage = () => {
                         <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-lg shadow-blue-500/30">
                             <ShieldCheck size={32} className="text-white" />
                         </div>
-                        <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">Welcome Back</h1>
-                        <p className="text-slate-500 text-sm mt-2">Login with your government service ID</p>
+                        <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">{t('login.welcome')}</h1>
+                        <p className="text-slate-500 text-sm mt-2">{t('login.subtitle')}</p>
                     </div>
 
                     <div className="p-10">
@@ -85,7 +88,7 @@ const LoginPage = () => {
 
                             <div>
                                 <label className="block text-xs font-medium text-slate-500 uppercase tracking-wider mb-2 ml-1">
-                                    National Identity Card (NIC)
+                                    {t('login.nic_label')}
                                 </label>
                                 <div className="relative group">
                                     <Fingerprint className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={20} />
@@ -103,14 +106,14 @@ const LoginPage = () => {
                             <div>
                                 <div className="flex justify-between items-center mb-2 ml-1">
                                     <label className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-                                        Password
+                                        {t('login.password_label')}
                                     </label>
                                     {nic ? (
                                         <button
                                             type="button"
                                             onClick={async () => {
                                                 if (!isValidNic(nic)) {
-                                                    setError("Please enter a valid Sri Lankan NIC number first.");
+                                                    setError(t('login.error_nic_required'));
                                                     setLoading(false);
                                                     return;
                                                 }
@@ -118,21 +121,21 @@ const LoginPage = () => {
                                                     await apiClient.get(`/auth/phone-hint?nic=${nic}`);
                                                     navigate(`/forgot-password?nic=${nic}`);
                                                 } catch (err: any) {
-                                                    setError(err.response?.data?.message || 'This NIC is not registered.');
+                                                    setError(err.response?.data?.message || t('login.error_not_registered'));
                                                 } finally {
                                                     setLoading(false);
                                                 }
                                             }}
                                             className="text-xs font-bold text-blue-600 hover:text-blue-700 cursor-pointer"
                                         >
-                                            Forgot?
+                                            {t('login.forgot_password')}
                                         </button>
                                     ) : (
                                         <span 
                                             title="Enter NIC first"
                                             className="text-xs font-bold text-slate-300 cursor-not-allowed"
                                         >
-                                            Forgot?
+                                            {t('login.forgot_password')}
                                         </span>
                                     )}
                                 </div>
@@ -169,7 +172,7 @@ const LoginPage = () => {
                                         />
                                         <div className="hidden peer-checked:block w-2.5 h-2.5 bg-blue-600 rounded-sm"></div>
                                     </div>
-                                    <span className="text-sm font-medium text-slate-500 group-hover:text-slate-700 transition-colors">Remember me</span>
+                                    <span className="text-sm font-medium text-slate-500 group-hover:text-slate-700 transition-colors">{t('login.remember_me')}</span>
                                 </label>
                             </div>
 
@@ -177,14 +180,14 @@ const LoginPage = () => {
                                 disabled={loading}
                                 className="w-full py-4 bg-blue-600 text-white font-medium rounded-2xl shadow-xl shadow-blue-500/20 hover:bg-blue-700 hover:-translate-y-0.5 transition-all text-lg flex items-center justify-center disabled:opacity-50 disabled:translate-y-0"
                             >
-                                {loading ? 'Signing In...' : 'Sign In'}
+                                {loading ? t('login.signing_in') : t('login.sign_in')}
                                 {!loading && <ArrowRight className="ml-2" size={20} />}
                             </button>
                         </form>
 
                         <div className="mt-10 pt-8 border-t border-slate-100 text-center">
                             <p className="text-slate-500 text-sm">
-                                Don't have an account? <Link to="/register" className="text-blue-600 font-bold hover:underline">Register now</Link>
+                                {t('login.no_account')} <Link to="/register" className="text-blue-600 font-bold hover:underline">{t('login.register_now')}</Link>
                             </p>
                         </div>
                     </div>
@@ -193,11 +196,11 @@ const LoginPage = () => {
                 <div className="mt-8 flex items-center justify-center space-x-6 text-slate-400">
                     <div className="flex items-center space-x-2 grayscale opacity-50">
                         <CheckCircle2 size={16} />
-                        <span className="text-xs font-bold uppercase tracking-wider">Certified</span>
+                        <span className="text-xs font-bold uppercase tracking-wider">{t('login.certified')}</span>
                     </div>
                     <div className="flex items-center space-x-2 grayscale opacity-50">
                         <AlertCircle size={16} />
-                        <span className="text-xs font-bold uppercase tracking-wider">Help Center</span>
+                        <span className="text-xs font-bold uppercase tracking-wider">{t('login.help_center')}</span>
                     </div>
                 </div>
             </div>

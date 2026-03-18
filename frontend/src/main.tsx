@@ -14,11 +14,12 @@ if (typeof (window as any).Buffer === 'undefined') {
   };
 }
 
-import React, { StrictMode } from 'react'
-import ReactDOM, { createRoot } from 'react-dom/client'
+import React from 'react'
+import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
+import './i18n'; // Import i18n configuration
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

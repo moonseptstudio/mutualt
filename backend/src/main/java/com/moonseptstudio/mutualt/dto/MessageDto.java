@@ -14,4 +14,5 @@ public class MessageDto {
     private String senderProfileImageUrl;
     private LocalDateTime createdAt;
     private boolean isRead;
+    private String type = "MESSAGE";
 }

@@ -23,7 +23,7 @@ const ConfigItem = ({ icon: Icon, label, value, action, warning, onClick }: any)
         </div>
         <button 
             onClick={onClick} 
-            className="px-3 py-1.5 text-[10px] font-bold text-primary-600 bg-primary-50 dark:bg-primary-900/40 dark:text-primary-400 uppercase tracking-wider rounded-lg hover:bg-primary-600 hover:text-white dark:hover:bg-primary-500 dark:hover:text-white transition-all duration-300 cursor-pointer active:scale-95"
+            className="px-4 py-2 sm:px-3 sm:py-1.5 text-[10px] font-bold text-primary-600 bg-primary-50 dark:bg-primary-900/40 dark:text-primary-400 uppercase tracking-wider rounded-lg hover:bg-primary-600 hover:text-white dark:hover:bg-primary-500 dark:hover:text-white transition-all duration-300 cursor-pointer active:scale-95"
         >
             {action}
         </button>
@@ -31,7 +31,9 @@ const ConfigItem = ({ icon: Icon, label, value, action, warning, onClick }: any)
 );
 
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import apiClient from '../../api/client';
+import PageLoader from '../../components/common/PageLoader';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -47,6 +49,7 @@ const DEFAULT_AVATARS = [
 ];
 
 const Profile = () => {
+    const { t } = useTranslation();
     const { logout } = useAuth();
     const navigate = useNavigate();
     const [profile, setProfile] = useState<any>(null);
@@ -84,16 +87,16 @@ const Profile = () => {
             const response = await apiClient.put('/profile/me', editForm);
             setProfile(response.data);
             setIsEditing(false);
-            toast.success('Profile updated successfully');
+            toast.success(t('profile.toast_updated'));
         } catch (err) {
             console.error("Update failed", err);
-            toast.error('Failed to update profile');
+            toast.error(t('profile.toast_update_failed'));
         }
     };
 
     const handleVerifyOTP = async () => {
         if (otpValue.length !== 6) {
-            toast.error('Please enter a 6-digit OTP code');
+            toast.error(t('profile.toast_otp_required'));
             return;
         }
 
@@ -101,11 +104,11 @@ const Profile = () => {
             const docType = 'biometrics';
             const response = await apiClient.put(`/profile/submit-doc/${docType}`, {});
             setProfile(response.data);
-            toast.success('Phone verified successfully');
+            toast.success(t('profile.toast_phone_verified'));
             setVerifyingType(null);
             setOtpValue('');
         } catch (err: any) {
-            toast.error(err.response?.data?.message || 'Verification failed. Please try again.');
+            toast.error(err.response?.data?.message || t('profile.toast_update_failed'));
         }
     };
 
@@ -132,9 +135,9 @@ const Profile = () => {
             });
             setProfile({ ...profile, profileImageUrl: res.data });
             setEditForm({ ...editForm, profileImageUrl: res.data });
-            toast.success('Photo updated successfully');
+            toast.success(t('profile.toast_photo_updated'));
         } catch (err) {
-            toast.error('Failed to upload photo');
+            toast.error(t('profile.toast_photo_failed'));
         } finally {
             setIsUploading(false);
         }
@@ -147,24 +150,20 @@ const Profile = () => {
             setEditForm({ ...editForm, profileImageUrl: avatarUrl });
             const response = await apiClient.put('/profile/me', { ...editForm, profileImageUrl: avatarUrl });
             setProfile(response.data);
-            toast.success('Avatar updated successfully');
+            toast.success(t('profile.toast_avatar_updated'));
         } catch (err) {
-            toast.error('Failed to update avatar');
+            toast.error(t('profile.toast_avatar_failed'));
         }
     };
 
 
 
-    if (loading) return (
-        <div className="flex items-center justify-center p-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
-        </div>
-    );
+    if (loading) return <PageLoader />;
 
     if (!profile) return (
         <div className="p-10 text-center glass-card rounded-[32px] bg-(--bg-card) border-(--border-main)">
-            <p className="text-(--text-muted) font-medium">Profile not found. Please log in again.</p>
-            <button onClick={executeLogout} className="mt-4 px-6 py-2 bg-(--text-main) text-(--bg-main) rounded-xl font-medium">Go to Login</button>
+            <p className="text-(--text-muted) font-medium">{t('profile.not_found')}</p>
+            <button onClick={executeLogout} className="mt-4 px-6 py-2 bg-(--text-main) text-(--bg-main) rounded-xl font-medium">{t('profile.go_to_login')}</button>
         </div>
     );
 
@@ -202,7 +201,7 @@ const Profile = () => {
                         <h1 className="text-2xl sm:text-4xl font-semibold text-(--text-main) tracking-tight leading-none">{profile.fullName}</h1>
                         <div className="flex items-center space-x-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 px-3 py-1 rounded-full text-[10px] sm:text-xs font-medium uppercase tracking-wider border border-emerald-100 dark:border-emerald-800 w-fit">
                             <ShieldCheck size={14} />
-                            <span>Verified Staff</span>
+                            <span>{t('profile.verified_staff')}</span>
                         </div>
                     </div>
                     <p className="text-xs sm:text-sm text-(--text-muted) font-medium">{profile.jobCategoryName} @ {profile.currentStationName}</p>
@@ -223,12 +222,12 @@ const Profile = () => {
                     <div className="flex items-center justify-center md:justify-start space-x-4 sm:space-x-6 mt-6">
                         <div className="text-center md:text-left">
                             <p className="text-xl sm:text-2xl font-semibold text-(--text-main)">Level {profile.verificationLevel}</p>
-                            <p className="text-[10px] sm:text-xs font-medium text-(--text-muted) uppercase tracking-wider mt-1">Trust Level</p>
+                            <p className="text-[10px] sm:text-xs font-medium text-(--text-muted) uppercase tracking-wider mt-1">{t('profile.trust_level')}</p>
                         </div>
                         <div className="w-px h-8 sm:h-10 bg-(--border-main)/50"></div>
                         <div className="text-center md:text-left">
                             <p className="text-xl sm:text-2xl font-semibold text-(--text-main)">{profile.verificationLevel >= 2 ? '100%' : '50%'}</p>
-                            <p className="text-[10px] sm:text-xs font-medium text-(--text-muted) uppercase tracking-wider mt-1">Profile Score</p>
+                            <p className="text-[10px] sm:text-xs font-medium text-(--text-muted) uppercase tracking-wider mt-1">{t('profile.profile_score')}</p>
                         </div>
                     </div>
                 </div>
@@ -240,14 +239,14 @@ const Profile = () => {
                     <div className="px-2">
                         <h3 className="text-base sm:text-lg font-semibold text-(--text-main) tracking-tight mb-4 sm:mb-6 flex items-center space-x-3">
                             <User size={20} className="text-primary-600" />
-                            <span>Personal Configuration</span>
+                            <span>{t('profile.personal_config')}</span>
                         </h3>
                         <div className="space-y-4">
                             {isEditing ? (
                                 <div className="space-y-4 p-6 bg-linear-to-br from-primary-50/50 to-indigo-50/50 dark:from-primary-900/10 dark:to-indigo-900/10 rounded-[32px] border border-primary-500/20 shadow-xl shadow-primary-500/5 animate-in fade-in zoom-in-95 duration-500">
                                     <div className="space-y-4">
                                         <div className="space-y-1.5">
-                                            <label className="text-[10px] font-bold text-(--text-muted) uppercase tracking-widest ml-1">Official Email</label>
+                                            <label className="text-[10px] font-bold text-(--text-muted) uppercase tracking-widest ml-1">{t('profile.official_email')}</label>
                                             <div className="relative group/input">
                                                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within/input:text-primary-500 transition-colors">
                                                     <Mail size={18} />
@@ -257,13 +256,13 @@ const Profile = () => {
                                                     value={editForm.email}
                                                     onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
                                                     className="w-full pl-12 pr-4 py-3.5 bg-(--bg-card) border border-(--border-main) rounded-2xl text-sm text-(--text-main) focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 outline-none transition-all font-medium"
-                                                    placeholder="Enter official email"
+                                                    placeholder={t('profile.email_placeholder')}
                                                 />
                                             </div>
                                         </div>
                                         
                                         <div className="space-y-1.5">
-                                            <label className="text-[10px] font-bold text-(--text-muted) uppercase tracking-widest ml-1">Contact Number</label>
+                                            <label className="text-[10px] font-bold text-(--text-muted) uppercase tracking-widest ml-1">{t('profile.contact_number')}</label>
                                             <div className="relative group/input">
                                                 <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center space-x-2">
                                                     <Smartphone size={18} className="text-slate-400 group-focus-within/input:text-primary-500 transition-colors" />
@@ -286,7 +285,7 @@ const Profile = () => {
                                             {editForm.phoneNumber && editForm.phoneNumber.length > 2 && !editForm.phoneNumber.startsWith('947') && (
                                                 <p className="text-[10px] text-rose-500 mt-1.5 font-bold flex items-center bg-rose-50 dark:bg-rose-900/20 w-fit px-2 py-0.5 rounded-md">
                                                     <AlertCircle size={10} className="mr-1" />
-                                                    Invalid prefix. Must start with 7
+                                                    {t('profile.invalid_prefix')}
                                                 </p>
                                             )}
                                         </div>
@@ -296,22 +295,22 @@ const Profile = () => {
                                                 onClick={handleUpdateProfile} 
                                                 className="flex-1 py-3 bg-primary-600 text-white rounded-2xl text-sm font-bold hover:bg-primary-700 transition-all shadow-lg shadow-primary-600/20 active:scale-[0.98] cursor-pointer"
                                             >
-                                                Save Changes
+                                                {t('profile.save_changes')}
                                             </button>
                                             <button 
                                                 onClick={() => setIsEditing(false)} 
                                                 className="px-6 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-2xl text-sm font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all active:scale-[0.98] cursor-pointer"
                                             >
-                                                Cancel
+                                                {t('common.cancel')}
                                             </button>
                                         </div>
                                     </div>
                                 </div>
                             ) : (
                                 <>
-                                    <ConfigItem icon={Mail} label="Official Email" value={profile.email} action="Manage" onClick={() => setIsEditing(true)} />
-                                    <ConfigItem icon={Smartphone} label="Contact Number" value={profile.phoneNumber || "Not Provided"} action="Manage" onClick={() => setIsEditing(true)} />
-                                    <ConfigItem icon={CreditCard} label="National Identity Card" value={profile.nic} action="View Details" onClick={() => toast(`NIC: ${profile.nic}`, { icon: '💳' })} />
+                                    <ConfigItem icon={Mail} label={t('profile.official_email')} value={profile.email} action={t('profile.manage')} onClick={() => setIsEditing(true)} />
+                                    <ConfigItem icon={Smartphone} label={t('profile.contact_number')} value={profile.phoneNumber || t('profile.not_provided')} action={t('profile.manage')} onClick={() => setIsEditing(true)} />
+                                    <ConfigItem icon={CreditCard} label={t('profile.nic_label')} value={profile.nic} action={t('profile.view_details')} onClick={() => toast(`NIC: ${profile.nic}`, { icon: '💳' })} />
                                 </>
                             )}
                         </div>
@@ -322,14 +321,14 @@ const Profile = () => {
                         className="flex items-center space-x-3 px-6 py-4 w-full bg-rose-50 dark:bg-rose-900/10 text-rose-600 dark:text-rose-400 rounded-3xl font-medium text-xs uppercase tracking-wider hover:bg-rose-100 dark:hover:bg-rose-900/20 transition-all group cursor-pointer"
                     >
                         <LogOut size={20} className="group-hover:-translate-x-1 transition-transform" />
-                        <span>Sign Out from active session</span>
+                        <span>{t('profile.sign_out_session')}</span>
                     </button>
                 </div>
 
                 <div className="px-2">
                     <h3 className="text-base sm:text-lg font-semibold text-(--text-main) tracking-tight mb-4 sm:mb-6 flex items-center space-x-3">
                         <FileText size={20} className="text-primary-600" />
-                        <span>Verification Pipeline</span>
+                        <span>{t('profile.verification_pipeline')}</span>
                     </h3>
                     <div className="glass-card rounded-2xl sm:rounded-[32px] p-6 sm:p-8 space-y-8 border-(--border-main) bg-(--bg-card) dark:bg-(--bg-card)/40">
                         <div className="relative pl-10 border-l-2 border-(--border-main)/50 space-y-12">
@@ -338,9 +337,9 @@ const Profile = () => {
                                     <ShieldCheck size={16} />
                                 </div>
                                 <div>
-                                    <h4 className="font-semibold text-(--text-main) text-sm">NIC Authentication</h4>
-                                    <p className="text-xs text-(--text-muted) mt-1 font-medium leading-relaxed">System-level identification completed via Department for Registration of Persons.</p>
-                                    <p className="text-xs font-medium text-emerald-500 uppercase tracking-wider mt-3">Completed</p>
+                                    <h4 className="font-semibold text-(--text-main) text-sm">{t('profile.nic_auth_title')}</h4>
+                                    <p className="text-xs text-(--text-muted) mt-1 font-medium leading-relaxed">{t('profile.nic_auth_desc')}</p>
+                                    <p className="text-xs font-medium text-emerald-500 uppercase tracking-wider mt-3">{t('profile.completed')}</p>
                                 </div>
                             </div>
 
@@ -350,23 +349,23 @@ const Profile = () => {
                                 </div>
                                 <div>
                                     <div className="flex items-center justify-between">
-                                        <h4 className="font-semibold text-(--text-main) text-sm">Phone SMS Verification (Level 2)</h4>
+                                        <h4 className="font-semibold text-(--text-main) text-sm">{t('profile.phone_verify_title')}</h4>
                                         {profile.verificationLevel < 2 && (
                                             <button
                                                 onClick={() => setVerifyingType('phone')}
                                                 className="text-[10px] font-bold text-primary-600 dark:text-primary-400 uppercase hover:text-primary-800 dark:hover:text-primary-300 transition-colors"
                                             >
-                                                Verify Phone
+                                                {t('profile.verify_phone')}
                                             </button>
                                         )}
                                     </div>
                                     <p className="text-xs text-slate-500 mt-1 font-medium leading-relaxed">
                                         {profile.verificationLevel >= 2
-                                            ? `Mobile number (${profile.phoneNumber}) verified via secure SMS OTP.`
-                                            : 'Complete Level 2 by verifying your mobile number to enable real-time match alerts.'}
+                                            ? t('profile.phone_verify_success', { phone: profile.phoneNumber })
+                                            : t('profile.phone_verify_pending')}
                                     </p>
                                     <p className={`text-xs font-medium uppercase tracking-wider mt-3 ${profile.verificationLevel >= 2 ? 'text-emerald-500' : 'text-slate-400 dark:text-slate-600'}`}>
-                                        {profile.verificationLevel >= 2 ? 'Verified' : 'Pending'}
+                                        {profile.verificationLevel >= 2 ? t('profile.verified') : t('profile.pending')}
                                     </p>
                                 </div>
                             </div>
@@ -385,10 +384,10 @@ const Profile = () => {
                             <Smartphone className="text-primary-600 dark:text-primary-400" size={32} />
                         </div>
                         <h3 className="text-xl font-bold text-center text-(--text-main) mb-2">
-                            Verify Phone
+                            {t('profile.verify_phone')}
                         </h3>
                         <p className="text-(--text-muted) text-center text-sm mb-6">
-                            We've sent a 6-digit verification code to your phone. Please enter it below.
+                            {t('profile.otp_modal_desc')}
                         </p>
                         <div className="space-y-6">
                             <input
@@ -405,13 +404,13 @@ const Profile = () => {
                                     onClick={() => setVerifyingType(null)}
                                     className="flex-1 px-4 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-sm transition-all"
                                 >
-                                    Cancel
+                                    {t('common.cancel')}
                                 </button>
                                 <button
                                     onClick={handleVerifyOTP}
                                     className="flex-1 px-4 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl text-sm transition-all shadow-lg shadow-primary-500/20"
                                 >
-                                    Verify
+                                    {t('profile.verify_btn')}
                                 </button>
                             </div>
                         </div>
@@ -423,9 +422,9 @@ const Profile = () => {
                 isOpen={isSignOutModalOpen}
                 onClose={() => setIsSignOutModalOpen(false)}
                 onConfirm={executeLogout}
-                title="Sign Out?"
-                message="Are you sure you want to sign out of your account? You will need to log in again to access your dashboard."
-                confirmText="Sign Out"
+                title={t('profile.logout_title')}
+                message={t('profile.logout_msg')}
+                confirmText={t('profile.logout_confirm')}
                 type="logout"
             />
         </div>

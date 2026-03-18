@@ -24,6 +24,8 @@ import {
 import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform, useInView } from 'framer-motion';
 import { useRef, useEffect, useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+
 
 /* ─── Animation Variants ─── */
 const fadeInUp: any = {
@@ -291,10 +293,11 @@ const StepCard = ({ step, icon: Icon, title, description, isLast }: any) => {
 
 /* ─── Testimonial Card ─── */
 const TestimonialCard = ({ name, role, location, quote, rating }: any) => {
+  const { t } = useTranslation();
   return (
     <div className="glass-panel rounded-3xl p-8 min-w-[340px] max-w-[380px] shrink-0 group hover:shadow-xl transition-shadow duration-500">
       <Quote size={24} className="text-blue-400/40 mb-4" />
-      <p className="text-slate-600 text-sm leading-relaxed mb-6 italic">"{quote}"</p>
+      <p className="text-slate-600 text-sm leading-relaxed mb-6 italic">"{t(quote)}"</p>
       <div className="flex items-center gap-1 mb-4">
         {Array.from({ length: rating }).map((_, i) => (
           <Star key={i} size={14} className="text-amber-400 fill-amber-400" />
@@ -303,7 +306,7 @@ const TestimonialCard = ({ name, role, location, quote, rating }: any) => {
       <div>
         <p className="font-bold text-slate-800 text-sm">{name}</p>
         <p className="text-slate-400 text-xs flex items-center gap-1 mt-0.5">
-          <MapPin size={10} /> {role} · {location}
+          <MapPin size={10} /> {t(role)} · {location}
         </p>
       </div>
     </div>
@@ -312,6 +315,7 @@ const TestimonialCard = ({ name, role, location, quote, rating }: any) => {
 
 /* ─── Pricing Card ─── */
 const PricingCard = ({ name, price, description, features, highlighted }: any) => {
+  const { t } = useTranslation();
   return (
     <motion.div
       variants={fadeInUp}
@@ -325,7 +329,7 @@ const PricingCard = ({ name, price, description, features, highlighted }: any) =
       {highlighted && (
         <div className="absolute -top-4 left-1/2 -translate-x-1/2">
           <span className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-linear-to-r from-blue-500 to-violet-500 text-white text-xs font-bold rounded-full shadow-lg">
-            <Sparkles size={12} /> Most Popular
+            <Sparkles size={12} /> {t('home.most_popular')}
           </span>
         </div>
       )}
@@ -333,7 +337,7 @@ const PricingCard = ({ name, price, description, features, highlighted }: any) =
       <p className="text-sm text-slate-500 mb-6">{description}</p>
       <div className="flex items-baseline mb-8">
         <span className="text-4xl font-bold text-slate-900 tracking-tight">Rs. {price}</span>
-        <span className="text-sm text-slate-400 ml-2">{price === "0" ? "/ forever" : "/ one-time"}</span>
+        <span className="text-sm text-slate-400 ml-2">{price === "0" ? t('home.pricing_forever') : t('home.pricing_one_time')}</span>
       </div>
       <ul className="space-y-4 mb-10">
         {features.map((feature: any, idx: number) => (
@@ -353,7 +357,7 @@ const PricingCard = ({ name, price, description, features, highlighted }: any) =
             : 'bg-slate-100 text-slate-800 hover:bg-slate-200'
         }`}
       >
-        {price === "0" ? "Start for Free" : "Upgrade to Premium"}
+        {price === "0" ? t('home.pricing_start_free') : t('home.pricing_upgrade')}
       </Link>
     </motion.div>
   );
@@ -373,18 +377,19 @@ const WaveDivider = ({ flip = false }: { flip?: boolean }) => (
 
 /* ─── Testimonials data ─── */
 const testimonials = [
-  { name: "Kasun Perera", role: "Teacher", location: "Colombo", quote: "MutualTransfer.lk found me a 3-way circular match in just 2 days. What would have taken months through notice boards happened in hours.", rating: 5 },
-  { name: "Nimali Fernando", role: "Nurse", location: "Kandy", quote: "The verified profiles gave me confidence. I knew every match was genuine. Best decision I made for my career transfer.", rating: 5 },
-  { name: "Samantha Wijesinghe", role: "Doctor", location: "Galle", quote: "Premium was absolutely worth it. The 3-way matching algorithm found connections I never would have discovered manually.", rating: 5 },
-  { name: "Ruwan Jayawardena", role: "Teacher", location: "Matara", quote: "Simple, fast, and reliable. Registered in the morning, had a match by evening. The future of transfers in Sri Lanka.", rating: 4 },
-  { name: "Dilini Senanayake", role: "Nurse", location: "Jaffna", quote: "I was skeptical at first, but the platform delivered beyond expectations. Found my perfect station match within a week.", rating: 5 },
-  { name: "Amal Dissanayake", role: "Teacher", location: "Kurunegala", quote: "The district scouting feature helped me explore options I hadn't even considered. Truly a game-changer.", rating: 5 },
+  { name: "Kasun Perera", role: "home.testimonial1_role", location: "Colombo", quote: "home.testimonial1_quote", rating: 5 },
+  { name: "Nimali Fernando", role: "Nurse", location: "Kandy", quote: "home.testimonial2_quote", rating: 5 },
+  { name: "Samantha Wijesinghe", role: "Doctor", location: "Galle", quote: "home.testimonial2_quote", rating: 5 },
+  { name: "Ruwan Jayawardena", role: "Teacher", location: "Matara", quote: "home.testimonial1_quote", rating: 4 },
+  { name: "Dilini Senanayake", role: "Nurse", location: "Jaffna", quote: "home.testimonial2_quote", rating: 5 },
+  { name: "Amal Dissanayake", role: "Teacher", location: "Kurunegala", quote: "home.testimonial1_quote", rating: 5 },
 ];
 
 /* ═══════════════════════════════════════════════
    ██  HOME PAGE
    ═══════════════════════════════════════════════ */
 const HomePage = () => {
+  const { t } = useTranslation();
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
   const heroY = useTransform(scrollYProgress, [0, 1], [0, 150]);
@@ -412,13 +417,13 @@ const HomePage = () => {
             >
               {/* Headline with word reveal */}
               <motion.h1 variants={fadeInUp} className="text-5xl sm:text-6xl md:text-7xl font-extrabold text-slate-900 mb-6 tracking-tight leading-[1.1]">
-                Find Your, <br />
-                <span className="shimmer-text">Dream Station</span>
+                {t('home.hero_title_part1')} <br />
+                <span className="shimmer-text">{t('home.hero_title_dream')}</span>
               </motion.h1>
 
               {/* Sub-headline */}
               <motion.p variants={fadeInUp} className="text-lg sm:text-xl text-slate-600 mb-10 leading-relaxed max-w-xl font-sans">
-                Sri Lanka's most trusted transfer platform for government employees in Sri Lanka.
+                {t('home.hero_subtitle')}
               </motion.p>
 
               {/* CTA Buttons */}
@@ -427,7 +432,7 @@ const HomePage = () => {
                   to="/register"
                   className="w-full sm:w-auto px-10 py-4.5 bg-linear-to-r from-blue-500 to-violet-500 text-white font-bold rounded-2xl shadow-2xl shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-1 transition-all duration-300 flex items-center justify-center group magnetic-hover"
                 >
-                  Join the Network
+                   {t('home.join_network')}
                   <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" size={20} />
                 </Link>
               </motion.div>
@@ -522,20 +527,19 @@ const HomePage = () => {
               viewport={{ once: true, margin: "-100px" }}
               variants={staggerContainer}
             >
-              <motion.span variants={fadeInUp} className="inline-block text-xs font-bold uppercase tracking-widest text-blue-500 mb-4">How It Works</motion.span>
+              <motion.span variants={fadeInUp} className="inline-block text-xs font-bold uppercase tracking-widest text-blue-500 mb-4">{t('home.how_it_works_label')}</motion.span>
               <motion.h2 variants={fadeInUp} className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight mb-4">
-                Get Matched in <br />
-                <span className="shimmer-text">3 Simple Steps</span>
+                {t('home.how_it_works_title')}
               </motion.h2>
               <motion.p variants={fadeInUp} className="text-slate-500 leading-relaxed mb-8">
-                Our intelligent matching engine does the heavy lifting. Register, set your preferences, and let our algorithm find your perfect transfer match.
+                {t('home.how_it_works_subtitle')}
               </motion.p>
               <motion.div variants={fadeInUp}>
                 <Link
                   to="/register"
                   className="inline-flex items-center px-8 py-3.5 bg-linear-to-r from-blue-500 to-violet-500 text-white font-bold rounded-2xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:-translate-y-1 transition-all duration-300 group"
                 >
-                  Get Started
+                  {t('home.get_started')}
                   <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" size={18} />
                 </Link>
               </motion.div>
@@ -551,20 +555,20 @@ const HomePage = () => {
               <StepCard
                 step={1}
                 icon={ClipboardList}
-                title="Register & Verify"
-                description="Create your account with NIC verification. Set up your professional profile in minutes."
+                title={t('home.step1_title')}
+                description={t('home.step1_desc')}
               />
               <StepCard
                 step={2}
                 icon={Settings2}
-                title="Set Preferences"
-                description="Choose your desired stations, districts, and transfer preferences for pinpoint matching."
+                title={t('home.step2_title')}
+                description={t('home.step2_desc')}
               />
               <StepCard
                 step={3}
                 icon={GitMerge}
-                title="Get Matched"
-                description="Our DFS algorithm finds direct and circular matches automatically. Accept with one click."
+                title={t('home.step3_title')}
+                description={t('home.step3_desc')}
                 isLast
               />
             </motion.div>
@@ -585,10 +589,10 @@ const HomePage = () => {
             className="glass-panel-strong rounded-3xl py-12 px-6 sm:px-12"
           >
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-              <StatItem value="1500" suffix="+" label="Registered Employees" icon={Users} />
-              <StatItem value="450" suffix="+" label="Successful Transfers" icon={CheckCircle2} />
-              <StatItem value="25" suffix="+" label="Hospital Networks" icon={Globe} />
-              <StatItem value="98" suffix="%" label="Matching Accuracy" icon={TrendingUp} />
+              <StatItem value="1500" suffix="+" label={t('home.stats_label1')} icon={Users} />
+              <StatItem value="450" suffix="+" label={t('home.stats_label2')} icon={CheckCircle2} />
+              <StatItem value="25" suffix="+" label={t('home.stats_label3')} icon={Globe} />
+              <StatItem value="98" suffix="%" label={t('home.stats_label4')} icon={TrendingUp} />
             </div>
           </motion.div>
         </div>
@@ -605,12 +609,12 @@ const HomePage = () => {
             variants={staggerContainer}
             className="text-center max-w-3xl mx-auto mb-16"
           >
-            <motion.span variants={fadeInUp} className="inline-block text-xs font-bold uppercase tracking-widest text-violet-500 mb-4">Features</motion.span>
+            <motion.span variants={fadeInUp} className="inline-block text-xs font-bold uppercase tracking-widest text-violet-500 mb-4">{t('home.features_label')}</motion.span>
             <motion.h2 variants={fadeInUp} className="text-3xl sm:text-4xl font-bold text-slate-900 mb-6 tracking-tight">
-              Why Choose MutualTransfer.lk?
+              {t('home.features_title')}
             </motion.h2>
             <motion.p variants={fadeInUp} className="text-slate-600 leading-relaxed">
-              We replace traditional notice boards and social media groups with a data-driven matching engine tailored for Sri Lanka.
+              {t('home.features_subtitle')}
             </motion.p>
           </motion.div>
           
@@ -623,18 +627,18 @@ const HomePage = () => {
           >
             {/* Large featured card */}
             <LargeFeatureCard
-              title="Advanced Circular Matching"
-              description="Our proprietary algorithm discovers complex 3-way circular transfer chains (A → B → C → A) that are humanly impossible to detect. Visualize your path to a new station."
+              title={t('home.feat_large_title')}
+              description={t('home.feat_large_desc')}
               imgSrc={matchingNetworkImg}
-              badge="New Algorithm"
+              badge={t('home.feat_large_badge')}
             />
 
             {/* Regular cards */}
-            <FeatureCard index={0} icon={Zap} title="Instant Scanning" description="Process thousands of professional requirements in milliseconds to find direct shifts." />
-            <FeatureCard index={2} icon={Shield} title="Multi-Level Security" description="NIC and Email validation ensures only legitimate government personnel access the system." />
-            <FeatureCard index={3} icon={Users} title="Unified Network" description="A centralized hub for Teachers, Nurses, and Doctors across all 25 districts." />
-            <FeatureCard index={4} icon={Search} title="Hierarchical Search" description="Drill down through Province, District, and Hospital level vacancies with precision." />
-            <FeatureCard index={5} icon={CheckCircle2} title="Verified Results" description="98% data accuracy ensures your match is valid and ready for official processing." />
+            <FeatureCard index={0} icon={Zap} title={t('home.feat1_title')} description={t('home.feat1_desc')} />
+            <FeatureCard index={2} icon={Shield} title={t('home.feat2_title')} description={t('home.feat2_desc')} />
+            <FeatureCard index={3} icon={Users} title={t('home.feat3_title')} description={t('home.feat3_desc')} />
+            <FeatureCard index={4} icon={Search} title={t('home.feat4_title')} description={t('home.feat4_desc')} />
+            <FeatureCard index={5} icon={CheckCircle2} title={t('home.feat5_title')} description={t('home.feat5_desc')} />
           </motion.div>
         </div>
       </ScrollAnimatedSection>
@@ -655,12 +659,12 @@ const HomePage = () => {
             variants={staggerContainer}
             className="text-center max-w-3xl mx-auto mb-14"
           >
-            <motion.span variants={fadeInUp} className="inline-block text-xs font-bold uppercase tracking-widest text-emerald-500 mb-4">Testimonials</motion.span>
+            <motion.span variants={fadeInUp} className="inline-block text-xs font-bold uppercase tracking-widest text-emerald-500 mb-4">{t('home.testimonials_label')}</motion.span>
             <motion.h2 variants={fadeInUp} className="text-3xl sm:text-4xl font-bold text-slate-900 mb-6 tracking-tight">
-              Loved by <span className="shimmer-text">Thousands</span> of Users
+              {t('home.testimonials_title')}
             </motion.h2>
             <motion.p variants={fadeInUp} className="text-slate-600 leading-relaxed">
-              Real stories from government employees across Sri Lanka who find their perfect transfer match.
+              {t('home.testimonials_subtitle')}
             </motion.p>
           </motion.div>
 
@@ -686,9 +690,9 @@ const HomePage = () => {
             variants={staggerContainer}
             className="text-center max-w-3xl mx-auto mb-20"
           >
-            <motion.span variants={fadeInUp} className="inline-block text-xs font-bold uppercase tracking-widest text-blue-500 mb-4">Pricing</motion.span>
-            <motion.h2 variants={fadeInUp} className="text-3xl sm:text-4xl font-bold text-slate-900 mb-6 tracking-tight">Pricing & Packages</motion.h2>
-            <motion.p variants={fadeInUp} className="text-slate-600">Select the plan that best fits your transfer goals.</motion.p>
+            <motion.span variants={fadeInUp} className="inline-block text-xs font-bold uppercase tracking-widest text-blue-500 mb-4">{t('home.pricing_label')}</motion.span>
+            <motion.h2 variants={fadeInUp} className="text-3xl sm:text-4xl font-bold text-slate-900 mb-6 tracking-tight">{t('home.pricing_title')}</motion.h2>
+            <motion.p variants={fadeInUp} className="text-slate-600">{t('home.pricing_subtitle')}</motion.p>
           </motion.div>
           <motion.div 
             initial="hidden"
@@ -698,65 +702,65 @@ const HomePage = () => {
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto"
           >
             <PricingCard
-              name="Basic"
+              name={t('home.pricing_plan_basic')}
               price="0"
-              description="Ideal for simple direct swaps."
+              description={t('home.pricing_basic_desc')}
               features={[
-                "2-Way Direct Matching Only",
-                "View-Only (Cannot Send Requests)",
-                "Hidden Contact Details",
-                "NIC Identity Verification",
-                "Station Preferences (Up to 3)",
-                "Search & Filter Vacancies",
-                "Dashboard Access (with Ads)"
+                t('home.pricing_feature_2way'),
+                t('home.pricing_feature_view_only'),
+                t('home.pricing_feature_hidden'),
+                t('home.pricing_feature_verify'),
+                t('home.pricing_feature_pref3'),
+                t('home.pricing_feature_search'),
+                t('home.pricing_feature_ads')
               ]}
               highlighted={false}
             />
             <PricingCard
-              name="Premium (1 Month)"
+              name={t('home.pricing_plan_premium1')}
               price="440"
-              description="Best for quick direct & 3-way swaps"
+              description={t('home.pricing_premium1_desc')}
               features={[
-                "Direct Messaging Option",
-                "Unlimited Match Requests",
-                "2-Way & 3-Way Dynamic Matching",
-                "Full Profile Visibility",
-                "Station Preferences (Up to 3)",
-                "Advanced Search & Filters",
-                "No Advertisements (Ad-Free)",
-                "Premium Customer Support"
+                t('home.pricing_feature_msg'),
+                t('home.pricing_feature_unlimited'),
+                t('home.pricing_feature_dynamic'),
+                t('home.pricing_feature_visibility'),
+                t('home.pricing_feature_pref3'),
+                t('home.pricing_feature_search'),
+                t('home.pricing_feature_no_ads'),
+                t('home.pricing_feature_support')
               ]}
               highlighted={false}
             />
             <PricingCard
-              name="Premium (2 Months)"
+              name={t('home.pricing_plan_premium2')}
               price="690"
-              description="Save more with 2 months access"
+              description={t('home.pricing_premium2_desc')}
               features={[
-                "Direct Messaging Option",
-                "Unlimited Match Requests",
-                "2-Way & 3-Way Dynamic Matching",
-                "Full Profile Visibility",
-                "Station Preferences (Up to 3)",
-                "Advanced Search & Filters",
-                "No Advertisements (Ad-Free)",
-                "Premium Customer Support"
+                t('home.pricing_feature_msg'),
+                t('home.pricing_feature_unlimited'),
+                t('home.pricing_feature_dynamic'),
+                t('home.pricing_feature_visibility'),
+                t('home.pricing_feature_pref3'),
+                t('home.pricing_feature_search'),
+                t('home.pricing_feature_no_ads'),
+                t('home.pricing_feature_support')
               ]}
               highlighted={false}
             />
             <PricingCard
-              name="Premium (3 Months)"
+              name={t('home.pricing_plan_premium3')}
               price="990"
-              description="Maximum value for long-term search"
+              description={t('home.pricing_premium3_desc')}
               features={[
-                "Direct Messaging Option",
-                "Unlimited Match Requests",
-                "2-Way & 3-Way Dynamic Matching",
-                "Full Profile Visibility",
-                "Station Preferences (Up to 3)",
-                "Advanced Search & Filters",
-                "No Advertisements (Ad-Free)",
-                "Premium Customer Support"
+                t('home.pricing_feature_msg'),
+                t('home.pricing_feature_unlimited'),
+                t('home.pricing_feature_dynamic'),
+                t('home.pricing_feature_visibility'),
+                t('home.pricing_feature_pref3'),
+                t('home.pricing_feature_search'),
+                t('home.pricing_feature_no_ads'),
+                t('home.pricing_feature_support')
               ]}
               highlighted={true}
             />
@@ -788,11 +792,10 @@ const HomePage = () => {
               <Sparkles className="w-10 h-10 text-blue-500 mx-auto mb-6" />
             </motion.div>
             <h2 className="text-2xl sm:text-4xl font-bold text-slate-900 mb-6 tracking-tight">
-              Ready to Find Your{' '}
-              <span className="shimmer-text">Perfect Transfer?</span>
+              {t('home.cta_title')}
             </h2>
             <p className="text-slate-600 mb-10 max-w-xl mx-auto leading-relaxed">
-              Join thousands of government employees who have already found their ideal station match on MutualTransfer.lk.
+              {t('home.cta_subtitle')}
             </p>
             <Link
               to="/register"

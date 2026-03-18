@@ -303,6 +303,13 @@ public class MessageController {
         // Broadcast message to WebSocket topic
         messagingTemplate.convertAndSend("/topic/room/" + roomId, convertToDto(message, true, sender.getId()));
 
+        // Broadcast to individual user notification topics for global browser notifications
+        for (User member : room.getMembers()) {
+            if (!member.getId().equals(sender.getId())) {
+                messagingTemplate.convertAndSend("/topic/user/" + member.getId() + "/notifications", convertToDto(message, true, sender.getId()));
+            }
+        }
+
         return ResponseEntity.ok(convertToDto(message, true, sender.getId()));
     }
 

@@ -3,7 +3,6 @@ import {
     ShieldCheck,
     Zap,
     ChevronRight,
-    TrendingUp,
     Clock,
     Activity,
     MessageSquare
@@ -12,12 +11,17 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 import { useOutletContext } from 'react-router-dom';
+import UserGuideWidget from '../../components/dashboard/UserGuideWidget';
+import PageLoader from '../../components/common/PageLoader';
+
 import { getAvatarUrl } from '../../api/url';
 
 
 
 const ClientDashboard = () => {
+    const { t } = useTranslation();
     const { user } = useAuth();
     const { globalSearchQuery, hasPackage }: any = useOutletContext();
     const navigate = useNavigate();
@@ -27,12 +31,6 @@ const ClientDashboard = () => {
     const [rooms, setRooms] = useState<any[]>([]);
     const [preferences, setPreferences] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [currentTime, setCurrentTime] = useState(new Date());
-
-    useEffect(() => {
-        const timer = setInterval(() => setCurrentTime(new Date()), 60000);
-        return () => clearInterval(timer);
-    }, []);
 
     useEffect(() => {
         const fetchDashboardData = async () => {
@@ -58,44 +56,31 @@ const ClientDashboard = () => {
         fetchDashboardData();
     }, []);
 
-    const getGreeting = () => {
-        const hour = currentTime.getHours();
-        if (hour < 12) return "Good Morning";
-        if (hour < 17) return "Good Afternoon";
-        return "Good Evening";
-    };
 
-    const StatsCard = ({ title, value, icon: Icon, color, trend }: any) => (
-        <div className="glass-card p-6 rounded-[32px] border-(--border-main) bg-(--bg-card) shadow-(--shadow-main) relative overflow-hidden group">
+
+    const StatsCard = ({ title, value, icon: Icon, color, trend, path }: any) => (
+        <div 
+            onClick={() => path && navigate(path)}
+            className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-[32px] border-(--border-main) bg-(--bg-card) shadow-(--shadow-main) relative overflow-hidden group cursor-pointer hover:scale-[1.02] active:scale-95 transition-all duration-300"
+        >
             <div className="relative z-10">
-                <div className={`p-3 rounded-2xl ${color} inline-flex mb-4 shadow-sm`}>
+                <div className={`p-2 sm:p-3 rounded-xl sm:rounded-2xl ${color} inline-flex mb-2 sm:mb-4 shadow-sm group-hover:scale-110 transition-transform duration-300`}>
                     <Icon size={20} className="text-white" />
                 </div>
-                <h4 className="text-[11px] font-bold text-(--text-muted) uppercase tracking-widest mb-1">{title}</h4>
+                <h4 className="text-[9px] sm:text-[11px] font-bold text-(--text-muted) uppercase tracking-widest mb-1">{title}</h4>
                 <div className="flex items-baseline space-x-2">
-                    <span className="text-3xl font-bold text-(--text-main) tracking-tight">{value}</span>
+                    <span className="text-2xl sm:text-3xl font-bold text-(--text-main) tracking-tight">{value}</span>
                     {trend && <span className="text-[10px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded-md">{trend}</span>}
                 </div>
             </div>
-            <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-500">
+            <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-[0.1] group-hover:-rotate-12 transition-all duration-500">
                 <Icon size={120} />
             </div>
         </div>
     );
 
     if (loading) {
-        return (
-            <div className="animate-in fade-in duration-700 space-y-8">
-                <div className="h-20 w-1/3 bg-slate-100 dark:bg-slate-800 rounded-3xl animate-pulse"></div>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    {[1, 2, 3, 4].map(i => <div key={i} className="h-40 bg-slate-100 dark:bg-slate-800 rounded-[32px] animate-pulse"></div>)}
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-2 h-96 bg-slate-100 dark:bg-slate-800 rounded-[40px] animate-pulse"></div>
-                    <div className="h-96 bg-slate-100 dark:bg-slate-800 rounded-[40px] animate-pulse"></div>
-                </div>
-            </div>
-        );
+        return <PageLoader />;
     }
 
     const allRequests = [...requests.incoming, ...requests.outgoing]
@@ -125,100 +110,81 @@ const ClientDashboard = () => {
 
         if (isNaN(end.getTime())) return 0;
         
-        const diff = end.getTime() - currentTime.getTime();
+        const diff = end.getTime() - new Date().getTime();
         return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
     };
 
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 space-y-8 pb-10">
-            {/* Top Header Section */}
-            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 border-b border-(--border-main) pb-8">
-                <div className="space-y-4">
-                    <div className="flex items-center space-x-2 text-primary-600 dark:text-primary-400 font-bold text-[10px] sm:text-[11px] uppercase tracking-[0.3em] bg-primary-50 dark:bg-primary-900/20 w-fit px-3 py-1.5 rounded-full">
-                        <TrendingUp size={14} className="animate-pulse" />
-                        <span>Overview • {currentTime.toLocaleDateString([], { month: 'long', year: 'numeric' })}</span>
-                    </div>
-                    <h1 className="text-3xl sm:text-5xl font-semibold text-(--text-main) tracking-tight leading-[1.1]">
-                        {getGreeting()}, <br className="sm:hidden" /> 
-                        <span className="shimmer-text">{profile?.fullName?.split(' ')[0] || user?.username}</span>
-                    </h1>
-                    <p className="text-(--text-muted) text-sm sm:text-base font-medium max-w-lg">
-                        Welcome back to your dashboard. You have <span className="text-(--text-main) font-bold">{matches.length}</span> active matches and <span className="text-(--text-main) font-bold">{allRequests.length}</span> pending requests today.
-                    </p>
-                </div>
-                <div className="flex items-center space-x-4 sm:space-x-6 glass-panel p-2 sm:p-3 pr-6 sm:pr-8 rounded-[24px] group hover:shadow-xl hover:shadow-primary-500/5 transition-all duration-500 border-glow">
-                    <div className="p-3 sm:p-4 icon-gradient-blue text-white rounded-[20px] shadow-lg shadow-primary-500/30 animate-float-slow">
-                        <Clock size={24} />
-                    </div>
-                    <div>
-                        <p className="text-[9px] sm:text-[10px] font-bold text-(--text-muted) uppercase tracking-widest leading-none mb-2">System Pulse • SL</p>
-                        <p className="text-xl sm:text-2xl font-bold text-(--text-main) leading-none tabular-nums tracking-tighter">
-                            {currentTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                    </div>
-                </div>
+        <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 pb-10">
+            <div className="mb-6 lg:mb-8">
+                <h1 className="text-3xl sm:text-4xl font-bold text-(--text-main) tracking-tight">
+                    {t('dashboard.welcome_heading', { name: profile?.fullName?.split(' ')[0] || user?.username || '' })}
+                </h1>
             </div>
-
-            {/* Quick Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatsCard
-                    title="Active Matches"
-                    value={matches.length}
-                    icon={Zap}
-                    color="bg-indigo-500"
-                    trend={matches.length > 0 ? "+High" : null}
-                />
-                <StatsCard
-                    title="Match Requests"
-                    value={allRequests.length}
-                    icon={Activity}
-                    color="bg-primary-500"
-                />
-                <StatsCard
-                    title="Messages"
-                    value={rooms.length}
-                    icon={MessageSquare}
-                    color="bg-emerald-500"
-                    trend="Live"
-                />
-                <StatsCard
-                    title="Preferences"
-                    value={preferences.length}
-                    icon={MapPin}
-                    color="bg-amber-500"
-                />
-            </div>
-
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Main Content Area */}
                 <div className="lg:col-span-2 space-y-8">
+                    {/* Quick Stats Grid */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                        <StatsCard
+                            title={t('dashboard.stats.active_matches')}
+                            value={matches.length}
+                            icon={Zap}
+                            color="bg-indigo-500"
+                            trend={matches.length > 0 ? "+High" : null}
+                            path="/matches"
+                        />
+                        <StatsCard
+                            title={t('dashboard.stats.match_requests')}
+                            value={allRequests.length}
+                            icon={Activity}
+                            color="bg-primary-500"
+                            path="/requests"
+                        />
+                        <StatsCard
+                            title={t('dashboard.stats.messages')}
+                            value={rooms.length}
+                            icon={MessageSquare}
+                            color="bg-emerald-500"
+                            trend="Live"
+                            path="/messages"
+                        />
+                        <StatsCard
+                            title={t('dashboard.stats.preferences')}
+                            value={preferences.length}
+                            icon={MapPin}
+                            color="bg-amber-500"
+                            path="/preferences"
+                        />
+                    </div>
+
                     {/* Featured Match Card */}
                     {matches.length > 0 ? (
-                        <div className="premium-gradient rounded-[40px] p-8 sm:p-10 text-white relative overflow-hidden shadow-2xl shadow-slate-900/40 group">
+                        <div className="premium-gradient rounded-3xl sm:rounded-[40px] p-5 sm:p-10 text-white relative overflow-hidden shadow-2xl shadow-slate-900/40 group">
                             <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
                                 <div className="max-w-md">
                                     <div className="flex items-center space-x-2 text-primary-400 mb-4 sm:mb-6 bg-white/10 w-fit px-3 py-1 rounded-full backdrop-blur-md border border-white/10">
                                         <ShieldCheck size={16} fill="currentColor" />
-                                        <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest opacity-80">Verified Match</span>
+                                        <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest opacity-80">{t('dashboard.featured.verified')}</span>
                                     </div>
                                     <h2 className="text-xl sm:text-3xl font-medium mb-3 sm:mb-4 tracking-tight leading-tight">
-                                        Perfect Match at <br /><span className="text-white font-bold">{matches[0].participants.find((p: any) => p.userId !== user?.id)?.stationName}</span>
+                                        {t('dashboard.featured.perfect_match_at')} <br /><span className="text-white font-bold">{matches[0].participants.find((p: any) => p.userId !== user?.id)?.stationName}</span>
                                     </h2>
                                     <h4 className="text-white/80 font-bold mb-4">
-                                        Partner: {(() => {
+                                        {t('dashboard.featured.partner')} {(() => {
                                             const partner = matches[0].participants.find((p: any) => p.userId !== user?.id);
                                             return partner?.name;
                                         })()}
                                     </h4>
                                     <p className="text-white/60 text-sm font-medium leading-relaxed mb-8">
-                                        You have a highly compatible mutual transfer match. Start a request to view contact details and initialize the official process.
+                                        {t('dashboard.featured.compatible_msg')}
                                     </p>
                                     <div className="flex items-center space-x-4">
                                         <button
                                             onClick={() => navigate('/matches')}
                                             className="px-8 py-4 bg-white text-slate-950 font-bold rounded-2xl hover:bg-primary-50 transition-all hover:scale-105 active:scale-95 text-xs uppercase tracking-widest shadow-xl"
                                         >
-                                            View Match Details
+                                            {t('dashboard.featured.view_details')}
                                         </button>
                                         <div className="hidden sm:flex -space-x-3">
                                             {matches[0].participants.map((p: any, i: number) => {
@@ -247,15 +213,15 @@ const ClientDashboard = () => {
                             <div className="absolute bottom-0 left-1/4 w-40 h-40 bg-indigo-500/30 rounded-full blur-[80px]"></div>
                         </div>
                     ) : (
-                        <div className="glass-card rounded-[40px] p-10 text-center border-dashed border-2 border-(--border-main) bg-(--bg-card)">
+                        <div className="glass-card rounded-3xl sm:rounded-[40px] p-6 sm:p-10 text-center border-dashed border-2 border-(--border-main) bg-(--bg-card)">
                             <MapPin size={48} className="mx-auto text-slate-300 dark:text-slate-700 mb-6" />
-                            <h3 className="text-xl font-bold text-(--text-main)">Finding your perfect match...</h3>
-                            <p className="text-sm text-(--text-muted) mt-2 max-w-sm mx-auto">Add more hospital preferences to increase your chances of finding a 2-way or 3-way match.</p>
+                            <h3 className="text-xl font-bold text-(--text-main)">{t('dashboard.empty.finding')}</h3>
+                            <p className="text-sm text-(--text-muted) mt-2 max-w-sm mx-auto">{t('dashboard.empty.increase_msg')}</p>
                             <button
                                 onClick={() => navigate('/preferences')}
                                 className="mt-8 px-8 py-4 bg-slate-900 dark:bg-primary-600 text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-slate-800 dark:hover:bg-primary-700 transition-all shadow-lg active:scale-95"
                             >
-                                Update Preferences
+                                {t('dashboard.empty.update_prefs')}
                             </button>
                         </div>
                     )}
@@ -264,10 +230,10 @@ const ClientDashboard = () => {
                     <div className="glass-card rounded-3xl sm:rounded-[40px] p-6 sm:p-8 border-(--border-main) bg-(--bg-card) shadow-(--shadow-main)">
                         <div className="flex items-center justify-between mb-6 sm:mb-8 px-1 sm:px-2 border-b border-(--border-main) pb-4 sm:pb-6">
                             <div>
-                                <h3 className="text-lg sm:text-xl font-bold text-(--text-main) tracking-tight">Recent Activity</h3>
-                                <p className="text-[10px] sm:text-xs font-medium text-(--text-muted) mt-1">Updates on your transfer requests</p>
+                                <h3 className="text-lg sm:text-xl font-bold text-(--text-main) tracking-tight">{t('dashboard.activity.title')}</h3>
+                                <p className="text-[10px] sm:text-xs font-medium text-(--text-muted) mt-1">{t('dashboard.activity.subtitle')}</p>
                             </div>
-                            <button onClick={() => navigate('/requests')} className="text-[9px] sm:text-[10px] font-bold text-primary-600 dark:text-primary-400 uppercase tracking-widest bg-primary-50 dark:bg-primary-900/20 px-2.5 py-1.5 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors">See Feed</button>
+                            <button onClick={() => navigate('/requests')} className="text-[9px] sm:text-[10px] font-bold text-primary-600 dark:text-primary-400 uppercase tracking-widest bg-primary-50 dark:bg-primary-900/20 px-2.5 py-1.5 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-900/30 transition-colors">{t('dashboard.activity.see_feed')}</button>
                         </div>
                         <div className="space-y-4">
                             {allRequests.length > 0 ? (
@@ -280,8 +246,8 @@ const ClientDashboard = () => {
                                             <div>
                                                 <p className="text-[13px] font-bold text-(--text-main)">
                                                     {req.senderId === user?.id 
-                                                        ? `Request sent to ${req.receiverName}` 
-                                                        : `Request from ${req.senderName}`}
+                                                        ? t('dashboard.activity.sent_to', { name: req.receiverName })
+                                                        : t('dashboard.activity.received_from', { name: req.senderName })}
                                                 </p>
                                                 <div className="flex items-center mt-1 space-x-2">
                                                     <span className="text-[10px] font-bold text-(--text-muted) uppercase tracking-widest">
@@ -299,19 +265,16 @@ const ClientDashboard = () => {
                             ) : (
                                 <div className="text-center py-10">
                                     <Activity size={32} className="mx-auto text-slate-200 mb-3" />
-                                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">No recent activity</p>
+                                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">{t('dashboard.activity.no_activity')}</p>
                                 </div>
                             )}
                         </div>
                     </div>
-                </div>
 
-                {/* Right Sidebar Section */}
-                <div className="space-y-8">
                     {/* Active Chats Quick-Access */}
                     <div className="glass-card rounded-[40px] p-8 border border-(--border-main) bg-(--bg-card)">
                         <div className="flex items-center justify-between mb-8 px-2 border-b border-(--border-main) pb-4">
-                            <h4 className="font-bold text-(--text-main) uppercase tracking-widest text-[11px]">Active Conversations</h4>
+                            <h3 className="font-bold text-(--text-main) text-lg sm:text-xl">{t('dashboard.conversations.title')}</h3>
                             <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
                         </div>
                         <div className="space-y-4">
@@ -329,7 +292,7 @@ const ClientDashboard = () => {
                                             </div>
                                             <div className="grow min-w-0">
                                                 <p className="text-xs sm:text-sm font-bold text-(--text-main) truncate leading-tight group-hover:text-primary-600 transition-colors">
-                                                    {room.type === 'GROUP' ? 'Match Group Chat' : (partner.name)}
+                                                    {room.type === 'GROUP' ? t('dashboard.conversations.group_chat') : (partner.name)}
                                                 </p>
                                                 <p className="text-[9px] sm:text-[10px] text-(--text-muted) font-medium truncate mt-1 uppercase tracking-tighter">
                                                     {room.type === 'GROUP' ? `${room.members.length} members` : partner.stationName || 'Staff Member'}
@@ -340,17 +303,29 @@ const ClientDashboard = () => {
                                 })
                             ) : (
                                 <div className="text-center py-6 bg-slate-50/50 dark:bg-slate-800/30 rounded-3xl border border-dashed border-(--border-main)">
-                                    <p className="text-[10px] font-bold text-(--text-muted) uppercase tracking-widest">No active chats</p>
+                                    <p className="text-[10px] font-bold text-(--text-muted) uppercase tracking-widest">{t('dashboard.conversations.no_chats')}</p>
                                 </div>
                             )}
                         </div>
-                        <button
-                            onClick={() => navigate('/messages')}
-                            className="w-full mt-6 py-4 bg-slate-900 dark:bg-primary-600 text-white rounded-[24px] text-[10px] font-bold uppercase tracking-widest hover:bg-primary-600 dark:hover:bg-primary-700 transition-all shadow-lg active:scale-95"
-                        >
-                            Open Messenger
-                        </button>
+                        <div className="flex justify-center w-full">
+                            <button
+                                onClick={() => navigate('/messages')}
+                                className="mt-8 px-8 py-4 bg-slate-900 dark:bg-primary-600 text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-slate-800 dark:hover:bg-primary-700 transition-all shadow-lg active:scale-95"
+                            >
+                                {t('dashboard.conversations.open_messenger')}
+                            </button>
+                        </div>
                     </div>
+                </div>
+
+                {/* Right Sidebar Section */}
+                <div className="space-y-8">
+                    <UserGuideWidget 
+                        preferences={preferences} 
+                        matches={matches} 
+                        requests={requests} 
+                        rooms={rooms} 
+                    />
 
                     {/* Verification Panel */}
                     <div className="glass-card rounded-[40px] p-8 border border-(--border-main) bg-(--bg-card)">
@@ -359,20 +334,20 @@ const ClientDashboard = () => {
                                 <ShieldCheck size={24} />
                             </div>
                             <div>
-                                <h4 className="font-bold text-(--text-main) tracking-tight leading-tight">Trust & Verification</h4>
+                                <h4 className="font-bold text-(--text-main) tracking-tight leading-tight">{t('dashboard.verification.title')}</h4>
                                 <div className="flex items-center space-x-2 mt-1">
                                     <div className="h-1.5 w-16 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                                         <div className="h-full bg-primary-500/10 dark:bg-primary-500 rounded-full transition-all duration-1000" style={{ width: `${profile?.verificationLevel >= 2 ? 100 : 50}%` }}></div>
                                     </div>
-                                    <span className="text-[10px] font-bold text-primary-600 dark:text-primary-400">{profile?.verificationLevel >= 2 ? 100 : 50}% Score</span>
+                                    <span className="text-[10px] font-bold text-primary-600 dark:text-primary-400">{profile?.verificationLevel >= 2 ? 100 : 50}% {t('dashboard.verification.score')}</span>
                                 </div>
                             </div>
                         </div>
 
                         <div className="space-y-5">
                             {[
-                                { label: 'Identity Document (NIC)', status: 'Completed', icon: ShieldCheck, color: 'text-emerald-500' },
-                                { label: 'Phone Number SMS', status: profile?.verificationLevel >= 2 ? 'Completed' : 'Pending', icon: Zap, color: profile?.verificationLevel >= 2 ? 'text-emerald-500' : 'text-amber-500' }
+                                { label: t('dashboard.verification.nic'), status: t('dashboard.verification.completed'), icon: ShieldCheck, color: 'text-emerald-500' },
+                                { label: t('dashboard.verification.phone'), status: profile?.verificationLevel >= 2 ? t('dashboard.verification.completed') : t('dashboard.verification.pending'), icon: Zap, color: profile?.verificationLevel >= 2 ? 'text-emerald-500' : 'text-amber-500' }
                             ].map((item, i) => (
                                 <div key={i} className="flex items-center justify-between">
                                     <div className="flex items-center space-x-3">
@@ -393,36 +368,36 @@ const ClientDashboard = () => {
                             <Zap size={32} className="text-primary-400 mb-6 group-hover:scale-110 transition-transform duration-500" />
                             {hasPackage ? (
                                 <>
-                                    <h4 className="text-lg font-bold tracking-tight mb-2">Package Duration</h4>
+                                    <h4 className="text-lg font-bold tracking-tight mb-2">{t('dashboard.pro.package_duration')}</h4>
                                     <div className="flex items-center space-x-2 mb-6 text-white/40 text-[11px] font-medium leading-relaxed">
                                         <Clock size={12} />
-                                        <span>{getRemainingDays()} Days Remaining</span>
+                                        <span>{getRemainingDays()} {t('dashboard.pro.days_remaining')}</span>
                                     </div>
                                     <p className="text-white/40 text-[11px] font-medium leading-relaxed mb-6">
-                                        Your premium features are active. You can extend your duration anytime to keep enjoying the benefits.
+                                        {t('dashboard.pro.active_msg')}
                                     </p>
-                                    <button 
+                                    <button
                                         onClick={() => navigate('/pricing')}
                                         className="w-full py-4 bg-white text-slate-950 rounded-[20px] text-[10px] font-bold uppercase tracking-[0.2em] shadow-lg hover:bg-primary-50 transition-all active:scale-95 cursor-pointer"
                                     >
-                                        Extend Duration
+                                        {t('dashboard.pro.extend')}
                                     </button>
                                 </>
                             ) : (
                                 <>
-                                    <h4 className="text-lg font-bold tracking-tight mb-2">Upgrade to MutualT Pro</h4>
+                                    <h4 className="text-lg font-bold tracking-tight mb-2">{t('dashboard.pro.upgrade_title')}</h4>
                                     <p className="text-white/40 text-[11px] font-medium leading-relaxed mb-6">
-                                        Experience unlimited matching, real-time alerts, and advanced profile statistics.
+                                        {t('dashboard.pro.upgrade_msg')}
                                     </p>
                                     <div className="flex items-baseline space-x-1 mb-6">
                                         <span className="text-2xl font-bold">Rs. 440</span>
-                                        <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">/ starting from</span>
+                                        <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest">{t('dashboard.pro.starting_from')}</span>
                                     </div>
-                                    <button 
+                                    <button
                                         onClick={() => navigate('/pricing')}
                                         className="w-full py-4 bg-white text-slate-950 rounded-[20px] text-[10px] font-bold uppercase tracking-[0.2em] shadow-lg hover:bg-primary-50 transition-all active:scale-95 cursor-pointer"
                                     >
-                                        View Premium Plans
+                                        {t('dashboard.pro.view_plans')}
                                     </button>
                                 </>
                             )}
