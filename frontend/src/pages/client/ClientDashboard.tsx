@@ -5,9 +5,11 @@ import {
     ChevronRight,
     Clock,
     Activity,
-    MessageSquare
+    MessageSquare,
+    BookOpen
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
@@ -31,6 +33,7 @@ const ClientDashboard = () => {
     const [rooms, setRooms] = useState<any[]>([]);
     const [preferences, setPreferences] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isGuideOpen, setIsGuideOpen] = useState(false);
 
     useEffect(() => {
         const fetchDashboardData = async () => {
@@ -320,12 +323,14 @@ const ClientDashboard = () => {
 
                 {/* Right Sidebar Section */}
                 <div className="space-y-8">
-                    <UserGuideWidget 
-                        preferences={preferences} 
-                        matches={matches} 
-                        requests={requests} 
-                        rooms={rooms} 
-                    />
+                    <div className="hidden lg:block">
+                        <UserGuideWidget 
+                            preferences={preferences} 
+                            matches={matches} 
+                            requests={requests} 
+                            rooms={rooms} 
+                        />
+                    </div>
 
                     {/* Verification Panel */}
                     <div className="glass-card rounded-[40px] p-8 border border-(--border-main) bg-(--bg-card)">
@@ -406,8 +411,58 @@ const ClientDashboard = () => {
                     </div>
                 </div>
             </div>
+
+        {/* Mobile Guide Floating Button */}
+        <div className="lg:hidden fixed bottom-6 right-6 z-40">
+            <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setIsGuideOpen(true)}
+                className="flex items-center space-x-2 bg-slate-900 dark:bg-primary-600 text-white px-5 py-4 rounded-full shadow-2xl shadow-primary-500/20 border border-white/10"
+            >
+                <BookOpen size={20} className="text-primary-400 dark:text-white" />
+                <span className="text-xs font-bold uppercase tracking-widest">{t('dashboard.guide.title')}</span>
+                {preferences.length === 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-4 w-4 bg-primary-500"></span>
+                    </span>
+                )}
+            </motion.button>
         </div>
-    );
+
+        {/* Mobile Guide Modal/Popup */}
+        <AnimatePresence>
+            {isGuideOpen && (
+                <>
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setIsGuideOpen(false)}
+                        className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-50 lg:hidden"
+                    />
+                    <motion.div
+                        initial={{ y: "100%" }}
+                        animate={{ y: 0 }}
+                        exit={{ y: "100%" }}
+                        transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                        className="fixed bottom-0 left-0 right-0 z-51 max-h-[85vh] overflow-y-auto lg:hidden"
+                    >
+                        <div className="p-4 sm:p-6 bg-slate-900 rounded-t-[40px] shadow-2xl">
+                            <UserGuideWidget 
+                                preferences={preferences} 
+                                matches={matches} 
+                                requests={requests} 
+                                rooms={rooms} 
+                                onClose={() => setIsGuideOpen(false)}
+                            />
+                        </div>
+                    </motion.div>
+                </>
+            )}
+        </AnimatePresence>
+    </div>
+);
 };
 
 export default ClientDashboard;

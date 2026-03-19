@@ -1,15 +1,16 @@
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { MapPin, Zap, Send, ShieldCheck, MessageSquare, Check, ChevronRight } from 'lucide-react';
+import { MapPin, Zap, Send, ShieldCheck, MessageSquare, Check, ChevronRight, X } from 'lucide-react';
 
 interface UserGuideWidgetProps {
     preferences: any[];
     matches: any[];
     requests: { incoming: any[], outgoing: any[] };
     rooms: any[];
+    onClose?: () => void;
 }
 
-const UserGuideWidget = ({ preferences, matches, requests, rooms }: UserGuideWidgetProps) => {
+const UserGuideWidget = ({ preferences, matches, requests, rooms, onClose }: UserGuideWidgetProps) => {
     const { t } = useTranslation();
     const navigate = useNavigate();
 
@@ -21,7 +22,10 @@ const UserGuideWidget = ({ preferences, matches, requests, rooms }: UserGuideWid
             btnText: t('dashboard.guide.step1_btn'),
             icon: MapPin,
             completed: preferences.length > 0,
-            action: () => navigate('/preferences'),
+            action: () => {
+                navigate('/preferences');
+                onClose?.();
+            },
         },
         {
             id: 2,
@@ -30,7 +34,10 @@ const UserGuideWidget = ({ preferences, matches, requests, rooms }: UserGuideWid
             btnText: t('dashboard.guide.step2_btn'),
             icon: Zap,
             completed: matches.length > 0 || requests.outgoing.length > 0,
-            action: () => navigate('/matches'),
+            action: () => {
+                navigate('/matches');
+                onClose?.();
+            },
         },
         {
             id: 3,
@@ -39,7 +46,10 @@ const UserGuideWidget = ({ preferences, matches, requests, rooms }: UserGuideWid
             btnText: t('dashboard.guide.step3_btn'),
             icon: Send,
             completed: requests.outgoing.length > 0,
-            action: () => navigate('/matches'),
+            action: () => {
+                navigate('/matches');
+                onClose?.();
+            },
         },
         {
             id: 4,
@@ -48,7 +58,10 @@ const UserGuideWidget = ({ preferences, matches, requests, rooms }: UserGuideWid
             btnText: t('dashboard.guide.step4_btn'),
             icon: ShieldCheck,
             completed: [...requests.incoming, ...requests.outgoing].some(r => r.status === 'ACCEPTED') || rooms.length > 0,
-            action: () => navigate('/requests'),
+            action: () => {
+                navigate('/requests');
+                onClose?.();
+            },
         },
         {
             id: 5,
@@ -57,7 +70,10 @@ const UserGuideWidget = ({ preferences, matches, requests, rooms }: UserGuideWid
             btnText: t('dashboard.guide.step5_btn'),
             icon: MessageSquare,
             completed: rooms.length > 0,
-            action: () => navigate('/messages'),
+            action: () => {
+                navigate('/messages');
+                onClose?.();
+            },
         }
     ];
 
@@ -76,18 +92,26 @@ const UserGuideWidget = ({ preferences, matches, requests, rooms }: UserGuideWid
 
     return (
         <div className="bg-slate-900 dark:bg-slate-800/80 rounded-[32px] p-8 text-white relative overflow-hidden shadow-2xl shadow-slate-900/20 mb-8 mt-4 lg:mt-0">
+            {onClose && (
+                <button 
+                    onClick={onClose}
+                    className="absolute top-6 right-6 z-20 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-all active:scale-95"
+                >
+                    <X size={18} />
+                </button>
+            )}
             {/* Background elements */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
             <div className="absolute bottom-0 left-0 w-40 h-40 bg-indigo-500/20 rounded-full blur-2xl translate-y-1/3 -translate-x-1/4 pointer-events-none"></div>
             
-            <div className="relative z-10 mb-8">
+            <div className={`relative z-10 mb-8 ${onClose ? 'pr-8' : ''}`}>
                 <h3 className="text-xl font-bold text-white tracking-tight">{t('dashboard.guide.title')}</h3>
                 <p className="text-sm font-medium text-white/60 mt-1">{t('dashboard.guide.subtitle')}</p>
                 
                 <div className="mt-6">
                     <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest mb-2">
                         <span className="text-primary-400">{completedCount} of {steps.length} {t('dashboard.guide.completed')}</span>
-                        <span className="text-white/60">{progressPercentage}%</span>
+                        <span className="text-white/60">{Math.round(progressPercentage)}%</span>
                     </div>
                     <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
                         <div 
@@ -160,3 +184,4 @@ const UserGuideWidget = ({ preferences, matches, requests, rooms }: UserGuideWid
 };
 
 export default UserGuideWidget;
+
