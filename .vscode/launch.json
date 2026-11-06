@@ -2,10 +2,42 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch Full App",
+            "name": "Run Full App (Terminal Only - No Debug)",
             "type": "node",
             "request": "launch",
+            "noDebug": true,
+            "runtimeExecutable": "cmd.exe",
+            "runtimeArgs": [
+                "/c",
+                "echo Full app is starting in the dedicated terminals below. Press Ctrl+C in each terminal to stop."
+            ],
             "preLaunchTask": "Run Full App"
+        },
+        {
+            "name": "Run Full App + Open Chrome (No Debug)",
+            "type": "chrome",
+            "request": "launch",
+            "noDebug": true,
+            "url": "http://localhost:5173",
+            "webRoot": "${workspaceFolder}/frontend",
+            "preLaunchTask": "Run Full App"
+        },
+        {
+            "name": "Run Full App + Open Edge (No Debug)",
+            "type": "msedge",
+            "request": "launch",
+            "noDebug": true,
+            "url": "http://localhost:5173",
+            "webRoot": "${workspaceFolder}/frontend",
+            "preLaunchTask": "Run Full App"
+        },
+        {
+            "name": "Backend Only (Spring Boot - No Debug)",
+            "type": "java",
+            "request": "launch",
+            "mainClass": "com.moonseptstudio.mutualt.MutualtApplication",
+            "projectName": "mutualt",
+            "noDebug": true
         }
     ]
 }

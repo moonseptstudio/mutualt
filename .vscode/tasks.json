@@ -5,38 +5,55 @@
             "label": "Run Frontend",
             "type": "shell",
             "command": "npm run dev",
+            "options": {
+                "cwd": "${workspaceFolder}/frontend"
+            },
             "isBackground": true,
             "problemMatcher": {
-                "owner": "vite",
+                "owner": "custom",
                 "pattern": {
                     "regexp": "^$"
                 },
                 "background": {
                     "activeOnStart": true,
-                    "beginsPattern": "VITE v",
-                    "endsPattern": "ready in"
+                    "beginsPattern": ".*(VITE|vite).*",
+                    "endsPattern": ".*(Local:|ready in).*"
                 }
-            },
-            "options": {
-                "cwd": "${workspaceFolder}/frontend"
             },
             "presentation": {
                 "reveal": "always",
                 "panel": "dedicated",
-                "group": "frontend"
+                "group": "frontend",
+                "clear": false
             }
         },
         {
             "label": "Run Backend",
             "type": "shell",
-            "command": "./mvnw.cmd spring-boot:run",
+            "command": ".\\mvnw.cmd spring-boot:run",
+            "windows": {
+                "command": ".\\mvnw.cmd spring-boot:run"
+            },
             "options": {
                 "cwd": "${workspaceFolder}/backend"
+            },
+            "isBackground": true,
+            "problemMatcher": {
+                "owner": "custom",
+                "pattern": {
+                    "regexp": "^$"
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": ".*",
+                    "endsPattern": ".*(Started [A-Za-z0-9]+ in|Tomcat started on port).*"
+                }
             },
             "presentation": {
                 "reveal": "always",
                 "panel": "dedicated",
-                "group": "backend"
+                "group": "backend",
+                "clear": false
             }
         },
         {
@@ -45,6 +62,8 @@
                 "Run Frontend",
                 "Run Backend"
             ],
+            "dependsOrder": "parallel",
+            "problemMatcher": [],
             "group": {
                 "kind": "build",
                 "isDefault": true
