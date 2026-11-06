@@ -6,7 +6,10 @@ import {
     Clock,
     Activity,
     MessageSquare,
-    BookOpen
+    BookOpen,
+    Smartphone,
+    CreditCard,
+    Building2
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,6 +22,7 @@ import UserGuideWidget from '../../components/dashboard/UserGuideWidget';
 import PageLoader from '../../components/common/PageLoader';
 
 import { getAvatarUrl } from '../../api/url';
+import featuredMatchCardBg from '../../assets/dashboard/featuredMatchCardbg.webp';
 
 
 
@@ -61,23 +65,20 @@ const ClientDashboard = () => {
 
 
 
-    const StatsCard = ({ title, value, icon: Icon, color, trend, path }: any) => (
+    const StatsCard = ({ title, value, icon: Icon, trend, path }: any) => (
         <div 
             onClick={() => path && navigate(path)}
-            className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-[32px] border-(--border-main) bg-(--bg-card) shadow-(--shadow-main) relative overflow-hidden group cursor-pointer hover:scale-[1.02] active:scale-95 transition-all duration-300"
+            className="glass-card p-4 sm:p-6 rounded-2xl sm:rounded-[32px] border border-sky-200/90 dark:border-sky-500/30 hover:border-sky-400 dark:hover:border-sky-400/60 bg-(--bg-card) shadow-xs hover:shadow-md hover:shadow-sky-500/10 relative overflow-hidden group cursor-pointer hover:scale-[1.02] active:scale-95 transition-all duration-300"
         >
             <div className="relative z-10">
-                <div className={`p-2 sm:p-3 rounded-xl sm:rounded-2xl ${color} inline-flex mb-2 sm:mb-4 shadow-sm group-hover:scale-110 transition-transform duration-300`}>
-                    <Icon size={20} className="text-white" />
-                </div>
-                <h4 className="text-[9px] sm:text-[11px] font-bold text-(--text-muted) uppercase tracking-widest mb-1">{title}</h4>
+                <h4 className="text-[9px] sm:text-[11px] font-bold text-(--text-muted) uppercase tracking-widest mb-1.5 sm:mb-2">{title}</h4>
                 <div className="flex items-baseline space-x-2">
                     <span className="text-2xl sm:text-3xl font-bold text-(--text-main) tracking-tight">{value}</span>
                     {trend && <span className="text-[10px] font-bold text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded-md">{trend}</span>}
                 </div>
             </div>
-            <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-[0.1] group-hover:-rotate-12 transition-all duration-500">
-                <Icon size={120} />
+            <div className="absolute -right-1 -bottom-1 opacity-[0.06] dark:opacity-[0.1] group-hover:opacity-[0.15] group-hover:-rotate-6 transition-all duration-500 pointer-events-none text-sky-500 dark:text-sky-400">
+                <Icon size={80} />
             </div>
         </div>
     );
@@ -133,7 +134,6 @@ const ClientDashboard = () => {
                             title={t('dashboard.stats.active_matches')}
                             value={matches.length}
                             icon={Zap}
-                            color="bg-indigo-500"
                             trend={matches.length > 0 ? "+High" : null}
                             path="/matches"
                         />
@@ -141,14 +141,12 @@ const ClientDashboard = () => {
                             title={t('dashboard.stats.match_requests')}
                             value={allRequests.length}
                             icon={Activity}
-                            color="bg-primary-500"
                             path="/requests"
                         />
                         <StatsCard
                             title={t('dashboard.stats.messages')}
                             value={rooms.length}
                             icon={MessageSquare}
-                            color="bg-emerald-500"
                             trend="Live"
                             path="/messages"
                         />
@@ -156,14 +154,21 @@ const ClientDashboard = () => {
                             title={t('dashboard.stats.preferences')}
                             value={preferences.length}
                             icon={MapPin}
-                            color="bg-amber-500"
                             path="/preferences"
                         />
                     </div>
 
                     {/* Featured Match Card */}
                     {matches.length > 0 ? (
-                        <div className="premium-gradient rounded-3xl sm:rounded-[40px] p-5 sm:p-10 text-white relative overflow-hidden shadow-2xl shadow-slate-900/40 group">
+                        <div className="rounded-3xl sm:rounded-[40px] p-5 sm:p-10 text-white relative overflow-hidden shadow-2xl shadow-slate-900/50 border border-slate-700/60 group bg-slate-950">
+                            {/* Background Image Layer with Cinematic Zoom on Hover */}
+                            <div 
+                                className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 ease-out group-hover:scale-105 pointer-events-none"
+                                style={{ backgroundImage: `url(${featuredMatchCardBg})` }}
+                            />
+                            {/* Contrast Overlay Gradient: Darker on left for text legibility, transparent on right for glowing cybernetic visual */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/65 to-slate-950/20 pointer-events-none" />
+
                             <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
                                 <div className="max-w-md">
                                     <div className="flex items-center space-x-2 text-primary-400 mb-4 sm:mb-6 bg-white/10 w-fit px-3 py-1 rounded-full backdrop-blur-md border border-white/10">
@@ -201,14 +206,6 @@ const ClientDashboard = () => {
                                                 );
                                             })}
                                         </div>
-                                    </div>
-                                </div>
-                                <div className="hidden md:block relative">
-                                    <div className="w-32 h-32 bg-white/10 rounded-[40px] backdrop-blur-md border border-white/20 flex items-center justify-center rotate-6 group-hover:rotate-12 transition-transform duration-700">
-                                        <Zap size={64} className="text-primary-400" />
-                                    </div>
-                                    <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-emerald-500 rounded-[20px] shadow-lg flex items-center justify-center -rotate-12 group-hover:-rotate-6 transition-transform duration-700">
-                                        <ShieldCheck size={32} className="text-white" />
                                     </div>
                                 </div>
                             </div>
@@ -338,21 +335,47 @@ const ClientDashboard = () => {
                             <div className="w-12 h-12 bg-(--bg-main) rounded-2xl shadow-md border border-(--border-main) flex items-center justify-center text-primary-500">
                                 <ShieldCheck size={24} />
                             </div>
-                            <div>
-                                <h4 className="font-bold text-(--text-main) tracking-tight leading-tight">{t('dashboard.verification.title')}</h4>
-                                <div className="flex items-center space-x-2 mt-1">
+                            <div className="flex-1">
+                                <div className="flex items-center justify-between">
+                                    <h4 className="font-bold text-(--text-main) tracking-tight leading-tight">{t('dashboard.verification.title')}</h4>
+                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary-50 dark:bg-primary-950/40 text-primary-600 dark:text-primary-400">
+                                        Level {profile?.verified ? 3 : 2}
+                                    </span>
+                                </div>
+                                <div className="flex items-center space-x-2 mt-1.5">
                                     <div className="h-1.5 w-16 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                        <div className="h-full bg-primary-500/10 dark:bg-primary-500 rounded-full transition-all duration-1000" style={{ width: `${profile?.verificationLevel >= 2 ? 100 : 50}%` }}></div>
+                                        <div 
+                                            className={`h-full ${profile?.verified ? 'bg-emerald-500' : 'bg-primary-500'} rounded-full transition-all duration-1000`} 
+                                            style={{ width: `${profile?.verified ? 100 : 70}%` }}
+                                        ></div>
                                     </div>
-                                    <span className="text-[10px] font-bold text-primary-600 dark:text-primary-400">{profile?.verificationLevel >= 2 ? 100 : 50}% {t('dashboard.verification.score')}</span>
+                                    <span className="text-[10px] font-bold text-primary-600 dark:text-primary-400">
+                                        {profile?.verified ? '100%' : '70%'} {t('dashboard.verification.score')}
+                                    </span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="space-y-5">
+                        <div className="space-y-4">
                             {[
-                                { label: t('dashboard.verification.nic'), status: t('dashboard.verification.completed'), icon: ShieldCheck, color: 'text-emerald-500' },
-                                { label: t('dashboard.verification.phone'), status: profile?.verificationLevel >= 2 ? t('dashboard.verification.completed') : t('dashboard.verification.pending'), icon: Zap, color: profile?.verificationLevel >= 2 ? 'text-emerald-500' : 'text-amber-500' }
+                                { 
+                                    label: t('dashboard.verification.phone'), 
+                                    status: t('dashboard.verification.completed'), 
+                                    icon: Smartphone, 
+                                    color: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-950/40' 
+                                },
+                                { 
+                                    label: t('dashboard.verification.nic'), 
+                                    status: t('dashboard.verification.completed'), 
+                                    icon: CreditCard, 
+                                    color: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-950/40' 
+                                },
+                                { 
+                                    label: t('dashboard.verification.service'), 
+                                    status: profile?.verified ? t('dashboard.verification.verified') : t('dashboard.verification.under_review'), 
+                                    icon: Building2, 
+                                    color: profile?.verified ? 'text-emerald-500 bg-emerald-50 dark:bg-emerald-950/40' : 'text-amber-500 bg-amber-50 dark:bg-amber-950/40' 
+                                }
                             ].map((item, i) => (
                                 <div key={i} className="flex items-center justify-between">
                                     <div className="flex items-center space-x-3">
@@ -361,7 +384,9 @@ const ClientDashboard = () => {
                                         </div>
                                         <span className="text-xs font-bold text-(--text-main) sm:opacity-80">{item.label}</span>
                                     </div>
-                                    <span className={`text-[9px] font-bold uppercase tracking-widest ${item.color}`}>{item.status}</span>
+                                    <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md ${item.color}`}>
+                                        {item.status}
+                                    </span>
                                 </div>
                             ))}
                         </div>
@@ -370,7 +395,6 @@ const ClientDashboard = () => {
                     {/* Pro Banner */}
                     <div className="bg-slate-950 rounded-[40px] p-8 text-white relative overflow-hidden group shadow-2xl shadow-slate-900/10">
                         <div className="relative z-10">
-                            <Zap size={32} className="text-primary-400 mb-6 group-hover:scale-110 transition-transform duration-500" />
                             {hasPackage ? (
                                 <>
                                     <h4 className="text-lg font-bold tracking-tight mb-2">{t('dashboard.pro.package_duration')}</h4>

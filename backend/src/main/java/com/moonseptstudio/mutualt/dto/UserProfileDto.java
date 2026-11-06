@@ -17,6 +17,7 @@ public class UserProfileDto {
     private String currentStationDistrict;
     private String phoneNumber;
     private Integer verificationLevel;
+    private boolean verified;
 
     private String biometricsStatus;
     private String profileImageUrl;

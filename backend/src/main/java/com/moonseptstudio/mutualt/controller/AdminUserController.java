@@ -43,8 +43,22 @@ public class AdminUserController {
     @Autowired
     com.moonseptstudio.mutualt.repository.ChatRoomRepository chatRoomRepository;
 
+    private void autoVerifyEligibleUsers() {
+        java.time.LocalDateTime cutoff = java.time.LocalDateTime.now().minusHours(24);
+        List<User> eligibleUsers = userRepository.findAll().stream()
+                .filter(u -> !u.isVerified() && u.getCreatedAt() != null && u.getCreatedAt().isBefore(cutoff))
+                .collect(java.util.stream.Collectors.toList());
+        if (!eligibleUsers.isEmpty()) {
+            for (User u : eligibleUsers) {
+                u.setVerified(true);
+            }
+            userRepository.saveAll(eligibleUsers);
+        }
+    }
+
     @GetMapping
     public List<com.moonseptstudio.mutualt.dto.UserAdminDto> getAllUsers() {
+        autoVerifyEligibleUsers();
         List<User> users = userRepository.findAll();
         return users.stream().map(user -> {
             com.moonseptstudio.mutualt.dto.UserAdminDto dto = new com.moonseptstudio.mutualt.dto.UserAdminDto();
@@ -117,6 +131,7 @@ public class AdminUserController {
 
     @GetMapping("/stats")
     public AdminStatsDto getStats() {
+        autoVerifyEligibleUsers();
         long totalUsers = userRepository.count();
         long activePremium = userRepository.countBySubscriptionPackageName("PREMIUM");
         long pendingVerifications = userRepository.countByVerifiedFalse();

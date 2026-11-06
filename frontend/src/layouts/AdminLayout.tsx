@@ -6,10 +6,7 @@ import {
     Hospital,
     BarChart3,
     LogOut,
-    RefreshCw,
-    Settings,
     Bell,
-    AlertTriangle,
     Layers
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';

@@ -11,7 +11,8 @@
     "dashboard": "Dashboard",
     "cancel": "Cancel",
     "incoming": "incoming",
-    "outgoing": "outgoing"
+    "outgoing": "outgoing",
+    "language": "Language"
   },
   "dashboard": {
     "welcome_heading": "{{name}}'s Dashboard",
@@ -83,8 +84,11 @@
       "score": "Score",
       "nic": "Identity Document (NIC)",
       "phone": "Phone Number SMS",
+      "service": "Service & Station Verification",
       "completed": "Completed",
-      "pending": "Pending"
+      "pending": "Pending",
+      "under_review": "Under Review",
+      "verified": "Verified"
     },
     "pro": {
       "package_duration": "Package Duration",
@@ -142,6 +146,9 @@
     "ranked_selection": "Ranked Selection",
     "reorder_hint": "Drag and drop to reorder your prioritized list",
     "selected_count": "{{count}} Selected",
+    "selected_preferences": "Selected Preferences",
+    "selected_hint": "Ranked priority list",
+    "no_preferences_selected": "None selected yet (click + Add below)",
     "remove_tooltip": "Remove Preference",
     "no_prefs_title": "No preferences added yet",
     "no_prefs_subtitle": "You haven't added any hospitals to your transfer preferences. Click the button below to start building your list.",
@@ -235,12 +242,15 @@
     "sign_out_session": "Sign Out from active session",
     "verify_phone": "Verify Phone",
     "verify_btn": "Verify",
-    "nic_auth_title": "NIC Authentication",
-    "nic_auth_desc": "System-level identification completed via Department for Registration of Persons.",
+    "phone_verify_title": "Phone SMS Verification",
+    "phone_verify_desc": "Mobile number ({{phone}}) verified via secure SMS OTP.",
+    "nic_auth_title": "NIC Identity Verification",
+    "nic_auth_desc": "National Identity Card ({{nic}}) verified in system records.",
+    "service_verify_title": "Service & Station Verification",
+    "service_verify_success": "Workplace station and professional designation verified by administration.",
+    "service_verify_pending": "Workplace station and designation details are currently under administrative review.",
+    "under_review": "Under Review",
     "completed": "Completed",
-    "phone_verify_title": "Phone SMS Verification (Level 2)",
-    "phone_verify_success": "Mobile number ({{phone}}) verified via secure SMS OTP.",
-    "phone_verify_pending": "Complete Level 2 by verifying your mobile number to enable real-time match alerts.",
     "verified": "Verified",
     "pending": "Pending",
     "otp_modal_desc": "We've sent a 6-digit verification code to your phone. Please enter it below.",

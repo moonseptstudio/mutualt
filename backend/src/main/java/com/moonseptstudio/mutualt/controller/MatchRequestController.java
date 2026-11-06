@@ -44,6 +44,14 @@ public class MatchRequestController {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
+    private String getUserDisplayName(User user) {
+        if (user == null) return "Someone";
+        return profileRepository.findByUserId(user.getId())
+                .map(UserProfile::getFullName)
+                .filter(name -> name != null && !name.trim().isEmpty())
+                .orElse(user.getUsername());
+    }
+
     @GetMapping("/me")
     public ResponseEntity<?> getMyRequests(Authentication authentication) {
         User user = userRepository.findByUsername(authentication.getName()).orElseThrow();
@@ -88,10 +96,12 @@ public class MatchRequestController {
 
         requestRepository.save(request);
 
+        String senderDisplayName = getUserDisplayName(sender);
+
         Notification notif = new Notification();
         notif.setUser(receiver);
         notif.setTitle("New Match Request");
-        notif.setMessage(sender.getUsername() + " sent you a new match request.");
+        notif.setMessage(senderDisplayName + " sent you a new match request.");
         notif.setType("MATCH");
         notif.setCreatedAt(LocalDateTime.now());
         notificationRepository.save(notif);
@@ -99,8 +109,8 @@ public class MatchRequestController {
         // Broadcast notification to receiver
         messagingTemplate.convertAndSend("/topic/user/" + receiver.getId() + "/notifications", Map.of(
             "type", "MATCH_REQUEST",
-            "senderName", sender.getUsername(),
-            "content", sender.getUsername() + " sent you a new match request."
+            "senderName", senderDisplayName,
+            "content", senderDisplayName + " sent you a new match request."
         ));
 
         return ResponseEntity.ok(convertToDto(request));
@@ -118,11 +128,13 @@ public class MatchRequestController {
         request.setStatus("ACCEPTED");
         requestRepository.save(request);
 
+        String acceptorDisplayName = getUserDisplayName(user);
+
         // Notify the sender that their request was accepted
         Notification responseNotif = new Notification();
         responseNotif.setUser(request.getSender());
         responseNotif.setTitle("Match Request Accepted");
-        responseNotif.setMessage(user.getUsername() + " accepted your match request.");
+        responseNotif.setMessage(acceptorDisplayName + " accepted your match request.");
         responseNotif.setType("MATCH");
         responseNotif.setCreatedAt(LocalDateTime.now());
         notificationRepository.save(responseNotif);
@@ -130,9 +142,12 @@ public class MatchRequestController {
         // Broadcast notification to the original sender
         messagingTemplate.convertAndSend("/topic/user/" + request.getSender().getId() + "/notifications", Map.of(
             "type", "MATCH_ACCEPTED",
-            "senderName", user.getUsername(),
-            "content", user.getUsername() + " accepted your match request."
+            "senderName", acceptorDisplayName,
+            "content", acceptorDisplayName + " accepted your match request."
         ));
+
+        String senderDisplayName = getUserDisplayName(request.getSender());
+        String receiverDisplayName = getUserDisplayName(request.getReceiver());
 
         // CREATE CHAT ROOM
         if ("TRIPLE".equals(request.getMatchType())) {
@@ -161,7 +176,7 @@ public class MatchRequestController {
 
             if (!roomExists) {
                 ChatRoom room = new ChatRoom();
-                room.setName("Group Chat: " + request.getSender().getUsername() + " & others");
+                room.setName("Group Chat: " + senderDisplayName + " & others");
                 room.setType("GROUP");
                 room.setMembers(members);
                 chatRoomRepository.save(room);
@@ -180,7 +195,7 @@ public class MatchRequestController {
 
             if (!roomExists) {
                 ChatRoom room = new ChatRoom();
-                room.setName(request.getSender().getUsername() + " & " + request.getReceiver().getUsername());
+                room.setName(senderDisplayName + " & " + receiverDisplayName);
                 room.setType("DIRECT");
                 room.setMembers(members);
                 chatRoomRepository.save(room);

@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { AlertTriangle, LogOut, Info, X } from 'lucide-react';
+import { LogOut, Info, X } from 'lucide-react';
 
 interface ConfirmationModalProps {
     isOpen: boolean;
@@ -59,7 +59,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     };
 
     return createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-slate-900/60 dark:bg-black/60 dark:backdrop-blur-sm transition-opacity"
@@ -70,8 +70,10 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
             <div className="relative w-full max-w-sm bg-[var(--bg-card)] rounded-[32px] shadow-2xl p-6 sm:p-8 border border-[var(--border-main)] animate-in zoom-in-95 duration-300 overflow-hidden">
                 {/* Close Button */}
                 <button
+                    type="button"
                     onClick={onClose}
-                    className="absolute top-4 right-4 p-2 text-slate-400 hover:text-[var(--text-main)] hover:bg-[var(--bg-main)] rounded-full transition-all"
+                    className="absolute top-4 right-4 z-10 p-2 text-slate-400 hover:text-[var(--text-main)] hover:bg-[var(--bg-main)] rounded-full transition-all cursor-pointer"
+                    aria-label="Close"
                 >
                     <X size={18} />
                 </button>
@@ -101,7 +103,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                 </div>
 
                 {/* Decorative background glow */}
-                <div className={`absolute -right-4 -top-4 w-24 h-24 ${type === 'info' ? 'bg-primary-500/5' : 'bg-rose-500/5'} rounded-full blur-2xl`}></div>
+                <div className={`absolute -right-4 -top-4 w-24 h-24 ${type === 'info' ? 'bg-primary-500/5' : 'bg-rose-500/5'} rounded-full blur-2xl pointer-events-none`}></div>
             </div>
         </div>,
         document.body

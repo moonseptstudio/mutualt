@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { X, ShieldCheck, CreditCard, Lock, AlertCircle, Tag, CheckCircle2 } from 'lucide-react';
+import { X, ShieldCheck, Lock, AlertCircle, Tag, CheckCircle2 } from 'lucide-react';
 
 interface PaymentModalProps {
     isOpen: boolean;
@@ -160,9 +160,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
 
                 <div className="p-8">
                     <div className="mb-8">
-                        <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center mb-4">
-                            <CreditCard size={24} />
-                        </div>
                         <h3 className="text-2xl font-bold text-(--text-main)">Complete Payment</h3>
                         <p className="text-(--text-muted) text-sm mt-1">Confirm your purchase details below</p>
                     </div>

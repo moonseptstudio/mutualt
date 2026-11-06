@@ -203,12 +203,10 @@ const PricingPage = () => {
                             description="Standard basic features for simple swaps"
                             features={[
                                 "2-Way Direct Matching Only",
-                                "View-Only (Cannot Send Requests)",
-                                "Hidden Contact Details",
-                                "NIC Identity Verification",
                                 "Station Preferences (Up to 3)",
                                 "Search & Filter Vacancies",
-                                "Dashboard Access (with Ads)"
+                                "NIC Identity Verification",
+                                "View-Only (Cannot Send Requests)"
                             ]}
                             highlighted={false}
                             onAction={() => navigate('/register')}
@@ -219,14 +217,11 @@ const PricingPage = () => {
                             price="440"
                             description="Best for quick direct & 3-way swaps"
                             features={[
-                                "Direct Messaging Option",
-                                "Unlimited Match Requests",
                                 "2-Way & 3-Way Dynamic Matching",
-                                "Full Profile Visibility",
-                                "Station Preferences (Up to 3)",
-                                "Advanced Search & Filters",
-                                "No Advertisements (Ad-Free)",
-                                "Premium Customer Support"
+                                "Unlimited Match Requests",
+                                "Direct Messaging Option",
+                                "Full Profile & Contact Visibility",
+                                "100% Ad-Free Experience"
                             ]}
                             highlighted={false}
                             onAction={() => handleUpgradeRequest({name: "Premium (1 Month)", price: "440", duration: 1})}
@@ -237,14 +232,11 @@ const PricingPage = () => {
                             price="690"
                             description="Save more with 2 months access"
                             features={[
-                                "Direct Messaging Option",
-                                "Unlimited Match Requests",
                                 "2-Way & 3-Way Dynamic Matching",
-                                "Full Profile Visibility",
-                                "Station Preferences (Up to 3)",
-                                "Advanced Search & Filters",
-                                "No Advertisements (Ad-Free)",
-                                "Premium Customer Support"
+                                "Unlimited Match Requests",
+                                "Direct Messaging Option",
+                                "Full Profile & Contact Visibility",
+                                "100% Ad-Free Experience"
                             ]}
                             highlighted={false}
                             onAction={() => handleUpgradeRequest({name: "Premium (2 Months)", price: "690", duration: 2})}
@@ -255,14 +247,11 @@ const PricingPage = () => {
                             price="990"
                             description="Maximum value for long-term search"
                             features={[
-                                "Direct Messaging Option",
-                                "Unlimited Match Requests",
                                 "2-Way & 3-Way Dynamic Matching",
-                                "Full Profile Visibility",
-                                "Station Preferences (Up to 3)",
-                                "Advanced Search & Filters",
-                                "No Advertisements (Ad-Free)",
-                                "Premium Customer Support"
+                                "Unlimited Match Requests",
+                                "Direct Messaging Option",
+                                "Full Profile & Contact Visibility",
+                                "100% Ad-Free Experience"
                             ]}
                             highlighted={true}
                             onAction={() => handleUpgradeRequest({name: "Premium (3 Months)", price: "990", duration: 3})}

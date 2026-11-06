@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Zap, X, ShieldCheck, ArrowRight, Activity, MapPin, Inbox, MessageSquare } from 'lucide-react';
+import { Zap, X, Activity, MapPin, Inbox, MessageSquare } from 'lucide-react';
 
 interface UnlockFullAccessModalProps {
     isOpen: boolean;

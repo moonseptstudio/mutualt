@@ -81,6 +81,9 @@ const NotificationListener = () => {
                     body: data.content,
                     tag: data.chatRoomId ? `msg-${data.chatRoomId}` : `notif-${data.type}` // Group appropriately
                 });
+
+                // Dispatch global event to update in-app notification count and dropdown immediately
+                window.dispatchEvent(new CustomEvent('notification-received'));
             });
         };
 

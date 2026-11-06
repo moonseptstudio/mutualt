@@ -21,12 +21,14 @@ const ConfigItem = ({ icon: Icon, label, value, action, warning, onClick }: any)
                 <p className="text-sm font-bold text-(--text-main) tracking-tight">{value}</p>
             </div>
         </div>
-        <button 
-            onClick={onClick} 
-            className="px-4 py-2 sm:px-3 sm:py-1.5 text-[10px] font-bold text-primary-600 bg-primary-50 dark:bg-primary-900/40 dark:text-primary-400 uppercase tracking-wider rounded-lg hover:bg-primary-600 hover:text-white dark:hover:bg-primary-500 dark:hover:text-white transition-all duration-300 cursor-pointer active:scale-95"
-        >
-            {action}
-        </button>
+        {action && (
+            <button 
+                onClick={onClick} 
+                className="px-4 py-2 sm:px-3 sm:py-1.5 text-[10px] font-bold text-primary-600 bg-primary-50 dark:bg-primary-900/40 dark:text-primary-400 uppercase tracking-wider rounded-lg hover:bg-primary-600 hover:text-white dark:hover:bg-primary-500 dark:hover:text-white transition-all duration-300 cursor-pointer active:scale-95"
+            >
+                {action}
+            </button>
+        )}
     </div>
 );
 
@@ -58,8 +60,6 @@ const Profile = () => {
     const [editForm, setEditForm] = useState({ email: '', phoneNumber: '', profileImageUrl: '' });
     const [isUploading, setIsUploading] = useState(false);
     const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
-    const [verifyingType, setVerifyingType] = useState<'phone' | null>(null);
-    const [otpValue, setOtpValue] = useState('');
 
     const photoInputRef = useRef<HTMLInputElement>(null);
 
@@ -91,24 +91,6 @@ const Profile = () => {
         } catch (err) {
             console.error("Update failed", err);
             toast.error(t('profile.toast_update_failed'));
-        }
-    };
-
-    const handleVerifyOTP = async () => {
-        if (otpValue.length !== 6) {
-            toast.error(t('profile.toast_otp_required'));
-            return;
-        }
-
-        try {
-            const docType = 'biometrics';
-            const response = await apiClient.put(`/profile/submit-doc/${docType}`, {});
-            setProfile(response.data);
-            toast.success(t('profile.toast_phone_verified'));
-            setVerifyingType(null);
-            setOtpValue('');
-        } catch (err: any) {
-            toast.error(err.response?.data?.message || t('profile.toast_update_failed'));
         }
     };
 
@@ -199,9 +181,9 @@ const Profile = () => {
                 <div className="text-center md:text-left grow">
                     <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-2 mb-2">
                         <h1 className="text-2xl sm:text-4xl font-semibold text-(--text-main) tracking-tight leading-none">{profile.fullName}</h1>
-                        <div className="flex items-center space-x-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 px-3 py-1 rounded-full text-[10px] sm:text-xs font-medium uppercase tracking-wider border border-emerald-100 dark:border-emerald-800 w-fit">
+                        <div className={`flex items-center space-x-1 ${profile.verified ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800' : 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-800'} px-3 py-1 rounded-full text-[10px] sm:text-xs font-medium uppercase tracking-wider border w-fit`}>
                             <ShieldCheck size={14} />
-                            <span>{t('profile.verified_staff')}</span>
+                            <span>{profile.verified ? t('profile.verified_staff') : t('profile.under_review')}</span>
                         </div>
                     </div>
                     <p className="text-xs sm:text-sm text-(--text-muted) font-medium">{profile.jobCategoryName} @ {profile.currentStationName}</p>
@@ -221,12 +203,12 @@ const Profile = () => {
                     )}
                     <div className="flex items-center justify-center md:justify-start space-x-4 sm:space-x-6 mt-6">
                         <div className="text-center md:text-left">
-                            <p className="text-xl sm:text-2xl font-semibold text-(--text-main)">Level {profile.verificationLevel}</p>
+                            <p className="text-xl sm:text-2xl font-semibold text-(--text-main)">Level {profile.verified ? 3 : 2}</p>
                             <p className="text-[10px] sm:text-xs font-medium text-(--text-muted) uppercase tracking-wider mt-1">{t('profile.trust_level')}</p>
                         </div>
                         <div className="w-px h-8 sm:h-10 bg-(--border-main)/50"></div>
                         <div className="text-center md:text-left">
-                            <p className="text-xl sm:text-2xl font-semibold text-(--text-main)">{profile.verificationLevel >= 2 ? '100%' : '50%'}</p>
+                            <p className="text-xl sm:text-2xl font-semibold text-(--text-main)">{profile.verified ? '100%' : '70%'}</p>
                             <p className="text-[10px] sm:text-xs font-medium text-(--text-muted) uppercase tracking-wider mt-1">{t('profile.profile_score')}</p>
                         </div>
                     </div>
@@ -310,7 +292,7 @@ const Profile = () => {
                                 <>
                                     <ConfigItem icon={Mail} label={t('profile.official_email')} value={profile.email} action={t('profile.manage')} onClick={() => setIsEditing(true)} />
                                     <ConfigItem icon={Smartphone} label={t('profile.contact_number')} value={profile.phoneNumber || t('profile.not_provided')} action={t('profile.manage')} onClick={() => setIsEditing(true)} />
-                                    <ConfigItem icon={CreditCard} label={t('profile.nic_label')} value={profile.nic} action={t('profile.view_details')} onClick={() => toast(`NIC: ${profile.nic}`, { icon: '💳' })} />
+                                    <ConfigItem icon={CreditCard} label={t('profile.nic_label')} value={profile.nic} />
                                 </>
                             )}
                         </div>
@@ -330,93 +312,83 @@ const Profile = () => {
                         <FileText size={20} className="text-primary-600" />
                         <span>{t('profile.verification_pipeline')}</span>
                     </h3>
-                    <div className="glass-card rounded-2xl sm:rounded-[32px] p-6 sm:p-8 space-y-8 border-(--border-main) bg-(--bg-card) dark:bg-(--bg-card)/40">
-                        <div className="relative pl-10 border-l-2 border-(--border-main)/50 space-y-12">
-                            <div className="relative">
-                                <div className="absolute -left-[51px] top-0 p-2 bg-emerald-500 text-white rounded-full border-4 border-(--bg-main)">
-                                    <ShieldCheck size={16} />
+                    <div className="glass-card rounded-2xl sm:rounded-[32px] p-6 sm:p-8 border-(--border-main) bg-(--bg-card) dark:bg-(--bg-card)/40">
+                        <div className="space-y-8">
+                            {/* Stage 1: Phone SMS Verification (Completed at registration) */}
+                            <div className="relative flex items-start space-x-5">
+                                {/* Connector line to Stage 2 */}
+                                <div 
+                                    className="absolute left-5 top-10 -bottom-8 w-0.5 bg-emerald-500/50 -translate-x-1/2" 
+                                    aria-hidden="true"
+                                />
+                                <div className="relative z-10 shrink-0 w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center border-4 border-(--bg-card) shadow-xs">
+                                    <Smartphone size={18} />
                                 </div>
-                                <div>
-                                    <h4 className="font-semibold text-(--text-main) text-sm">{t('profile.nic_auth_title')}</h4>
-                                    <p className="text-xs text-(--text-muted) mt-1 font-medium leading-relaxed">{t('profile.nic_auth_desc')}</p>
-                                    <p className="text-xs font-medium text-emerald-500 uppercase tracking-wider mt-3">{t('profile.completed')}</p>
+                                <div className="pt-1.5 flex-1 min-w-0">
+                                    <h4 className="font-semibold text-(--text-main) text-sm">{t('profile.phone_verify_title')}</h4>
+                                    <p className="text-xs text-(--text-muted) mt-1 font-medium leading-relaxed">
+                                        {t('profile.phone_verify_desc', { phone: profile.phoneNumber })}
+                                    </p>
+                                    <p className="text-xs font-semibold text-emerald-500 uppercase tracking-wider mt-2">
+                                        {t('profile.completed')}
+                                    </p>
                                 </div>
                             </div>
 
-                            <div className="relative">
-                                <div className={`absolute -left-[51px] top-0 p-2 ${profile.verificationLevel >= 2 ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'} text-white rounded-full border-4 border-(--bg-main)`}>
-                                    <Smartphone size={16} />
+                            {/* Stage 2: NIC Identity Verification (Completed at registration) */}
+                            <div className="relative flex items-start space-x-5">
+                                {/* Connector line to Stage 3 */}
+                                <div 
+                                    className={`absolute left-5 top-10 -bottom-8 w-0.5 -translate-x-1/2 ${
+                                        profile.verified ? 'bg-emerald-500/50' : 'bg-(--border-main)'
+                                    }`} 
+                                    aria-hidden="true"
+                                />
+                                <div className="relative z-10 shrink-0 w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center border-4 border-(--bg-card) shadow-xs">
+                                    <CreditCard size={18} />
                                 </div>
-                                <div>
-                                    <div className="flex items-center justify-between">
-                                        <h4 className="font-semibold text-(--text-main) text-sm">{t('profile.phone_verify_title')}</h4>
-                                        {profile.verificationLevel < 2 && (
-                                            <button
-                                                onClick={() => setVerifyingType('phone')}
-                                                className="text-[10px] font-bold text-primary-600 dark:text-primary-400 uppercase hover:text-primary-800 dark:hover:text-primary-300 transition-colors"
-                                            >
-                                                {t('profile.verify_phone')}
-                                            </button>
+                                <div className="pt-1.5 flex-1 min-w-0">
+                                    <h4 className="font-semibold text-(--text-main) text-sm">{t('profile.nic_auth_title')}</h4>
+                                    <p className="text-xs text-(--text-muted) mt-1 font-medium leading-relaxed">
+                                        {t('profile.nic_auth_desc', { nic: profile.nic })}
+                                    </p>
+                                    <p className="text-xs font-semibold text-emerald-500 uppercase tracking-wider mt-2">
+                                        {t('profile.completed')}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Stage 3: Service & Station Verification (Admin Review) */}
+                            <div className="relative flex items-start space-x-5">
+                                <div className={`relative z-10 shrink-0 w-10 h-10 rounded-full flex items-center justify-center border-4 border-(--bg-card) shadow-xs ${
+                                    profile.verified ? 'bg-emerald-500 text-white' : 'bg-amber-500/20 text-amber-500'
+                                }`}>
+                                    <ShieldCheck size={18} />
+                                </div>
+                                <div className="pt-1.5 flex-1 min-w-0">
+                                    <h4 className="font-semibold text-(--text-main) text-sm">{t('profile.service_verify_title')}</h4>
+                                    <p className="text-xs text-(--text-muted) mt-1 font-medium leading-relaxed">
+                                        {profile.verified
+                                            ? t('profile.service_verify_success')
+                                            : t('profile.service_verify_pending')}
+                                    </p>
+                                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                                        <p className={`text-xs font-semibold uppercase tracking-wider ${profile.verified ? 'text-emerald-500' : 'text-amber-500'}`}>
+                                            {profile.verified ? t('profile.verified') : t('profile.under_review')}
+                                        </p>
+                                        {!profile.verified && (
+                                            <span className="text-[10px] text-(--text-muted)">
+                                                • {profile.jobCategoryName} @ {profile.currentStationName}
+                                            </span>
                                         )}
                                     </div>
-                                    <p className="text-xs text-slate-500 mt-1 font-medium leading-relaxed">
-                                        {profile.verificationLevel >= 2
-                                            ? t('profile.phone_verify_success', { phone: profile.phoneNumber })
-                                            : t('profile.phone_verify_pending')}
-                                    </p>
-                                    <p className={`text-xs font-medium uppercase tracking-wider mt-3 ${profile.verificationLevel >= 2 ? 'text-emerald-500' : 'text-slate-400 dark:text-slate-600'}`}>
-                                        {profile.verificationLevel >= 2 ? t('profile.verified') : t('profile.pending')}
-                                    </p>
                                 </div>
                             </div>
-
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* OTP Verification Modal */}
-            {verifyingType && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
-                    <div className="absolute inset-0 bg-slate-900/40 dark:bg-black/60 backdrop-blur-sm" onClick={() => setVerifyingType(null)}></div>
-                    <div className="relative w-full max-w-sm bg-(--bg-card) rounded-3xl shadow-2xl p-6 sm:p-8 border border-(--border-main) animate-in zoom-in-95 duration-300">
-                        <div className="mx-auto w-16 h-16 bg-primary-50 dark:bg-primary-900/30 rounded-full flex items-center justify-center mb-6">
-                            <Smartphone className="text-primary-600 dark:text-primary-400" size={32} />
-                        </div>
-                        <h3 className="text-xl font-bold text-center text-(--text-main) mb-2">
-                            {t('profile.verify_phone')}
-                        </h3>
-                        <p className="text-(--text-muted) text-center text-sm mb-6">
-                            {t('profile.otp_modal_desc')}
-                        </p>
-                        <div className="space-y-6">
-                            <input
-                                type="text"
-                                maxLength={6}
-                                value={otpValue}
-                                onChange={(e) => setOtpValue(e.target.value.replace(/\D/g, ''))}
-                                placeholder="000000"
-                                className="w-full text-center text-3xl font-bold tracking-[0.5em] py-4 bg-(--bg-main) dark:bg-(--bg-main)/50 border-2 border-(--border-main) dark:border-(--border-main)/50 rounded-2xl focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 text-(--text-main) outline-none transition-all"
-                            />
-
-                            <div className="flex flex-col sm:flex-row gap-3">
-                                <button
-                                    onClick={() => setVerifyingType(null)}
-                                    className="flex-1 px-4 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold rounded-xl text-sm transition-all"
-                                >
-                                    {t('common.cancel')}
-                                </button>
-                                <button
-                                    onClick={handleVerifyOTP}
-                                    className="flex-1 px-4 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl text-sm transition-all shadow-lg shadow-primary-500/20"
-                                >
-                                    {t('profile.verify_btn')}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
             {/* Logout Confirmation */}
             <ConfirmationModal
                 isOpen={isSignOutModalOpen}

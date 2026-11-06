@@ -286,12 +286,17 @@ public class MessageController {
         messageRepository.save(message);
 
         // Create notifications for other members
+        String senderDisplayName = profileRepository.findByUserId(sender.getId())
+                .map(UserProfile::getFullName)
+                .filter(name -> name != null && !name.trim().isEmpty())
+                .orElse(sender.getUsername());
+
         for (User member : room.getMembers()) {
             if (!member.getId().equals(sender.getId())) {
                 Notification notif = new Notification();
                 notif.setUser(member);
                 notif.setTitle("New Message");
-                notif.setMessage(sender.getUsername() + " sent a message in " + room.getName());
+                notif.setMessage(senderDisplayName + " sent a message in " + room.getName());
                 notif.setType("SYSTEM");
                 notif.setCreatedAt(LocalDateTime.now());
                 notificationRepository.save(notif);

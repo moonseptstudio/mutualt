@@ -1,16 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-    Bell,
     Lock,
     MessageSquare,
-    Eye,
-    Globe,
     Moon,
     Sun,
     ChevronRight,
-    Zap,
-    RefreshCw
+    Zap
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ChangePasswordModal from '../../components/modals/ChangePasswordModal';
@@ -117,40 +113,6 @@ const Settings = () => {
                                 description={t('settings.instant_message_desc')}
                                 enabled={settings.instantMessageAlerts}
                                 onToggle={() => toggleSetting('instantMessageAlerts')}
-                            />
-                            <SettingToggle
-                                icon={RefreshCw}
-                                title={t('settings.cycle_detection_title')}
-                                description={t('settings.cycle_detection_desc')}
-                                enabled={settings.cycleDetectionAlerts}
-                                onToggle={() => toggleSetting('cycleDetectionAlerts')}
-                            />
-                            <SettingToggle
-                                icon={Bell}
-                                title={t('settings.system_updates_title')}
-                                description={t('settings.system_updates_desc')}
-                                enabled={settings.systemUpdatesAlerts}
-                                onToggle={() => toggleSetting('systemUpdatesAlerts')}
-                            />
-                        </div>
-                    </div>
-
-                    <div>
-                        <h3 className="text-xs font-medium text-(--text-muted) uppercase tracking-wider mb-6 px-2">{t('settings.section_privacy')}</h3>
-                        <div className="space-y-4">
-                            <SettingToggle
-                                icon={Eye}
-                                title={t('settings.public_profile_title')}
-                                description={t('settings.public_profile_desc')}
-                                enabled={settings.publicProfile}
-                                onToggle={() => toggleSetting('publicProfile')}
-                            />
-                            <SettingToggle
-                                icon={Globe}
-                                title={t('settings.regional_discovery_title')}
-                                description={t('settings.regional_discovery_desc')}
-                                enabled={settings.regionalDiscovery}
-                                onToggle={() => toggleSetting('regionalDiscovery')}
                             />
                         </div>
                     </div>

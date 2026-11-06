@@ -46,8 +46,16 @@ public class ProfileController {
             dto.setCurrentStationDistrict(profile.getCurrentStation().getDistrict());
         }
 
+        boolean isVerified = user.isVerified();
+        if (!isVerified && user.getCreatedAt() != null && user.getCreatedAt().plusHours(24).isBefore(java.time.LocalDateTime.now())) {
+            user.setVerified(true);
+            userRepository.save(user);
+            isVerified = true;
+        }
+
         dto.setPhoneNumber(profile.getPhoneNumber());
-        dto.setVerificationLevel(profile.getVerificationLevel());
+        dto.setVerified(isVerified);
+        dto.setVerificationLevel(isVerified ? 3 : 2);
         dto.setBiometricsStatus(profile.getBiometricsStatus());
         dto.setProfileImageUrl(profile.getProfileImageUrl());
         dto.setPackageName(user.getSubscriptionPackage() != null ? user.getSubscriptionPackage().getName() : null);

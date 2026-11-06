@@ -2,8 +2,10 @@ package com.moonseptstudio.mutualt.controller;
 
 import com.moonseptstudio.mutualt.model.Notification;
 import com.moonseptstudio.mutualt.model.User;
+import com.moonseptstudio.mutualt.model.UserProfile;
 import com.moonseptstudio.mutualt.repository.NotificationRepository;
 import com.moonseptstudio.mutualt.repository.UserRepository;
+import com.moonseptstudio.mutualt.repository.UserProfileRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -24,6 +26,9 @@ public class NotificationController {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private UserProfileRepository profileRepository;
+
     @GetMapping
     public ResponseEntity<?> getUserNotifications(Authentication authentication) {
         User user = userRepository.findByUsername(authentication.getName()).orElseThrow();
@@ -42,6 +47,18 @@ public class NotificationController {
             notifications = notificationRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
         }
 
+        Map<String, String> nameCache = new java.util.HashMap<>();
+        for (Notification n : notifications) {
+            String msg = n.getMessage();
+            if (msg == null) continue;
+
+            String updatedMsg = resolveMessageWithDisplayName(msg, nameCache);
+            if (!msg.equals(updatedMsg)) {
+                n.setMessage(updatedMsg);
+                notificationRepository.save(n);
+            }
+        }
+
         List<Map<String, Object>> response = notifications.stream().map(n -> {
             Map<String, Object> map = new java.util.HashMap<>();
             map.put("id", n.getId());
@@ -54,6 +71,50 @@ public class NotificationController {
         }).collect(Collectors.toList());
 
         return ResponseEntity.ok(response);
+    }
+
+    private String resolveMessageWithDisplayName(String msg, Map<String, String> nameCache) {
+        if (msg == null || msg.trim().isEmpty()) {
+            return msg;
+        }
+
+        if (msg.endsWith(" sent you a new match request.")) {
+            String username = msg.substring(0, msg.indexOf(" sent you a new match request.")).trim();
+            String displayName = getDisplayNameByUsername(username, nameCache);
+            return displayName + " sent you a new match request.";
+        }
+
+        if (msg.endsWith(" accepted your match request.")) {
+            String username = msg.substring(0, msg.indexOf(" accepted your match request.")).trim();
+            String displayName = getDisplayNameByUsername(username, nameCache);
+            return displayName + " accepted your match request.";
+        }
+
+        if (msg.contains(" sent a message in ")) {
+            int idx = msg.indexOf(" sent a message in ");
+            String username = msg.substring(0, idx).trim();
+            String roomPart = msg.substring(idx + " sent a message in ".length()).trim();
+            String displayName = getDisplayNameByUsername(username, nameCache);
+            return displayName + " sent a message in " + roomPart;
+        }
+
+        return msg;
+    }
+
+    private String getDisplayNameByUsername(String username, Map<String, String> nameCache) {
+        if (nameCache.containsKey(username)) {
+            return nameCache.get(username);
+        }
+
+        String displayName = userRepository.findByUsername(username)
+                .map(u -> profileRepository.findByUserId(u.getId())
+                        .map(UserProfile::getFullName)
+                        .filter(name -> name != null && !name.trim().isEmpty())
+                        .orElse(username))
+                .orElse(username);
+
+        nameCache.put(username, displayName);
+        return displayName;
     }
 
     @PutMapping("/{id}/read")

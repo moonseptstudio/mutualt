@@ -176,7 +176,8 @@ public class AuthController {
             user.setUsername(pendingUser.getUsername());
             user.setPasswordHash(pendingUser.getPasswordHash());
             user.setRole("USER");
-            user.setVerified(true);
+            user.setVerified(false);
+            user.setCreatedAt(java.time.LocalDateTime.now());
             
             SubscriptionPackage freePackage = packageRepository.findByName("FREE").orElse(null);
             user.setSubscriptionPackage(freePackage);

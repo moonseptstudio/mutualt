@@ -12,10 +12,69 @@ import {
     X,
     MapPin
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 import toast from 'react-hot-toast';
 import PageLoader from '../../components/common/PageLoader';
 import ConfirmationModal from '../../components/common/ConfirmationModal';
+
+interface PreferenceItemProps {
+    item: any;
+    index: number;
+    onRemove: (id: number) => void;
+    onDragEnd: () => void;
+}
+
+const PreferenceItem: React.FC<PreferenceItemProps> = ({ item, index, onRemove, onDragEnd }) => {
+    const controls = useDragControls();
+    const { t } = useTranslation();
+
+    return (
+        <Reorder.Item
+            value={item}
+            dragListener={false}
+            dragControls={controls}
+            onDragEnd={onDragEnd}
+            whileDrag={{
+                scale: 1.02,
+                boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.08)",
+                zIndex: 50,
+            }}
+            transition={{ type: "spring", stiffness: 350, damping: 25 }}
+            className="relative flex items-center space-x-3 sm:space-x-4 p-4 sm:p-5 bg-[var(--bg-card)] rounded-2xl sm:rounded-[24px] border border-[var(--border-main)] shadow-sm group hover:border-primary-300 dark:hover:border-primary-700 transition-colors select-none"
+        >
+            <div
+                onPointerDown={(e) => controls.start(e)}
+                className="flex items-center space-x-2 sm:space-x-3 cursor-grab active:cursor-grabbing touch-none select-none"
+            >
+                <div className="text-slate-300 dark:text-slate-600 hover:text-primary-500 transition-colors p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/80">
+                    <GripVertical size={24} />
+                </div>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center font-bold text-xs sm:text-sm text-slate-400 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/30 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-all border border-slate-100 dark:border-slate-700 group-hover:border-primary-200 dark:group-hover:border-primary-800 shrink-0">
+                    {index + 1}
+                </div>
+            </div>
+            <div className="grow min-w-0">
+                <p className="font-bold text-[var(--text-main)] text-base sm:text-lg leading-tight truncate">
+                    {item.preferredStation?.name}
+                </p>
+                <div className="flex items-center text-[10px] sm:text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mt-1 sm:mt-1.5 space-x-3">
+                    <span className="flex items-center">
+                        <MapPin size={12} className="mr-1" />
+                        {item.preferredStation?.district}
+                    </span>
+                </div>
+            </div>
+            <button
+                type="button"
+                onClick={() => onRemove(item.id)}
+                className="p-2 sm:p-3 text-slate-300 hover:text-white hover:bg-rose-500 rounded-lg sm:rounded-xl transition-all cursor-pointer shrink-0"
+                title={t('preferences.remove_tooltip')}
+            >
+                <Trash2 size={18} />
+            </button>
+        </Reorder.Item>
+    );
+};
 
 const Preferences = () => {
     const { t } = useTranslation();
@@ -30,8 +89,9 @@ const Preferences = () => {
     const [isDistrictDropdownOpen, setIsDistrictDropdownOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [districtFilter, setDistrictFilter] = useState('');
-    const [draggedItemIndex, setDraggedItemIndex] = useState<number | null>(null);
     const districtDropdownRef = useRef<HTMLDivElement>(null);
+    const preferencesRef = useRef(preferences);
+    preferencesRef.current = preferences;
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -118,27 +178,13 @@ const Preferences = () => {
         }
     };
 
-    const handleDragStart = (index: number) => {
-        setDraggedItemIndex(index);
-    };
-
-    const handleDragEnter = (index: number) => {
-        if (draggedItemIndex === null || draggedItemIndex === index) return;
-
-        const newPreferences = [...preferences];
-        const draggedItemContext = newPreferences[draggedItemIndex];
-
-        newPreferences.splice(draggedItemIndex, 1);
-        newPreferences.splice(index, 0, draggedItemContext);
-
-        setDraggedItemIndex(index);
+    const handleReorder = (newPreferences: any[]) => {
         setPreferences(newPreferences);
     };
 
-    const handleDragEnd = async () => {
-        setDraggedItemIndex(null);
+    const handleReorderEnd = async () => {
         try {
-            const preferenceIds = preferences.map(p => p.id);
+            const preferenceIds = preferencesRef.current.map(p => p.id);
             await apiClient.post('/preferences/reorder', preferenceIds);
         } catch (error) {
             console.error("Failed to save reordered preferences", error);
@@ -200,48 +246,24 @@ const Preferences = () => {
                             </div>
                         </div>
 
-                        <div className="space-y-4" onDragOver={(e) => e.preventDefault()}>
+                        <div className="space-y-4">
                             {preferences.length > 0 ? (
-                                <AnimatePresence mode="popLayout" initial={false}>
+                                <Reorder.Group
+                                    axis="y"
+                                    values={preferences}
+                                    onReorder={handleReorder}
+                                    className="space-y-4"
+                                >
                                     {preferences.map((item, i) => (
-                                        <motion.div
+                                        <PreferenceItem
                                             key={item.id}
-                                            layout
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, scale: 0.95 }}
-                                            draggable
-                                            onDragStart={() => handleDragStart(i)}
-                                            onDragEnter={() => handleDragEnter(i)}
-                                            onDragEnd={handleDragEnd}
-                                            onDragOver={(e) => e.preventDefault()}
-                                            className={`flex items-center space-x-3 sm:space-x-4 p-4 sm:p-5 bg-[var(--bg-card)] rounded-2xl sm:rounded-[24px] border shadow-sm group hover:border-primary-300 dark:hover:border-primary-700 transition-all ${draggedItemIndex === i ? 'opacity-50 border-primary-400 scale-[0.98]' : 'border-[var(--border-main)]'}`}
-                                        >
-                                            <div className="text-slate-300 dark:text-slate-600 hover:text-primary-500 transition-colors cursor-grab active:cursor-grabbing p-1 -ml-1 sm:p-2 sm:-ml-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                                                <GripVertical size={24} />
-                                            </div>
-                                            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center font-bold text-xs sm:text-sm text-slate-400 group-hover:bg-primary-50 dark:group-hover:bg-primary-900/30 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-all border border-slate-100 dark:border-slate-700 group-hover:border-primary-200 dark:group-hover:border-primary-800 shrink-0">
-                                                {i + 1}
-                                            </div>
-                                            <div className="grow min-w-0">
-                                                <p className="font-bold text-[var(--text-main)] text-base sm:text-lg leading-tight truncate">{item.preferredStation.name}</p>
-                                                <div className="flex items-center text-[10px] sm:text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mt-1 sm:mt-1.5 space-x-3">
-                                                    <span className="flex items-center">
-                                                        <MapPin size={12} className="mr-1" />
-                                                        {item.preferredStation.district}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <button
-                                                onClick={() => confirmRemovePreference(item.id)}
-                                                className="p-2 sm:p-3 text-slate-300 hover:text-white hover:bg-rose-500 rounded-lg sm:rounded-xl transition-all cursor-pointer shrink-0"
-                                                title={t('preferences.remove_tooltip')}
-                                            >
-                                                <Trash2 size={18} />
-                                            </button>
-                                        </motion.div>
+                                            item={item}
+                                            index={i}
+                                            onRemove={confirmRemovePreference}
+                                            onDragEnd={handleReorderEnd}
+                                        />
                                     ))}
-                                </AnimatePresence>
+                                </Reorder.Group>
                             ) : (
                                 <div className="text-center py-16 px-6 glass-card rounded-[24px] border-dashed border-2 border-slate-200 dark:border-slate-800 bg-[var(--bg-card)]/50">
                                     <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -312,98 +334,177 @@ const Preferences = () => {
                             {/* Drag Indicator for Mobile */}
                             <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto my-3 sm:hidden shrink-0"></div>
 
-                            {/* Modal Header - Sticky */}
-                            <div className="px-6 py-4 sm:p-8 flex items-center justify-between border-b border-[var(--border-main)]/50 bg-[var(--bg-card)]/95 backdrop-blur-xl z-30 sticky top-0">
-                                <div>
-                                    <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-main)] tracking-tight">{t('preferences.discover_title')}</h2>
-                                    <p className="text-xs sm:text-sm font-medium text-[var(--text-muted)] mt-0.5 sm:mt-1">{t('preferences.discover_subtitle')}</p>
+                            {/* Modal Header & Top Search Bar - Fixed at top */}
+                            <div className="px-6 py-4 sm:px-8 sm:py-5 border-b border-[var(--border-main)]/50 bg-[var(--bg-card)]/95 backdrop-blur-xl z-30 shrink-0">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div>
+                                        <h2 className="text-xl sm:text-2xl font-bold text-[var(--text-main)] tracking-tight">{t('preferences.discover_title')}</h2>
+                                        <p className="text-xs sm:text-sm font-medium text-[var(--text-muted)] mt-0.5 sm:mt-1">{t('preferences.discover_subtitle')}</p>
+                                    </div>
+                                    <button
+                                        onClick={() => setIsModalOpen(false)}
+                                        className="p-2 sm:p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-[var(--text-main)] rounded-full transition-all cursor-pointer"
+                                    >
+                                        <X size={20} />
+                                    </button>
                                 </div>
-                                <button
-                                    onClick={() => setIsModalOpen(false)}
-                                    className="p-2 sm:p-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-[var(--text-main)] rounded-full transition-all cursor-pointer"
-                                >
-                                    <X size={20} />
-                                </button>
+
+                                {/* Top Search Bar & District Filter */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    <div className="relative md:col-span-2">
+                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                        <input
+                                            type="text"
+                                            placeholder={t('preferences.search_placeholder')}
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="w-full pl-12 pr-10 py-3 sm:py-3.5 bg-[var(--bg-main)]/50 border border-[var(--border-main)] rounded-2xl text-sm font-medium text-[var(--text-main)] focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all outline-none shadow-sm"
+                                        />
+                                        {searchQuery && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setSearchQuery('')}
+                                                className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-200/50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <div className="relative" ref={districtDropdownRef}>
+                                        <button
+                                            onClick={() => setIsDistrictDropdownOpen(!isDistrictDropdownOpen)}
+                                            className={`w-full flex items-center justify-between pl-12 pr-4 sm:pr-6 py-3 sm:py-3.5 bg-[var(--bg-main)]/50 border ${isDistrictDropdownOpen ? 'border-primary-500 ring-4 ring-primary-500/10' : 'border-[var(--border-main)]'} rounded-2xl text-sm font-bold text-[var(--text-main)] hover:border-slate-300 dark:hover:border-slate-700 transition-all cursor-pointer shadow-sm text-left`}
+                                        >
+                                            <Filter size={16} className={`absolute left-4 top-1/2 -translate-y-1/2 ${isDistrictDropdownOpen ? 'text-primary-500' : 'text-slate-400'} transition-colors`} />
+                                            <span className={`truncate mr-2 ${!districtFilter ? 'text-slate-400 font-medium' : ''}`}>
+                                                {districtFilter || t('preferences.all_districts')}
+                                            </span>
+                                            <motion.div
+                                                animate={{ rotate: isDistrictDropdownOpen ? 180 : 0 }}
+                                                transition={{ duration: 0.2 }}
+                                                className="shrink-0"
+                                            >
+                                                <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                                </svg>
+                                            </motion.div>
+                                        </button>
+
+                                        <AnimatePresence>
+                                            {isDistrictDropdownOpen && (
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                    exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                                                    className="absolute top-full left-0 right-0 mt-2 z-50 bg-[var(--bg-card)] border border-[var(--border-main)] rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl"
+                                                >
+                                                    <div className="max-h-60 overflow-y-auto custom-scrollbar py-2">
+                                                        <button
+                                                            onClick={() => { setDistrictFilter(''); setIsDistrictDropdownOpen(false); }}
+                                                            className={`w-full text-left px-6 py-3 text-sm font-bold transition-colors ${!districtFilter ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                                                        >
+                                                            {t('preferences.all_districts')}
+                                                        </button>
+                                                        {districts.map(d => (
+                                                            <button
+                                                                key={d}
+                                                                onClick={() => { setDistrictFilter(d); setIsDistrictDropdownOpen(false); }}
+                                                                className={`w-full text-left px-6 py-3 text-sm font-bold transition-colors ${districtFilter === d ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400' : 'text-[var(--text-main)] hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                                                            >
+                                                                {d}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Modal Body */}
-                            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 sm:p-8 relative z-10">
-                                {/* Search & Filter - Nested Sticky */}
-                                <div className="sticky top-0 z-20 bg-[var(--bg-card)] pb-4 -mx-1 px-1">
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
-                                        <div className="relative md:col-span-2">
-                                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                            <input
-                                                type="text"
-                                                placeholder={t('preferences.search_placeholder')}
-                                                value={searchQuery}
-                                                onChange={(e) => setSearchQuery(e.target.value)}
-                                                className="w-full pl-12 pr-4 py-3 sm:py-4 bg-[var(--bg-main)]/50 border border-[var(--border-main)] rounded-2xl text-sm font-medium text-[var(--text-main)] focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all outline-none shadow-sm"
-                                            />
+                            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 sm:p-8 relative z-10 space-y-6">
+                                {/* Selected Preferences Section (Directly Below Search Bar) */}
+                                {preferences.length > 0 ? (
+                                    <div className="p-4 sm:p-5 rounded-2xl bg-primary-50/40 dark:bg-primary-950/20 border border-primary-100 dark:border-primary-900/40">
+                                        <div className="flex items-center justify-between mb-3">
+                                            <div className="flex items-center space-x-2">
+                                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                                <h4 className="text-xs sm:text-sm font-bold text-[var(--text-main)] tracking-tight">
+                                                    {t('preferences.selected_preferences')}
+                                                </h4>
+                                                <span className="px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 text-[10px] sm:text-[11px] font-bold">
+                                                    {preferences.length}
+                                                </span>
+                                            </div>
+                                            <span className="text-[10px] text-[var(--text-muted)] font-medium hidden sm:inline">
+                                                {t('preferences.selected_hint')}
+                                            </span>
                                         </div>
 
-                                        <div className="relative" ref={districtDropdownRef}>
-                                            <button
-                                                onClick={() => setIsDistrictDropdownOpen(!isDistrictDropdownOpen)}
-                                                className={`w-full flex items-center justify-between pl-12 pr-6 py-3 sm:py-4 bg-[var(--bg-main)]/50 border ${isDistrictDropdownOpen ? 'border-primary-500 ring-4 ring-primary-500/10' : 'border-[var(--border-main)]'} rounded-2xl text-sm font-bold text-[var(--text-main)] hover:border-slate-300 dark:hover:border-slate-700 transition-all cursor-pointer shadow-sm text-left`}
-                                            >
-                                                <Filter size={16} className={`absolute left-4 top-1/2 -translate-y-1/2 ${isDistrictDropdownOpen ? 'text-primary-500' : 'text-slate-400'} transition-colors`} />
-                                                <span className={!districtFilter ? 'text-slate-400 font-medium' : ''}>
-                                                    {districtFilter || t('preferences.all_districts')}
-                                                </span>
-                                                <motion.div
-                                                    animate={{ rotate: isDistrictDropdownOpen ? 180 : 0 }}
-                                                    transition={{ duration: 0.2 }}
-                                                >
-                                                    <svg width="12" height="8" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                        <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                                    </svg>
-                                                </motion.div>
-                                            </button>
-
-                                            <AnimatePresence>
-                                                {isDistrictDropdownOpen && (
+                                        <div className="flex flex-wrap gap-2 sm:gap-2.5 max-h-40 sm:max-h-48 overflow-y-auto custom-scrollbar p-0.5">
+                                            <AnimatePresence mode="popLayout">
+                                                {preferences.map((item, index) => (
                                                     <motion.div
-                                                        initial={{ opacity: 0, y: -10, scale: 0.98 }}
-                                                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                                                        exit={{ opacity: 0, y: -10, scale: 0.98 }}
-                                                        className="absolute top-full left-0 right-0 mt-2 z-50 bg-[var(--bg-card)] border border-[var(--border-main)] rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl"
+                                                        key={item.id}
+                                                        layout
+                                                        initial={{ opacity: 0, scale: 0.9 }}
+                                                        animate={{ opacity: 1, scale: 1 }}
+                                                        exit={{ opacity: 0, scale: 0.8 }}
+                                                        transition={{ duration: 0.15 }}
+                                                        className="group flex items-center space-x-2 pl-2.5 pr-1.5 py-1.5 bg-[var(--bg-card)] rounded-xl border border-[var(--border-main)] shadow-sm hover:border-primary-300 dark:hover:border-primary-700 transition-all"
                                                     >
-                                                        <div className="max-h-60 overflow-y-auto custom-scrollbar py-2">
-                                                            <button
-                                                                onClick={() => { setDistrictFilter(''); setIsDistrictDropdownOpen(false); }}
-                                                                className={`w-full text-left px-6 py-3 text-sm font-bold transition-colors ${!districtFilter ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400' : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
-                                                            >
-                                                                {t('preferences.all_districts')}
-                                                            </button>
-                                                            {districts.map(d => (
-                                                                <button
-                                                                    key={d}
-                                                                    onClick={() => { setDistrictFilter(d); setIsDistrictDropdownOpen(false); }}
-                                                                    className={`w-full text-left px-6 py-3 text-sm font-bold transition-colors ${districtFilter === d ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/20 dark:text-primary-400' : 'text-[var(--text-main)] hover:bg-slate-50 dark:hover:bg-slate-800'}`}
-                                                                >
-                                                                    {d}
-                                                                </button>
-                                                            ))}
+                                                        <span className="w-5 h-5 rounded-lg bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 font-bold text-[10px] sm:text-[11px] flex items-center justify-center shrink-0 border border-primary-200/50 dark:border-primary-800/50">
+                                                            {index + 1}
+                                                        </span>
+                                                        <div className="flex flex-col min-w-0 pr-1">
+                                                            <span className="text-xs font-bold text-[var(--text-main)] truncate max-w-[130px] sm:max-w-[200px]">
+                                                                {item.preferredStation?.name}
+                                                            </span>
+                                                            <span className="text-[9px] text-[var(--text-muted)] font-medium truncate flex items-center">
+                                                                <MapPin size={9} className="mr-0.5 shrink-0" />
+                                                                {item.preferredStation?.district}
+                                                            </span>
                                                         </div>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => confirmRemovePreference(item.id)}
+                                                            className="p-1 text-slate-400 hover:text-white hover:bg-rose-500 rounded-lg transition-all cursor-pointer shrink-0"
+                                                            title={t('preferences.remove_tooltip')}
+                                                        >
+                                                            <X size={13} />
+                                                        </button>
                                                     </motion.div>
-                                                )}
+                                                ))}
                                             </AnimatePresence>
                                         </div>
                                     </div>
+                                ) : (
+                                    <div className="p-3.5 sm:p-4 rounded-2xl bg-[var(--bg-main)]/40 border border-dashed border-[var(--border-main)] flex items-center justify-between text-xs text-[var(--text-muted)]">
+                                        <div className="flex items-center space-x-2">
+                                            <span className="w-2 h-2 rounded-full bg-slate-400"></span>
+                                            <span className="font-semibold text-[var(--text-main)]">{t('preferences.selected_preferences')}:</span>
+                                            <span className="italic">{t('preferences.no_preferences_selected')}</span>
+                                        </div>
+                                    </div>
+                                )}
 
-                                    <div className="flex items-center justify-between mt-6">
-                                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest pl-2 border-l-2 border-primary-500">{t('preferences.available_results', { count: filteredStations.length })}</p>
+                                {/* Available Results Section */}
+                                <div>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest pl-2 border-l-2 border-primary-500">
+                                            {t('preferences.available_results', { count: filteredStations.length })}
+                                        </p>
                                         {(searchQuery || districtFilter || globalSearchQuery) && (
                                             <button
                                                 onClick={() => { setSearchQuery(''); setDistrictFilter(''); }}
-                                                className="text-[10px] font-bold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20 px-3 py-1.5 rounded-lg uppercase hover:bg-primary-100 dark:hover:bg-primary-900/40 transition-colors"
+                                                className="text-[10px] font-bold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20 px-3 py-1.5 rounded-lg uppercase hover:bg-primary-100 dark:hover:bg-primary-900/40 transition-colors cursor-pointer"
                                             >
                                                 {t('preferences.clear_filters')}
                                             </button>
                                         )}
                                     </div>
-                                </div>
 
                                 <div className="space-y-4 pt-2">
                                     {filteredStations.length > 0 ? (
@@ -423,24 +524,25 @@ const Preferences = () => {
                                                         <div className="min-w-0">
                                                             <div className="flex items-center gap-2 mb-1">
                                                                 <p className={`font-bold text-sm sm:text-[15px] leading-tight transition-colors truncate ${isCurrentStation ? 'text-slate-500' : 'text-[var(--text-main)] group-hover:text-primary-600 dark:group-hover:text-primary-400'}`}>{station.name}</p>
-                                                                {isCurrentStation && (
-                                                                    <span className="shrink-0 px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[9px] font-bold rounded-md uppercase tracking-wide">{t('preferences.current_label')}</span>
-                                                                )}
                                                             </div>
                                                             <p className="text-[10px] sm:text-xs text-[var(--text-muted)] font-medium truncate flex items-center">
                                                                 <MapPin size={10} className="mr-1 sm:size-[12px]" />
                                                                 {station.district} • {station.province}
                                                             </p>
                                                         </div>
-                                                        <button
-                                                            onClick={() => !isCurrentStation && handleAddPreference(station.id)}
-                                                            disabled={isCurrentStation}
-                                                            className={`shrink-0 flex items-center justify-center space-x-1 sm:space-x-2 px-3 sm:px-5 py-2 sm:py-2.5 border rounded-xl text-[11px] sm:text-sm font-semibold transition-all shadow-sm ${isCurrentStation ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-50 hover:bg-primary-600 border-slate-100 hover:border-transparent text-slate-700 hover:text-white cursor-pointer'}`}
-                                                        >
-                                                            <Plus size={14} className="sm:size-[16px]" />
-                                                            <span className="hidden xs:inline">{isCurrentStation ? t('preferences.your_station') : t('preferences.add_label')}</span>
-                                                            <span className="xs:hidden">{isCurrentStation ? '' : t('preferences.add_label')}</span>
-                                                        </button>
+                                                        {isCurrentStation ? (
+                                                            <span className="shrink-0 px-3.5 sm:px-5 py-2 sm:py-2.5 bg-slate-100 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 text-slate-400 dark:text-slate-500 text-xs sm:text-sm font-semibold rounded-xl select-none">
+                                                                {t('preferences.current_label')}
+                                                            </span>
+                                                        ) : (
+                                                            <button
+                                                                onClick={() => handleAddPreference(station.id)}
+                                                                className="shrink-0 flex items-center justify-center space-x-1.5 sm:space-x-2 px-3.5 sm:px-5 py-2 sm:py-2.5 border rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-sm bg-slate-50 dark:bg-slate-800 hover:bg-primary-600 dark:hover:bg-primary-600 border-slate-100 dark:border-slate-700 hover:border-transparent text-slate-700 dark:text-slate-200 hover:text-white cursor-pointer"
+                                                            >
+                                                                <Plus size={14} className="sm:size-[16px]" />
+                                                                <span>{t('preferences.add_label')}</span>
+                                                            </button>
+                                                        )}
                                                     </motion.div>
                                                 )
                                             })}
@@ -456,9 +558,10 @@ const Preferences = () => {
                                     )}
                                 </div>
                             </div>
-                        </motion.div>
-                    </div>
-                )}
+                        </div>
+                    </motion.div>
+                </div>
+            )}
             </AnimatePresence>
             <ConfirmationModal
                 isOpen={isDeleteModalOpen}

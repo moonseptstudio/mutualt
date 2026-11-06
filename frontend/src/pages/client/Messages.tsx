@@ -27,7 +27,7 @@ const Messages = () => {
     const { t } = useTranslation();
     const { user } = useAuth();
     const location = useLocation();
-    const { globalSearchQuery, hasPackage }: any = useOutletContext();
+    const { globalSearchQuery }: any = useOutletContext();
     const scrollRef = useRef<HTMLDivElement>(null);
 
     const [searchParams, setSearchParams] = useSearchParams();
