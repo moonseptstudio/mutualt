@@ -1,11 +1,13 @@
-import { Check, ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../api/client';
 import toast from 'react-hot-toast';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import PaymentModal from '../../components/modals/PaymentModal';
 import { motion, useScroll, useTransform } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
+import PricingCard from '../../components/common/PricingCard';
 
 /* ─── Animation Variants ─── */
 const fadeInUp: any = {
@@ -69,55 +71,8 @@ const ScrollAnimatedSection = ({ children, className = "", id, ref: externalRef 
   );
 };
 
-const PricingCard = ({ name, price, description, features, highlighted, onAction, actionLabel }: any) => {
-  return (
-    <motion.div 
-      variants={fadeInUp}
-      whileHover={{ scale: highlighted ? 1.05 : 1.02, y: -5 }}
-      className={`relative p-8 rounded-3xl border transition-all duration-500 glass-panel-hover ${highlighted
-            ? 'bg-blue-600 dark:bg-slate-900 text-white border-blue-600 dark:border-slate-800 shadow-2xl z-10'
-            : 'bg-white dark:bg-slate-800/40 text-slate-900 dark:text-slate-100 border-slate-200 dark:border-slate-700 shadow-sm'
-        }`}
-    >
-        {highlighted && (
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                <span className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-linear-to-r from-blue-400 to-violet-400 text-white text-xs font-bold rounded-full shadow-lg">
-                    <Sparkles size={12} /> Most Popular
-                </span>
-            </div>
-        )}
-        <h3 className="text-xl font-bold mb-2">{name}</h3>
-        <p className={`text-sm mb-6 ${highlighted ? 'text-blue-100/80' : 'text-slate-500'}`}>{description}</p>
-        <div className="flex items-baseline mb-8">
-            <span className="text-4xl font-bold tracking-tight">Rs. {price}</span>
-            <span className={`text-sm ml-2 ${highlighted ? 'text-blue-100/60' : 'text-slate-500'}`}>{price === "0" ? "/ forever" : "/ one-time"}</span>
-        </div>
-        <ul className="space-y-4 mb-10">
-            {features.map((feature: any, idx: number) => (
-                <li key={idx} className="flex items-center space-x-3 text-sm font-medium">
-                    <div className={`w-5 h-5 rounded-full flex items-center justify-center ${highlighted ? 'bg-white/20' : 'bg-blue-50'}`}>
-                        <Check size={12} className={highlighted ? 'text-white' : 'text-blue-600'} />
-                    </div>
-                    <span>{feature}</span>
-                </li>
-            ))}
-        </ul>
-        <button
-            onClick={onAction}
-            className={`w-full text-center py-4 rounded-2xl font-bold transition-all cursor-pointer ${highlighted
-                    ? 'bg-white text-blue-600 hover:bg-blue-50 shadow-xl'
-                    : 'bg-slate-100 text-slate-900 hover:bg-slate-200'
-                }`}
-        >
-            {actionLabel}
-        </button>
-    </motion.div>
-  );
-};
-
-import { useRef } from 'react';
-
 const PricingPage = () => {
+    const { t } = useTranslation();
     const { isAuthenticated, login, user } = useAuth();
     const navigate = useNavigate();
     const [isUpgrading, setIsUpgrading] = useState(false);
@@ -195,67 +150,39 @@ const PricingPage = () => {
 
                     <motion.div 
                         variants={staggerContainer}
-                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto"
+                        className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto"
                     >
                         <PricingCard
-                            name="Basic"
+                            name={t('home.pricing_plan_basic', 'Basic')}
                             price="0"
-                            description="Standard basic features for simple swaps"
+                            description={t('home.pricing_basic_desc', 'Standard basic features for simple swaps')}
                             features={[
-                                "2-Way Direct Matching Only",
-                                "Station Preferences (Up to 3)",
-                                "Search & Filter Vacancies",
-                                "NIC Identity Verification",
-                                "View-Only (Cannot Send Requests)"
+                                t('home.pricing_feature_2way', '2-Way Direct Matching Only'),
+                                t('home.pricing_feature_pref3', 'Station Preferences (Up to 3)'),
+                                t('home.pricing_feature_search', 'Search & Filter Vacancies'),
+                                t('home.pricing_feature_verify', 'NIC Identity Verification'),
+                                t('home.pricing_feature_view_only', 'View-Only (Cannot Send Requests)')
                             ]}
                             highlighted={false}
-                            onAction={() => navigate('/register')}
-                            actionLabel="Start for Free"
+                            onAction={() => navigate(isAuthenticated ? '/dashboard' : '/register')}
+                            actionLabel={t('home.pricing_start_free', 'Start for Free')}
+                            periodLabel={t('home.pricing_forever', '/ forever')}
                         />
                         <PricingCard
-                            name="Premium (1 Month)"
+                            name={t('home.pricing_plan_premium1', 'Premium (1 Month)')}
                             price="440"
-                            description="Best for quick direct & 3-way swaps"
+                            description={t('home.pricing_premium1_desc', 'Best for quick direct & 3-way swaps')}
                             features={[
-                                "2-Way & 3-Way Dynamic Matching",
-                                "Unlimited Match Requests",
-                                "Direct Messaging Option",
-                                "Full Profile & Contact Visibility",
-                                "100% Ad-Free Experience"
-                            ]}
-                            highlighted={false}
-                            onAction={() => handleUpgradeRequest({name: "Premium (1 Month)", price: "440", duration: 1})}
-                            actionLabel={isUpgrading ? "Upgrading..." : (user?.packageName === 'PREMIUM' ? "Extend 1 Month" : "Buy 1 Month")}
-                        />
-                        <PricingCard
-                            name="Premium (2 Months)"
-                            price="690"
-                            description="Save more with 2 months access"
-                            features={[
-                                "2-Way & 3-Way Dynamic Matching",
-                                "Unlimited Match Requests",
-                                "Direct Messaging Option",
-                                "Full Profile & Contact Visibility",
-                                "100% Ad-Free Experience"
-                            ]}
-                            highlighted={false}
-                            onAction={() => handleUpgradeRequest({name: "Premium (2 Months)", price: "690", duration: 2})}
-                            actionLabel={isUpgrading ? "Upgrading..." : (user?.packageName === 'PREMIUM' ? "Extend 2 Months" : "Buy 2 Months")}
-                        />
-                        <PricingCard
-                            name="Premium (3 Months)"
-                            price="990"
-                            description="Maximum value for long-term search"
-                            features={[
-                                "2-Way & 3-Way Dynamic Matching",
-                                "Unlimited Match Requests",
-                                "Direct Messaging Option",
-                                "Full Profile & Contact Visibility",
-                                "100% Ad-Free Experience"
+                                t('home.pricing_feature_dynamic', '2-Way & 3-Way Dynamic Matching'),
+                                t('home.pricing_feature_unlimited', 'Unlimited Match Requests'),
+                                t('home.pricing_feature_msg', 'Direct Messaging Option'),
+                                t('home.pricing_feature_visibility', 'Full Profile & Contact Visibility'),
+                                t('home.pricing_feature_no_ads', '100% Ad-Free Experience')
                             ]}
                             highlighted={true}
-                            onAction={() => handleUpgradeRequest({name: "Premium (3 Months)", price: "990", duration: 3})}
-                            actionLabel={isUpgrading ? "Upgrading..." : (user?.packageName === 'PREMIUM' ? "Extend 3 Months" : "Buy 3 Months")}
+                            onAction={() => handleUpgradeRequest({name: t('home.pricing_plan_premium1', 'Premium (1 Month)'), price: "440", duration: 1})}
+                            actionLabel={isUpgrading ? t('home.pricing_upgrading', 'Upgrading...') : (user?.packageName === 'PREMIUM' ? t('home.pricing_extend_1m', 'Extend 1 Month') : t('home.pricing_buy_1m', 'Buy 1 Month'))}
+                            periodLabel={t('home.pricing_one_time', '/ one-time')}
                         />
                     </motion.div>
                 </motion.div>

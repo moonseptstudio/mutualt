@@ -218,6 +218,30 @@ h6,
     background: linear-gradient(135deg, #06b6d4, #3b82f6);
   }
 
+  /* Bookmark ribbon for features section */
+  .bookmark-ribbon {
+    width: 3.25rem;
+    height: 4.25rem;
+    background-color: #2563eb;
+    background-image: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%);
+    -webkit-clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 50% 82%, 0% 100%);
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 50% 82%, 0% 100%);
+    filter: drop-shadow(0 4px 6px rgba(37, 99, 235, 0.3));
+    transition: transform 0.3s ease, filter 0.3s ease;
+  }
+
+  @media (min-width: 640px) {
+    .bookmark-ribbon {
+      width: 3.5rem;
+      height: 4.5rem;
+    }
+  }
+
+  .group:hover .bookmark-ribbon {
+    filter: drop-shadow(0 8px 16px rgba(37, 99, 235, 0.45));
+    transform: translateY(4px);
+  }
+
   /* Scroll-snap section-by-section scrolling */
   .snap-container {
     scroll-snap-type: y proximity;

@@ -1,7 +1,8 @@
 
-import matchingNetworkImg from '../../assets/homePage/matching-network.png';
+import circularMatchingImg from '../../assets/homePage/featurescard01.webp';
 import testimonialBgImg from '../../assets/homePage/testimonial-bg.png';
-import deviceMockupImg from '../../assets/homePage/device-mockup.png';
+import statsCardBg from '../../assets/homePage/stats-card-bg.webp';
+import Network3DBackground from '../../components/home/Network3DBackground';
 
 import { 
   CheckCircle2, 
@@ -10,7 +11,6 @@ import {
   Zap, 
   Users, 
   Search,
-  Check,
   Sparkles,
   ClipboardList,
   Settings2,
@@ -21,10 +21,15 @@ import {
   TrendingUp,
   Globe,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, useScroll, useTransform, useInView } from 'framer-motion';
 import { useRef, useEffect, useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../../context/AuthContext';
+import apiClient from '../../api/client';
+import toast from 'react-hot-toast';
+import PaymentModal from '../../components/modals/PaymentModal';
+import PricingCard from '../../components/common/PricingCard';
 
 
 /* ─── Animation Variants ─── */
@@ -160,53 +165,53 @@ const StatItem = ({ value, suffix = '', label, icon: Icon }: any) => {
     <motion.div 
       ref={ref}
       variants={fadeInUp} 
-      className="text-center stat-glow rounded-2xl p-6 bg-white/50 backdrop-blur-sm"
+      whileHover={{ y: -6, scale: 1.02 }}
+      className="text-center stat-glow rounded-2xl p-6 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl saturate-150 border border-white/80 dark:border-white/15 shadow-lg shadow-blue-900/5 dark:shadow-black/30 hover:bg-white/80 dark:hover:bg-slate-900/80 hover:border-blue-300/80 dark:hover:border-blue-400/40 transition-all duration-300"
     >
-      <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-linear-to-br from-blue-500/10 to-violet-500/10 flex items-center justify-center">
-        <Icon size={22} className="text-blue-600" />
+      <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-linear-to-br from-blue-500/15 to-violet-500/15 backdrop-blur-md border border-white/60 dark:border-white/10 flex items-center justify-center shadow-xs">
+        <Icon size={22} className="text-blue-600 dark:text-blue-400" />
       </div>
       <p className="text-3xl sm:text-4xl font-bold tracking-tight shimmer-text mb-1">
         {count.toLocaleString()}{suffix}
       </p>
-      <p className="text-slate-500 text-[10px] sm:text-xs font-bold uppercase tracking-widest">{label}</p>
+      <p className="text-slate-600 dark:text-slate-300 text-[10px] sm:text-xs font-bold uppercase tracking-widest">{label}</p>
     </motion.div>
   );
 };
 
 /* ─── Feature Card ─── */
-const gradientClasses = [
-  'icon-gradient-blue',
-  'icon-gradient-violet',
-  'icon-gradient-emerald',
-  'icon-gradient-cyan',
-  'icon-gradient-amber',
-  'icon-gradient-rose',
-];
-
-const FeatureCard = ({ icon: Icon, title, description, index }: any) => {
+const FeatureCard = ({ icon: Icon, title, description }: any) => {
   return (
     <motion.div
       variants={fadeInUp}
-      whileHover={{ y: -10, scale: 1.02 }}
-      className="glass-panel rounded-[32px] p-8 group relative overflow-hidden flex flex-col justify-between h-full"
+      whileHover={{ y: -8, scale: 1.015 }}
+      className="glass-panel rounded-[32px] pt-20 sm:pt-24 pb-8 px-7 sm:px-8 group relative overflow-hidden flex flex-col justify-between h-full"
     >
-      <div className="relative z-10">
-        <div className={`w-14 h-14 ${gradientClasses[index % gradientClasses.length]} rounded-2xl flex items-center justify-center mb-6 shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-500`}>
-          <Icon size={26} className="text-white" />
+      {/* Bookmark Tag at top-left - Single unified brand blue color */}
+      <div className="absolute top-0 left-7 sm:left-8 z-20">
+        <div className="bookmark-ribbon flex items-center justify-center pb-3 text-white">
+          {/* Top highlight line simulating ribbon fold */}
+          <div className="absolute top-0 inset-x-0 h-1 bg-white/40" />
+
+          {/* Icon */}
+          <Icon size={22} className="text-white drop-shadow-sm group-hover:scale-110 transition-transform duration-300" />
         </div>
-        <h3 className="text-lg font-bold text-slate-900 mb-3 group-hover:text-blue-600 transition-colors">{title}</h3>
-        <p className="text-slate-500 text-sm leading-relaxed mb-6 font-medium">
+      </div>
+
+      <div className="relative z-10 flex-1 flex flex-col justify-start">
+        <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-3 group-hover:text-blue-600 transition-colors">
+          {title}
+        </h3>
+        <p className="text-slate-500 text-sm leading-relaxed font-medium">
           {description}
         </p>
       </div>
 
-      
-
       {/* Hover background effect */}
-      <div className="absolute inset-0 bg-linear-to-br from-blue-50/0 via-transparent to-violet-50/0 group-hover:from-blue-50/50 group-hover:to-violet-50/50 transition-colors duration-500" />
+      <div className="absolute inset-0 bg-linear-to-br from-blue-50/0 via-transparent to-violet-50/0 group-hover:from-blue-50/50 group-hover:to-violet-50/50 transition-colors duration-500 pointer-events-none" />
       
       {/* Decorative corner */}
-      <div className="absolute -bottom-10 -right-10 w-24 h-24 bg-slate-100/30 rounded-full blur-2xl group-hover:bg-blue-100/40 transition-colors duration-500" />
+      <div className="absolute -bottom-10 -right-10 w-24 h-24 bg-slate-100/30 rounded-full blur-2xl group-hover:bg-blue-100/40 transition-colors duration-500 pointer-events-none" />
     </motion.div>
   );
 };
@@ -217,7 +222,7 @@ const LargeFeatureCard = ({ title, description, imgSrc, badge }: any) => {
     <motion.div
       variants={fadeInUp}
       whileHover={{ y: -6, scale: 1.01 }}
-      className="bento-large glass-panel rounded-[32px] group relative overflow-hidden flex flex-col md:flex-row"
+      className="bento-large glass-panel rounded-[32px] group relative overflow-hidden flex flex-col md:flex-row items-stretch"
     >
       <div className="flex-1 p-8 sm:p-10 flex flex-col justify-between relative z-10">
         <div>
@@ -246,20 +251,19 @@ const LargeFeatureCard = ({ title, description, imgSrc, badge }: any) => {
         </Link>
       </div>
 
-      <div className="flex-1 relative h-64 md:h-auto overflow-hidden">
-        <div className="absolute inset-x-0 bottom-0 top-0 md:top-auto md:h-2/3 bg-linear-to-t from-white via-white/40 to-transparent z-10 hidden md:block" />
+      <div className="flex-1 relative min-h-[300px] md:min-h-[360px] overflow-hidden flex items-center justify-center bg-slate-50/40">
         <img 
           src={imgSrc} 
           alt={title} 
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 ease-out"
+          className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
         />
-        {/* Glass overlay for mobile/small screens */}
-        <div className="absolute inset-0 bg-linear-to-t from-white/80 via-transparent to-transparent md:hidden" />
+        {/* Subtle glass edge blend */}
+        <div className="absolute inset-y-0 left-0 w-16 bg-linear-to-r from-white/70 to-transparent hidden md:block pointer-events-none" />
       </div>
 
       {/* Decorative elements */}
-      <div className="absolute -top-24 -right-24 w-48 h-48 bg-violet-200/20 blur-3xl rounded-full" />
-      <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-blue-200/20 blur-3xl rounded-full" />
+      <div className="absolute -top-24 -right-24 w-48 h-48 bg-violet-200/20 blur-3xl rounded-full pointer-events-none" />
+      <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-blue-200/20 blur-3xl rounded-full pointer-events-none" />
     </motion.div>
   );
 };
@@ -313,56 +317,6 @@ const TestimonialCard = ({ name, role, location, quote, rating }: any) => {
   );
 };
 
-/* ─── Pricing Card ─── */
-const PricingCard = ({ name, price, description, features, highlighted }: any) => {
-  const { t } = useTranslation();
-  return (
-    <motion.div
-      variants={fadeInUp}
-      whileHover={{ scale: highlighted ? 1.05 : 1.02 }}
-      className={`relative rounded-3xl p-8 transition-all duration-500 ${
-        highlighted
-          ? 'gradient-border-animated shadow-2xl shadow-blue-500/10 z-10'
-          : 'glass-panel hover:shadow-lg'
-      }`}
-    >
-      {highlighted && (
-        <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-          <span className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-linear-to-r from-blue-500 to-violet-500 text-white text-xs font-bold rounded-full shadow-lg">
-            <Sparkles size={12} /> {t('home.most_popular')}
-          </span>
-        </div>
-      )}
-      <h3 className="text-xl font-bold text-slate-800 mb-2">{name}</h3>
-      <p className="text-sm text-slate-500 mb-6">{description}</p>
-      <div className="flex items-baseline mb-8">
-        <span className="text-4xl font-bold text-slate-900 tracking-tight">Rs. {price}</span>
-        <span className="text-sm text-slate-400 ml-2">{price === "0" ? t('home.pricing_forever') : t('home.pricing_one_time')}</span>
-      </div>
-      <ul className="space-y-4 mb-10">
-        {features.map((feature: any, idx: number) => (
-          <li key={idx} className="flex items-center space-x-3 text-sm font-medium text-slate-700">
-            <div className={`w-5 h-5 rounded-full flex items-center justify-center ${highlighted ? 'bg-linear-to-br from-blue-500 to-violet-500' : 'bg-blue-100'}`}>
-              <Check size={12} className={highlighted ? 'text-white' : 'text-blue-600'} />
-            </div>
-            <span>{feature}</span>
-          </li>
-        ))}
-      </ul>
-      <Link
-        to="/register"
-        className={`block text-center py-3.5 rounded-2xl font-bold transition-all duration-300 ${
-          highlighted
-            ? 'bg-linear-to-r from-blue-500 to-violet-500 text-white hover:shadow-xl hover:shadow-blue-500/25'
-            : 'bg-slate-100 text-slate-800 hover:bg-slate-200'
-        }`}
-      >
-        {price === "0" ? t('home.pricing_start_free') : t('home.pricing_upgrade')}
-      </Link>
-    </motion.div>
-  );
-};
-
 /* ─── Wave Divider SVG ─── */
 const WaveDivider = ({ flip = false }: { flip?: boolean }) => (
   <div className={`wave-divider ${flip ? 'top-0 bottom-auto rotate-180' : ''}`}>
@@ -390,6 +344,46 @@ const testimonials = [
    ═══════════════════════════════════════════════ */
 const HomePage = () => {
   const { t } = useTranslation();
+  const { isAuthenticated, login, user } = useAuth();
+  const navigate = useNavigate();
+  const [isUpgrading, setIsUpgrading] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<{name: string, price: string, duration: number} | null>(null);
+
+  const handleUpgradeRequest = (plan: {name: string, price: string, duration: number}) => {
+    if (!isAuthenticated) {
+      navigate('/register');
+      return;
+    }
+    setSelectedPlan(plan);
+    setShowPaymentModal(true);
+  };
+
+  const handlePaymentSuccess = async () => {
+    if (!selectedPlan) return;
+    setShowPaymentModal(false);
+    await performUpgrade(selectedPlan.duration);
+  };
+
+  const performUpgrade = async (durationMonths: number) => {
+    try {
+      setIsUpgrading(true);
+      await apiClient.post('/packages/buy', { duration: durationMonths });
+      
+      if (user) {
+        login({ ...user, packageName: 'PREMIUM' });
+      }
+      
+      toast.success("Welcome to Premium! All features unlocked.", { icon: '💎' });
+      navigate('/dashboard');
+    } catch (err: any) {
+      console.error("Upgrade failed", err);
+      toast.error(err.response?.data?.message || "Failed to upgrade. Please try again.");
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
+
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
   const heroY = useTransform(scrollYProgress, [0, 1], [0, 150]);
@@ -398,17 +392,26 @@ const HomePage = () => {
 
   return (
     <div>
+      <PaymentModal 
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        onPaymentSuccess={handlePaymentSuccess}
+        packageName={selectedPlan?.name || "Premium"}
+        price={selectedPlan?.price || "0"}
+      />
 
       {/* ─── HERO SECTION ─── */}
-      <section ref={heroRef} className="relative mesh-gradient-bg overflow-hidden min-h-screen flex flex-col justify-center pt-24">
-        <ParticleField />
+      <section ref={heroRef} className="relative mesh-gradient-bg overflow-hidden min-h-screen flex flex-col justify-start lg:justify-center pt-20 sm:pt-24">
+        {/* Interactive 3D Connected Crystal Network Background */}
+        <Network3DBackground />
         <FloatingShapes />
 
         <motion.div 
           style={{ y: heroY, scale: heroScale, opacity: heroOpacity }}
           className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
         >
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center text-left">
+          {/* On mobile: pt-80 frames the 7 3D interconnected avatars extending lower down into the screen */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center text-left pt-80 sm:pt-88 lg:pt-0">
             <motion.div 
               initial="hidden"
               whileInView="visible"
@@ -422,90 +425,34 @@ const HomePage = () => {
               </motion.h1>
 
               {/* Sub-headline */}
-              <motion.p variants={fadeInUp} className="text-lg sm:text-xl text-slate-600 mb-10 leading-relaxed max-w-xl font-sans">
+              <motion.p variants={fadeInUp} className="text-lg sm:text-xl text-slate-600 mb-8 sm:mb-10 leading-relaxed max-w-xl font-sans">
                 {t('home.hero_subtitle')}
               </motion.p>
 
-              {/* CTA Buttons */}
-              <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+              {/* CTA Buttons - Positioned comfortably lower on mobile */}
+              <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 mt-8 sm:mt-14 pb-12 sm:pb-0">
                 <Link
                   to="/register"
-                  className="w-full sm:w-auto px-10 py-4.5 bg-linear-to-r from-blue-500 to-violet-500 text-white font-bold rounded-2xl shadow-2xl shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-1 transition-all duration-300 flex items-center justify-center group magnetic-hover"
+                  className="w-full sm:w-auto px-10 py-5 bg-linear-to-r from-blue-600 to-violet-600 text-white font-bold rounded-2xl shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-1 transition-all duration-300 flex items-center justify-center group magnetic-hover text-base sm:text-lg"
                 >
                    {t('home.join_network')}
-                  <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" size={20} />
+                  <ArrowRight className="ml-2 group-hover:translate-x-1.5 transition-transform" size={20} />
                 </Link>
               </motion.div>
 
               
             </motion.div>
 
-            {/* Hero Device Mockup */}
+            {/* Right Column - 3D Network Focus Showcase Space */}
             <motion.div 
-              initial={{ opacity: 0, scale: 0.85, y: 40 }}
-              whileInView={{ opacity: 1, scale: 1, y: 0 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 1, ease: [0.21, 0.45, 0.32, 0.9], delay: 0.3 }}
-              className="relative hidden lg:block"
+              transition={{ duration: 1, ease: [0.21, 0.45, 0.32, 0.9], delay: 0.2 }}
+              className="relative w-full hidden lg:flex items-center justify-center min-h-[460px] pointer-events-none"
             >
-              <motion.div
-                animate={{ y: [0, -12, 0] }}
-                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-                className="relative"
-              >
-                <img 
-                  src={deviceMockupImg} 
-                  alt="Platform on multiple devices"
-                  className="w-full h-auto object-contain drop-shadow-2xl"
-                />
-                <div className="absolute inset-0 bg-linear-to-t from-white/5 to-transparent pointer-events-none rounded-3xl" />
-              </motion.div>
-              
-              {/* Floating notification 1 */}
-              <motion.div 
-                animate={{ y: [0, -10, 0] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute bottom-10 right-30 glass-panel-strong p-4 rounded-2xl shadow-xl"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
-                    <CheckCircle2 className="text-emerald-500" size={20} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase">Match Found</p>
-                    <p className="text-sm font-bold text-slate-800">3 Way Matching System</p>
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Floating notification 2 */}
-              <motion.div 
-                animate={{ y: [0, 10, 0] }}
-                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                className="absolute top-10 -left-12 glass-panel-strong p-4 rounded-2xl shadow-xl"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <TrendingUp className="text-blue-500" size={20} />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase">Success Rate</p>
-                    <p className="text-sm font-bold text-slate-800">98% Accuracy</p>
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Floating badge */}
-              <motion.div 
-                animate={{ y: [0, -6, 0], rotate: [0, 3, 0] }}
-                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-                className="absolute top-[15%] right-16 glass-panel-strong py-2 px-4 rounded-xl shadow-lg"
-              >
-                <div className="flex items-center gap-2">
-                  <Shield className="text-violet-500" size={16} />
-                  <span className="text-xs font-bold text-slate-700">Secured Privacy</span>
-                </div>
-              </motion.div>
+              {/* Subtle ambient light aura complementing the 3D crystal network */}
+              <div className="w-80 h-80 rounded-full bg-linear-to-tr from-blue-400/15 via-violet-400/15 to-emerald-400/10 blur-3xl" />
             </motion.div>
           </div>
         </motion.div>
@@ -518,7 +465,7 @@ const HomePage = () => {
 
       {/* ─── HOW IT WORKS (Timeline) ─── */}
       <ScrollAnimatedSection className="relative perspective-2000 py-24">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             {/* Left: Title */}
             <motion.div 
@@ -578,17 +525,48 @@ const HomePage = () => {
 
       {/* ─── STATS BAR ─── */}
       <ScrollAnimatedSection className="relative overflow-hidden perspective-2000 py-24">
-        <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-blue-200/60 to-transparent" />
+        <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-blue-200/60 dark:via-blue-500/20 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-violet-200/50 dark:via-violet-500/20 to-transparent" />
         
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Section Header */}
           <motion.div 
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
             variants={staggerContainer}
-            className="glass-panel-strong rounded-3xl py-12 px-6 sm:px-12"
+            className="text-center max-w-3xl mx-auto mb-14"
           >
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+            <motion.span variants={fadeInUp} className="inline-block text-xs font-bold uppercase tracking-widest text-blue-500 dark:text-blue-400 mb-4">
+              {t('home.stats_label')}
+            </motion.span>
+            <motion.h2 variants={fadeInUp} className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-5 tracking-tight">
+              {t('home.stats_title')}
+            </motion.h2>
+            <motion.p variants={fadeInUp} className="text-slate-600 dark:text-slate-300 leading-relaxed text-base sm:text-lg">
+              {t('home.stats_subtitle')}
+            </motion.p>
+          </motion.div>
+
+          {/* 4 Stats Cards Container Layer with Background Image */}
+          <motion.div 
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={staggerContainer}
+            className="relative overflow-hidden rounded-[32px] p-6 sm:p-10 lg:p-12 border border-slate-200/80 dark:border-slate-800/80 shadow-2xl shadow-blue-500/10 group bg-slate-900/5 dark:bg-slate-950"
+          >
+            {/* Background image on the 4-cards layer */}
+            <div 
+              className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 ease-out group-hover:scale-105 pointer-events-none"
+              style={{ backgroundImage: `url(${statsCardBg})` }}
+            />
+            {/* Soft overlay gradient for high legibility */}
+            <div className="absolute inset-0 bg-white/30 dark:bg-slate-950/70 backdrop-blur-[1px] pointer-events-none" />
+            <div className="absolute inset-0 bg-linear-to-b from-white/20 via-transparent to-white/40 dark:from-slate-950/50 dark:via-transparent dark:to-slate-950/70 pointer-events-none" />
+
+            {/* Grid of 4 Stat Cards with Glass Effect */}
+            <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
               <StatItem value="1500" suffix="+" label={t('home.stats_label1')} icon={Users} />
               <StatItem value="450" suffix="+" label={t('home.stats_label2')} icon={CheckCircle2} />
               <StatItem value="25" suffix="+" label={t('home.stats_label3')} icon={Globe} />
@@ -629,16 +607,16 @@ const HomePage = () => {
             <LargeFeatureCard
               title={t('home.feat_large_title')}
               description={t('home.feat_large_desc')}
-              imgSrc={matchingNetworkImg}
+              imgSrc={circularMatchingImg}
               badge={t('home.feat_large_badge')}
             />
 
             {/* Regular cards */}
-            <FeatureCard index={0} icon={Zap} title={t('home.feat1_title')} description={t('home.feat1_desc')} />
-            <FeatureCard index={2} icon={Shield} title={t('home.feat2_title')} description={t('home.feat2_desc')} />
-            <FeatureCard index={3} icon={Users} title={t('home.feat3_title')} description={t('home.feat3_desc')} />
-            <FeatureCard index={4} icon={Search} title={t('home.feat4_title')} description={t('home.feat4_desc')} />
-            <FeatureCard index={5} icon={CheckCircle2} title={t('home.feat5_title')} description={t('home.feat5_desc')} />
+            <FeatureCard icon={Zap} title={t('home.feat1_title')} description={t('home.feat1_desc')} />
+            <FeatureCard icon={Shield} title={t('home.feat2_title')} description={t('home.feat2_desc')} />
+            <FeatureCard icon={Users} title={t('home.feat3_title')} description={t('home.feat3_desc')} />
+            <FeatureCard icon={Search} title={t('home.feat4_title')} description={t('home.feat4_desc')} />
+            <FeatureCard icon={CheckCircle2} title={t('home.feat5_title')} description={t('home.feat5_desc')} />
           </motion.div>
         </div>
       </ScrollAnimatedSection>
@@ -699,7 +677,7 @@ const HomePage = () => {
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
             variants={staggerContainer}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto"
+            className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto"
           >
             <PricingCard
               name={t('home.pricing_plan_basic')}
@@ -707,62 +685,31 @@ const HomePage = () => {
               description={t('home.pricing_basic_desc')}
               features={[
                 t('home.pricing_feature_2way'),
-                t('home.pricing_feature_view_only'),
-                t('home.pricing_feature_hidden'),
-                t('home.pricing_feature_verify'),
                 t('home.pricing_feature_pref3'),
                 t('home.pricing_feature_search'),
-                t('home.pricing_feature_ads')
+                t('home.pricing_feature_verify'),
+                t('home.pricing_feature_view_only')
               ]}
               highlighted={false}
+              onAction={() => navigate(isAuthenticated ? '/dashboard' : '/register')}
+              actionLabel={t('home.pricing_start_free')}
+              periodLabel={t('home.pricing_forever')}
             />
             <PricingCard
               name={t('home.pricing_plan_premium1')}
               price="440"
               description={t('home.pricing_premium1_desc')}
               features={[
-                t('home.pricing_feature_msg'),
-                t('home.pricing_feature_unlimited'),
                 t('home.pricing_feature_dynamic'),
-                t('home.pricing_feature_visibility'),
-                t('home.pricing_feature_pref3'),
-                t('home.pricing_feature_search'),
-                t('home.pricing_feature_no_ads'),
-                t('home.pricing_feature_support')
-              ]}
-              highlighted={false}
-            />
-            <PricingCard
-              name={t('home.pricing_plan_premium2')}
-              price="690"
-              description={t('home.pricing_premium2_desc')}
-              features={[
-                t('home.pricing_feature_msg'),
                 t('home.pricing_feature_unlimited'),
-                t('home.pricing_feature_dynamic'),
-                t('home.pricing_feature_visibility'),
-                t('home.pricing_feature_pref3'),
-                t('home.pricing_feature_search'),
-                t('home.pricing_feature_no_ads'),
-                t('home.pricing_feature_support')
-              ]}
-              highlighted={false}
-            />
-            <PricingCard
-              name={t('home.pricing_plan_premium3')}
-              price="990"
-              description={t('home.pricing_premium3_desc')}
-              features={[
                 t('home.pricing_feature_msg'),
-                t('home.pricing_feature_unlimited'),
-                t('home.pricing_feature_dynamic'),
                 t('home.pricing_feature_visibility'),
-                t('home.pricing_feature_pref3'),
-                t('home.pricing_feature_search'),
-                t('home.pricing_feature_no_ads'),
-                t('home.pricing_feature_support')
+                t('home.pricing_feature_no_ads')
               ]}
               highlighted={true}
+              onAction={() => handleUpgradeRequest({name: t('home.pricing_plan_premium1'), price: "440", duration: 1})}
+              actionLabel={isUpgrading ? t('home.pricing_upgrading', 'Upgrading...') : (user?.packageName === 'PREMIUM' ? t('home.pricing_extend_1m', 'Extend 1 Month') : t('home.pricing_buy_1m', 'Buy 1 Month'))}
+              periodLabel={t('home.pricing_one_time')}
             />
           </motion.div>
         </div>
