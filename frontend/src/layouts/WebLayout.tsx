@@ -71,7 +71,7 @@ const WebLayout = () => {
         <div id="snap-root" className="bg-[#f8fafc] min-h-screen">
             {/* Global Scroll Progress Bar */}
             <motion.div
-                className="fixed top-0 left-0 right-0 h-1 bg-linear-to-r from-blue-500 to-violet-500 z-60 origin-left"
+                className="fixed top-0 left-0 right-0 h-1 bg-blue-600 z-60 origin-left"
                 style={{ scaleX }}
             />
             {/* ─── HEADER ─── */}
@@ -105,7 +105,7 @@ const WebLayout = () => {
                             >
                                 {link.label}
                                 <span
-                                    className={`absolute bottom-0 left-0 h-0.5 bg-linear-to-r from-blue-500 to-violet-500 rounded-full transition-all duration-300 ${
+                                    className={`absolute bottom-0 left-0 h-0.5 bg-blue-600 rounded-full transition-all duration-300 ${
                                         location.pathname === link.to ? 'w-full' : 'w-0'
                                     }`}
                                 />
@@ -124,7 +124,7 @@ const WebLayout = () => {
                         </Link>
                         <Link
                             to="/register"
-                            className="px-5 py-2.5 text-sm font-bold bg-linear-to-r from-blue-500 to-violet-500 text-white rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all duration-300"
+                            className="px-5 py-2.5 text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all duration-300"
                         >
                             Register
                         </Link>
@@ -169,7 +169,7 @@ const WebLayout = () => {
                                 <Link to="/login" className="px-4 py-3 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 text-center">
                                     Login
                                 </Link>
-                                <Link to="/register" className="px-4 py-3 rounded-xl text-sm font-bold bg-linear-to-r from-blue-500 to-violet-500 text-white text-center shadow-lg shadow-blue-500/20">
+                                <Link to="/register" className="px-4 py-3 rounded-xl text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white text-center shadow-lg shadow-blue-500/20 transition-all duration-300">
                                     Register
                                 </Link>
                             </div>

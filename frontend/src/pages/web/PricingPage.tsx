@@ -40,7 +40,7 @@ const FloatingShapes = () => {
     return (
       <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
         <motion.div style={{ y: y1 }} className="absolute -top-20 -left-20 w-72 h-72 rounded-full bg-blue-100/40 blur-3xl" />
-        <motion.div style={{ y: y2 }} className="absolute top-1/2 -right-20 w-80 h-80 rounded-full bg-violet-100/30 blur-3xl" />
+        <motion.div style={{ y: y2 }} className="absolute top-1/2 -right-20 w-80 h-80 rounded-full bg-sky-100/35 blur-3xl" />
       </div>
     );
 };
@@ -234,7 +234,7 @@ const PricingPage = () => {
                     <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mb-10 tracking-tight">Still have questions?</h2>
                     <Link 
                         to="/register" 
-                        className="inline-flex items-center px-10 py-4.5 bg-linear-to-r from-blue-500 to-violet-500 text-white font-bold rounded-2xl shadow-2xl shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-1 transition-all duration-300 group"
+                        className="inline-flex items-center px-10 py-4.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-2xl shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-1 transition-all duration-300 group"
                     >
                         Contact Support
                         <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" size={20} />

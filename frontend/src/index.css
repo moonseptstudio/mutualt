@@ -111,7 +111,7 @@ h6,
     -webkit-backdrop-filter: blur(24px) saturate(180%);
     border: 1px solid rgba(255, 255, 255, 0.5);
     box-shadow:
-      0 8px 32px rgba(99, 102, 241, 0.06),
+      0 8px 32px rgba(37, 99, 235, 0.06),
       0 2px 8px rgba(0, 0, 0, 0.04),
       inset 0 1px 0 rgba(255, 255, 255, 0.8);
   }
@@ -130,7 +130,7 @@ h6,
     -webkit-backdrop-filter: blur(32px) saturate(200%);
     border: 1px solid rgba(255, 255, 255, 0.6);
     box-shadow:
-      0 20px 60px rgba(99, 102, 241, 0.08),
+      0 20px 60px rgba(37, 99, 235, 0.08),
       0 4px 16px rgba(0, 0, 0, 0.04),
       inset 0 1px 0 rgba(255, 255, 255, 0.9);
   }
@@ -143,26 +143,26 @@ h6,
       inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
 
-  /* Mesh Gradient Background */
+  /* Mesh Gradient Background - Clean Blue Palette */
   .mesh-gradient-bg {
     background:
-      radial-gradient(ellipse at 20% 50%, rgba(147, 197, 253, 0.3) 0%, transparent 50%),
-      radial-gradient(ellipse at 80% 20%, rgba(196, 181, 253, 0.25) 0%, transparent 50%),
-      radial-gradient(ellipse at 40% 80%, rgba(167, 243, 208, 0.2) 0%, transparent 50%),
-      radial-gradient(ellipse at 70% 60%, rgba(253, 230, 138, 0.15) 0%, transparent 40%),
-      linear-gradient(135deg, #f8fafc 0%, #eef2ff 30%, #f0fdf4 60%, #faf5ff 100%);
+      radial-gradient(ellipse at 20% 50%, rgba(147, 197, 253, 0.35) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, rgba(191, 219, 254, 0.30) 0%, transparent 50%),
+      radial-gradient(ellipse at 40% 80%, rgba(219, 234, 254, 0.25) 0%, transparent 50%),
+      radial-gradient(ellipse at 70% 60%, rgba(186, 230, 253, 0.25) 0%, transparent 40%),
+      linear-gradient(135deg, #f8fafc 0%, #eff6ff 35%, #e0f2fe 70%, #f0f9ff 100%);
     animation: mesh-shift 12s ease-in-out infinite;
   }
 
-  /* Shimmer Text Effect */
+  /* Shimmer Text Effect - Clean Blue Shimmer */
   .shimmer-text {
     background: linear-gradient(
       110deg,
-      #3b82f6 0%,
-      #8b5cf6 25%,
-      #06b6d4 50%,
-      #8b5cf6 75%,
-      #3b82f6 100%
+      #1d4ed8 0%,
+      #2563eb 25%,
+      #60a5fa 50%,
+      #2563eb 75%,
+      #1d4ed8 100%
     );
     background-size: 200% 100%;
     -webkit-background-clip: text;
@@ -180,7 +180,7 @@ h6,
     position: absolute;
     inset: -1px;
     border-radius: inherit;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(6, 182, 212, 0.1), rgba(167, 139, 250, 0.15));
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.15), rgba(59, 130, 246, 0.12), rgba(96, 165, 250, 0.15));
     z-index: -1;
     opacity: 0;
     transition: opacity 0.4s ease;
@@ -306,7 +306,7 @@ h6,
     border-radius: inherit;
     background: linear-gradient(
       var(--border-angle, 0deg),
-      #3b82f6, #8b5cf6, #06b6d4, #10b981, #3b82f6
+      #1d4ed8, #2563eb, #60a5fa, #3b82f6, #1d4ed8
     );
     z-index: -1;
     animation: border-dance 4s linear infinite;
@@ -331,7 +331,7 @@ h6,
     position: absolute;
     width: 4px;
     height: 4px;
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.4), rgba(139, 92, 246, 0.4));
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.4), rgba(96, 165, 250, 0.4));
     border-radius: 50%;
     animation: particle-float var(--duration, 8s) var(--delay, 0s) ease-in-out infinite;
   }
@@ -350,16 +350,18 @@ h6,
   /* Wave section divider */
   .wave-divider {
     position: absolute;
-    bottom: 0;
+    bottom: -1px;
     left: 0;
     width: 100%;
     overflow: hidden;
     line-height: 0;
+    z-index: 20;
+    pointer-events: none;
   }
   .wave-divider svg {
     display: block;
     width: calc(100% + 1px);
-    height: 60px;
+    height: clamp(65px, 9vw, 130px);
   }
 
   /* Magnetic hover effect */
@@ -471,8 +473,8 @@ h6,
 }
 
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.1), 0 0 60px rgba(99, 102, 241, 0.05); }
-  50% { box-shadow: 0 0 30px rgba(99, 102, 241, 0.2), 0 0 80px rgba(99, 102, 241, 0.1); }
+  0%, 100% { box-shadow: 0 0 20px rgba(37, 99, 235, 0.15), 0 0 60px rgba(59, 130, 246, 0.08); }
+  50% { box-shadow: 0 0 30px rgba(37, 99, 235, 0.25), 0 0 80px rgba(59, 130, 246, 0.15); }
 }
 
 @keyframes orbit {

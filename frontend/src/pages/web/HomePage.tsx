@@ -11,7 +11,6 @@ import {
   Zap, 
   Users, 
   Search,
-  Sparkles,
   ClipboardList,
   Settings2,
   GitMerge,
@@ -100,11 +99,11 @@ const FloatingShapes = () => {
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-      <motion.div style={{ y: y1 }} className="absolute -top-20 -left-20 w-72 h-72 rounded-full bg-blue-200/30 blur-3xl" />
-      <motion.div style={{ y: y2 }} className="absolute -top-10 right-10 w-56 h-56 rounded-full bg-violet-200/25 blur-2xl" />
-      <motion.div style={{ y: y1, rotate }} className="absolute bottom-20 -left-10 w-40 h-40 rounded-full bg-emerald-200/20 blur-2xl" />
+      <motion.div style={{ y: y1 }} className="absolute -top-20 -left-20 w-72 h-72 rounded-full bg-blue-200/35 blur-3xl" />
+      <motion.div style={{ y: y2 }} className="absolute -top-10 right-10 w-56 h-56 rounded-full bg-sky-200/25 blur-2xl" />
+      <motion.div style={{ y: y1, rotate }} className="absolute bottom-20 -left-10 w-40 h-40 rounded-full bg-blue-100/30 blur-2xl" />
       <motion.div style={{ rotate }} className="absolute top-[15%] left-[12%] w-16 h-16 border-2 border-blue-200/40 rounded-xl" />
-      <motion.div style={{ y: y2 }} className="absolute top-[25%] right-[15%] w-12 h-12 border-2 border-violet-200/40 rounded-full" />
+      <motion.div style={{ y: y2 }} className="absolute top-[25%] right-[15%] w-12 h-12 border-2 border-blue-200/40 rounded-full" />
     </div>
   );
 };
@@ -168,7 +167,7 @@ const StatItem = ({ value, suffix = '', label, icon: Icon }: any) => {
       whileHover={{ y: -6, scale: 1.02 }}
       className="text-center stat-glow rounded-2xl p-6 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl saturate-150 border border-white/80 dark:border-white/15 shadow-lg shadow-blue-900/5 dark:shadow-black/30 hover:bg-white/80 dark:hover:bg-slate-900/80 hover:border-blue-300/80 dark:hover:border-blue-400/40 transition-all duration-300"
     >
-      <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-linear-to-br from-blue-500/15 to-violet-500/15 backdrop-blur-md border border-white/60 dark:border-white/10 flex items-center justify-center shadow-xs">
+      <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-blue-500/10 backdrop-blur-md border border-blue-200/50 dark:border-blue-400/20 flex items-center justify-center shadow-xs">
         <Icon size={22} className="text-blue-600 dark:text-blue-400" />
       </div>
       <p className="text-3xl sm:text-4xl font-bold tracking-tight shimmer-text mb-1">
@@ -208,7 +207,7 @@ const FeatureCard = ({ icon: Icon, title, description }: any) => {
       </div>
 
       {/* Hover background effect */}
-      <div className="absolute inset-0 bg-linear-to-br from-blue-50/0 via-transparent to-violet-50/0 group-hover:from-blue-50/50 group-hover:to-violet-50/50 transition-colors duration-500 pointer-events-none" />
+      <div className="absolute inset-0 bg-linear-to-br from-blue-50/0 via-transparent to-blue-50/0 group-hover:from-blue-50/40 group-hover:to-sky-50/40 transition-colors duration-500 pointer-events-none" />
       
       {/* Decorative corner */}
       <div className="absolute -bottom-10 -right-10 w-24 h-24 bg-slate-100/30 rounded-full blur-2xl group-hover:bg-blue-100/40 transition-colors duration-500 pointer-events-none" />
@@ -227,11 +226,11 @@ const LargeFeatureCard = ({ title, description, imgSrc, badge }: any) => {
       <div className="flex-1 p-8 sm:p-10 flex flex-col justify-between relative z-10">
         <div>
           <div className="flex items-center gap-3 mb-4">
-            <span className="px-3 py-1 bg-violet-100 text-violet-600 text-[10px] font-bold uppercase tracking-widest rounded-full">
+            <span className="px-3 py-1 bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-widest rounded-full">
               Featured
             </span>
             {badge && (
-              <span className="px-3 py-1 bg-emerald-100 text-emerald-600 text-[10px] font-bold uppercase tracking-widest rounded-full animate-pulse">
+              <span className="px-3 py-1 bg-sky-100 text-sky-700 text-[10px] font-bold uppercase tracking-widest rounded-full animate-pulse">
                 {badge}
               </span>
             )}
@@ -262,7 +261,7 @@ const LargeFeatureCard = ({ title, description, imgSrc, badge }: any) => {
       </div>
 
       {/* Decorative elements */}
-      <div className="absolute -top-24 -right-24 w-48 h-48 bg-violet-200/20 blur-3xl rounded-full pointer-events-none" />
+      <div className="absolute -top-24 -right-24 w-48 h-48 bg-sky-200/20 blur-3xl rounded-full pointer-events-none" />
       <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-blue-200/20 blur-3xl rounded-full pointer-events-none" />
     </motion.div>
   );
@@ -278,12 +277,12 @@ const StepCard = ({ step, icon: Icon, title, description, isLast }: any) => {
           <div className="w-16 h-16 glass-panel-strong rounded-2xl flex items-center justify-center shadow-lg animate-glow-pulse">
             <Icon size={28} className="text-blue-600" />
           </div>
-          <span className="absolute -top-2 -right-2 w-7 h-7 bg-linear-to-br from-blue-500 to-violet-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-md">
+          <span className="absolute -top-2 -right-2 w-7 h-7 bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-md">
             {step}
           </span>
         </div>
         {!isLast && (
-          <div className="w-0.5 h-full bg-linear-to-b from-blue-200 to-violet-200/30 mt-4" />
+          <div className="w-0.5 h-full bg-linear-to-b from-blue-200 to-blue-200/30 mt-4" />
         )}
       </div>
       {/* Content */}
@@ -320,10 +319,57 @@ const TestimonialCard = ({ name, role, location, quote, rating }: any) => {
 /* ─── Wave Divider SVG ─── */
 const WaveDivider = ({ flip = false }: { flip?: boolean }) => (
   <div className={`wave-divider ${flip ? 'top-0 bottom-auto rotate-180' : ''}`}>
-    <svg viewBox="0 0 1440 60" preserveAspectRatio="none">
+    <svg viewBox="0 0 1440 140" preserveAspectRatio="none" className="w-full block overflow-visible">
+      <defs>
+        {/* Primary foreground curve border gradient */}
+        <linearGradient id="waveBorderPrimary" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.35" />
+          <stop offset="25%" stopColor="#2563eb" stopOpacity="0.85" />
+          <stop offset="65%" stopColor="#1d4ed8" stopOpacity="0.9" />
+          <stop offset="85%" stopColor="#3b82f6" stopOpacity="0.75" />
+          <stop offset="100%" stopColor="#60a5fa" stopOpacity="0.4" />
+        </linearGradient>
+
+        {/* Secondary background layer curve border gradient */}
+        <linearGradient id="waveBorderSecondary" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#93c5fd" stopOpacity="0.2" />
+          <stop offset="50%" stopColor="#3b82f6" stopOpacity="0.5" />
+          <stop offset="100%" stopColor="#60a5fa" stopOpacity="0.25" />
+        </linearGradient>
+
+        {/* Subtle upper glow filter for edge definition */}
+        <filter id="waveGlow" x="-5%" y="-20%" width="110%" height="150%">
+          <feDropShadow dx="0" dy="-2" stdDeviation="4" floodColor="#2563eb" floodOpacity="0.18" />
+        </filter>
+      </defs>
+
+      {/* Layer 1: Background soft wave fill */}
       <path
-        d="M0,30 C360,60 720,0 1080,30 C1260,45 1380,20 1440,30 L1440,60 L0,60 Z"
+        d="M0,50 C360,130 680,20 1020,90 C1240,135 1380,80 1440,75 L1440,140 L0,140 Z"
         fill="#f8fafc"
+        fillOpacity="0.65"
+      />
+      {/* Layer 1: Secondary wave border line */}
+      <path
+        d="M0,50 C360,130 680,20 1020,90 C1240,135 1380,80 1440,75"
+        fill="none"
+        stroke="url(#waveBorderSecondary)"
+        strokeWidth="2"
+      />
+
+      {/* Layer 2: Foreground primary wave fill with glow */}
+      <path
+        d="M0,70 C320,145 600,30 900,85 C1180,140 1340,55 1440,70 L1440,140 L0,140 Z"
+        fill="#f8fafc"
+        filter="url(#waveGlow)"
+      />
+      {/* Layer 2: Primary prominent crisp wave border line */}
+      <path
+        d="M0,70 C320,145 600,30 900,85 C1180,140 1340,55 1440,70"
+        fill="none"
+        stroke="url(#waveBorderPrimary)"
+        strokeWidth="3.5"
+        strokeLinecap="round"
       />
     </svg>
   </div>
@@ -401,14 +447,14 @@ const HomePage = () => {
       />
 
       {/* ─── HERO SECTION ─── */}
-      <section ref={heroRef} className="relative mesh-gradient-bg overflow-hidden min-h-screen flex flex-col justify-start lg:justify-center pt-20 sm:pt-24">
+      <section ref={heroRef} className="relative mesh-gradient-bg overflow-hidden min-h-screen lg:h-screen lg:max-h-screen flex flex-col justify-start lg:justify-center pt-20 sm:pt-24 lg:pt-16 lg:pb-12">
         {/* Interactive 3D Connected Crystal Network Background */}
         <Network3DBackground />
         <FloatingShapes />
 
         <motion.div 
           style={{ y: heroY, scale: heroScale, opacity: heroOpacity }}
-          className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+          className="relative z-10 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 my-auto"
         >
           {/* On mobile: pt-80 frames the 7 3D interconnected avatars extending lower down into the screen */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center text-left pt-80 sm:pt-88 lg:pt-0">
@@ -419,21 +465,21 @@ const HomePage = () => {
               variants={staggerContainer}
             >
               {/* Headline with word reveal */}
-              <motion.h1 variants={fadeInUp} className="text-5xl sm:text-6xl md:text-7xl font-extrabold text-slate-900 mb-6 tracking-tight leading-[1.1]">
+              <motion.h1 variants={fadeInUp} className="text-4xl sm:text-5xl lg:text-5xl xl:text-6xl font-extrabold text-slate-900 mb-4 lg:mb-5 tracking-tight leading-[1.15]">
                 {t('home.hero_title_part1')} <br />
                 <span className="shimmer-text">{t('home.hero_title_dream')}</span>
               </motion.h1>
 
               {/* Sub-headline */}
-              <motion.p variants={fadeInUp} className="text-lg sm:text-xl text-slate-600 mb-8 sm:mb-10 leading-relaxed max-w-xl font-sans">
+              <motion.p variants={fadeInUp} className="text-base sm:text-lg lg:text-xl text-slate-600 mb-6 lg:mb-8 leading-relaxed max-w-xl font-sans">
                 {t('home.hero_subtitle')}
               </motion.p>
 
               {/* CTA Buttons - Positioned comfortably lower on mobile */}
-              <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 mt-8 sm:mt-14 pb-12 sm:pb-0">
+              <motion.div variants={fadeInUp} className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 mt-4 lg:mt-6 pb-12 sm:pb-0">
                 <Link
                   to="/register"
-                  className="w-full sm:w-auto px-10 py-5 bg-linear-to-r from-blue-600 to-violet-600 text-white font-bold rounded-2xl shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-1 transition-all duration-300 flex items-center justify-center group magnetic-hover text-base sm:text-lg"
+                  className="w-full sm:w-auto px-10 py-4.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-1 transition-all duration-300 flex items-center justify-center group magnetic-hover text-base sm:text-lg"
                 >
                    {t('home.join_network')}
                   <ArrowRight className="ml-2 group-hover:translate-x-1.5 transition-transform" size={20} />
@@ -449,10 +495,10 @@ const HomePage = () => {
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ duration: 1, ease: [0.21, 0.45, 0.32, 0.9], delay: 0.2 }}
-              className="relative w-full hidden lg:flex items-center justify-center min-h-[460px] pointer-events-none"
+              className="relative w-full hidden lg:flex items-center justify-center min-h-[360px] xl:min-h-[420px] pointer-events-none"
             >
               {/* Subtle ambient light aura complementing the 3D crystal network */}
-              <div className="w-80 h-80 rounded-full bg-linear-to-tr from-blue-400/15 via-violet-400/15 to-emerald-400/10 blur-3xl" />
+              <div className="w-80 h-80 rounded-full bg-linear-to-tr from-blue-500/20 via-sky-400/15 to-blue-300/10 blur-3xl" />
             </motion.div>
           </div>
         </motion.div>
@@ -484,7 +530,7 @@ const HomePage = () => {
               <motion.div variants={fadeInUp}>
                 <Link
                   to="/register"
-                  className="inline-flex items-center px-8 py-3.5 bg-linear-to-r from-blue-500 to-violet-500 text-white font-bold rounded-2xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:-translate-y-1 transition-all duration-300 group"
+                  className="inline-flex items-center px-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:-translate-y-1 transition-all duration-300 group"
                 >
                   {t('home.get_started')}
                   <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" size={18} />
@@ -526,7 +572,7 @@ const HomePage = () => {
       {/* ─── STATS BAR ─── */}
       <ScrollAnimatedSection className="relative overflow-hidden perspective-2000 py-24">
         <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-blue-200/60 dark:via-blue-500/20 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-violet-200/50 dark:via-violet-500/20 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-blue-200/50 dark:via-blue-500/20 to-transparent" />
         
         <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Section Header */}
@@ -587,7 +633,7 @@ const HomePage = () => {
             variants={staggerContainer}
             className="text-center max-w-3xl mx-auto mb-16"
           >
-            <motion.span variants={fadeInUp} className="inline-block text-xs font-bold uppercase tracking-widest text-violet-500 mb-4">{t('home.features_label')}</motion.span>
+            <motion.span variants={fadeInUp} className="inline-block text-xs font-bold uppercase tracking-widest text-blue-500 mb-4">{t('home.features_label')}</motion.span>
             <motion.h2 variants={fadeInUp} className="text-3xl sm:text-4xl font-bold text-slate-900 mb-6 tracking-tight">
               {t('home.features_title')}
             </motion.h2>
@@ -637,7 +683,7 @@ const HomePage = () => {
             variants={staggerContainer}
             className="text-center max-w-3xl mx-auto mb-14"
           >
-            <motion.span variants={fadeInUp} className="inline-block text-xs font-bold uppercase tracking-widest text-emerald-500 mb-4">{t('home.testimonials_label')}</motion.span>
+            <motion.span variants={fadeInUp} className="inline-block text-xs font-bold uppercase tracking-widest text-blue-500 mb-4">{t('home.testimonials_label')}</motion.span>
             <motion.h2 variants={fadeInUp} className="text-3xl sm:text-4xl font-bold text-slate-900 mb-6 tracking-tight">
               {t('home.testimonials_title')}
             </motion.h2>
@@ -717,11 +763,11 @@ const HomePage = () => {
 
       {/* ─── CTA BANNER ─── */}
       <ScrollAnimatedSection className="relative overflow-hidden perspective-2000 py-24">
-        <div className="absolute inset-0 bg-linear-to-r from-blue-50 via-violet-50/60 to-cyan-50" />
+        <div className="absolute inset-0 bg-linear-to-r from-blue-50/80 via-sky-50/60 to-blue-50/80" />
         <ParticleField />
         <div className="absolute inset-0">
           <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-blue-200/60 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-violet-200/50 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-blue-200/50 to-transparent" />
         </div>
 
         <div className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -732,12 +778,6 @@ const HomePage = () => {
             transition={{ duration: 0.8 }}
             className="glass-panel-strong rounded-3xl p-10 sm:p-14"
           >
-            <motion.div
-              animate={{ rotate: [0, 5, -5, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <Sparkles className="w-10 h-10 text-blue-500 mx-auto mb-6" />
-            </motion.div>
             <h2 className="text-2xl sm:text-4xl font-bold text-slate-900 mb-6 tracking-tight">
               {t('home.cta_title')}
             </h2>
@@ -746,7 +786,7 @@ const HomePage = () => {
             </p>
             <Link
               to="/register"
-              className="inline-flex items-center px-10 py-4.5 bg-linear-to-r from-blue-500 to-violet-500 text-white font-bold rounded-2xl shadow-2xl shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-1 transition-all duration-300 group magnetic-hover"
+              className="inline-flex items-center px-10 py-4.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-2xl shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-1 transition-all duration-300 group magnetic-hover"
             >
               Get Started Now
               <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" size={20} />

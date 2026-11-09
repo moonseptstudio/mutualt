@@ -55,17 +55,17 @@ export const Network3DBackground: React.FC = () => {
     const avatarCanvases: HTMLCanvasElement[] = [];
     const professions = [
       // 0. DOCTOR (Male) - White Coat, Stethoscope
-      { type: 'doctor' as const, bg1: '#059669', bg2: '#047857', skin: '#fed7aa', hair: '#1f2937', glow: 'rgba(16, 185, 129, 0.5)' },
+      { type: 'doctor' as const, bg1: '#0284c7', bg2: '#0369a1', skin: '#fed7aa', hair: '#1f2937', glow: 'rgba(2, 132, 199, 0.5)' },
       // 1. NURSE (Female) - Teal Scrubs, White Nurse Cap with Red Cross
-      { type: 'nurse' as const, bg1: '#0284c7', bg2: '#0369a1', skin: '#fef08a', hair: '#78350f', glow: 'rgba(2, 132, 199, 0.5)' },
+      { type: 'nurse' as const, bg1: '#0ea5e9', bg2: '#0284c7', skin: '#fef08a', hair: '#78350f', glow: 'rgba(14, 165, 233, 0.5)' },
       // 2. TEACHER (Female) - Academic Mortarboard Graduation Cap, Glasses
       { type: 'teacher' as const, bg1: '#3b82f6', bg2: '#1d4ed8', skin: '#fcd34d', hair: '#451a03', glow: 'rgba(59, 130, 246, 0.5)' },
       // 3. DOCTOR (Female) - White Coat, Stethoscope
-      { type: 'doctor' as const, bg1: '#0891b2', bg2: '#0e7490', skin: '#fed7aa', hair: '#374151', glow: 'rgba(8, 145, 178, 0.5)' },
+      { type: 'doctor' as const, bg1: '#2563eb', bg2: '#1d4ed8', skin: '#fed7aa', hair: '#374151', glow: 'rgba(37, 99, 235, 0.5)' },
       // 4. NURSE (Male) - Hospital Scrubs, ID Badge
-      { type: 'nurse' as const, bg1: '#6366f1', bg2: '#4338ca', skin: '#ffedd5', hair: '#111827', glow: 'rgba(99, 102, 241, 0.5)' },
+      { type: 'nurse' as const, bg1: '#1d4ed8', bg2: '#1e3a8a', skin: '#ffedd5', hair: '#111827', glow: 'rgba(29, 78, 216, 0.5)' },
       // 5. TEACHER (Male) - Educator Sweater Vest, Glasses
-      { type: 'teacher' as const, bg1: '#d97706', bg2: '#b45309', skin: '#fde68a', hair: '#92400e', glow: 'rgba(217, 119, 6, 0.5)' },
+      { type: 'teacher' as const, bg1: '#0284c7', bg2: '#1d4ed8', skin: '#fde68a', hair: '#92400e', glow: 'rgba(2, 132, 199, 0.5)' },
     ];
 
     const createAvatars = () => {
@@ -868,13 +868,13 @@ export const Network3DBackground: React.FC = () => {
     // Vertices of regular heptagon: angle step = 2*PI / 7 ≈ 51.43 deg
     // Glow auras softened to match the page's light mesh gradient & floating blurred bubbles
     const stations: Station[] = [
-      { id: 0, type: 'hospital',   angle: -Math.PI / 2 + (0 * 2 * Math.PI) / 7, glowColor: 'rgba(16, 185, 129, 0.22)', themeColor: '#059669', driftSpeed: 0.85, phaseX: 0.2, phaseY: 1.5, ampX: 22, ampY: 26 }, // Top (0 deg)
-      { id: 1, type: 'school',     angle: -Math.PI / 2 + (1 * 2 * Math.PI) / 7, glowColor: 'rgba(37, 99, 235, 0.22)',  themeColor: '#2563eb', driftSpeed: 0.75, phaseX: 2.1, phaseY: 0.8, ampX: 25, ampY: 22 }, // Top-Right (51.4 deg)
-      { id: 2, type: 'ministry',   angle: -Math.PI / 2 + (2 * 2 * Math.PI) / 7, glowColor: 'rgba(124, 58, 237, 0.22)', themeColor: '#7c3aed', driftSpeed: 0.80, phaseX: 4.0, phaseY: 3.2, ampX: 22, ampY: 25 }, // Mid-Right (102.9 deg)
-      { id: 3, type: 'maternity',  angle: -Math.PI / 2 + (3 * 2 * Math.PI) / 7, glowColor: 'rgba(244, 63, 94, 0.22)',  themeColor: '#f43f5e', driftSpeed: 0.78, phaseX: 1.8, phaseY: 4.1, ampX: 24, ampY: 24 }, // Bottom-Right (154.3 deg)
+      { id: 0, type: 'hospital',   angle: -Math.PI / 2 + (0 * 2 * Math.PI) / 7, glowColor: 'rgba(37, 99, 235, 0.22)',  themeColor: '#2563eb', driftSpeed: 0.85, phaseX: 0.2, phaseY: 1.5, ampX: 22, ampY: 26 }, // Top (0 deg)
+      { id: 1, type: 'school',     angle: -Math.PI / 2 + (1 * 2 * Math.PI) / 7, glowColor: 'rgba(59, 130, 246, 0.22)',  themeColor: '#3b82f6', driftSpeed: 0.75, phaseX: 2.1, phaseY: 0.8, ampX: 25, ampY: 22 }, // Top-Right (51.4 deg)
+      { id: 2, type: 'ministry',   angle: -Math.PI / 2 + (2 * 2 * Math.PI) / 7, glowColor: 'rgba(2, 132, 199, 0.22)',   themeColor: '#0284c7', driftSpeed: 0.80, phaseX: 4.0, phaseY: 3.2, ampX: 22, ampY: 25 }, // Mid-Right (102.9 deg)
+      { id: 3, type: 'maternity',  angle: -Math.PI / 2 + (3 * 2 * Math.PI) / 7, glowColor: 'rgba(14, 165, 233, 0.22)',  themeColor: '#0ea5e9', driftSpeed: 0.78, phaseX: 1.8, phaseY: 4.1, ampX: 24, ampY: 24 }, // Bottom-Right (154.3 deg)
       { id: 4, type: 'secretariat', angle: -Math.PI / 2 + (4 * 2 * Math.PI) / 7, glowColor: 'rgba(30, 58, 138, 0.20)',  themeColor: '#1e3a8a', driftSpeed: 0.70, phaseX: 1.1, phaseY: 4.8, ampX: 24, ampY: 24 }, // Bottom-Left (205.7 deg) - District Secretariat
-      { id: 5, type: 'tower',       angle: -Math.PI / 2 + (5 * 2 * Math.PI) / 7, glowColor: 'rgba(2, 132, 199, 0.20)',  themeColor: '#0284c7', driftSpeed: 0.82, phaseX: 3.4, phaseY: 1.9, ampX: 23, ampY: 25 }, // Mid-Left (257.1 deg) - Public Service Tower
-      { id: 6, type: 'college',    angle: -Math.PI / 2 + (6 * 2 * Math.PI) / 7, glowColor: 'rgba(217, 119, 6, 0.22)',  themeColor: '#d97706', driftSpeed: 0.90, phaseX: 5.3, phaseY: 2.4, ampX: 26, ampY: 21 }, // Top-Left (308.6 deg)
+      { id: 5, type: 'tower',       angle: -Math.PI / 2 + (5 * 2 * Math.PI) / 7, glowColor: 'rgba(29, 78, 216, 0.20)',  themeColor: '#1d4ed8', driftSpeed: 0.82, phaseX: 3.4, phaseY: 1.9, ampX: 23, ampY: 25 }, // Mid-Left (257.1 deg) - Public Service Tower
+      { id: 6, type: 'college',    angle: -Math.PI / 2 + (6 * 2 * Math.PI) / 7, glowColor: 'rgba(37, 99, 235, 0.22)',  themeColor: '#2563eb', driftSpeed: 0.90, phaseX: 5.3, phaseY: 2.4, ampX: 26, ampY: 21 }, // Top-Left (308.6 deg)
     ];
 
     // Spoke Line Curvature offsets for visual rhythm (quadratic Bezier for 7 spokes)
