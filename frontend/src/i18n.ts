@@ -33,4 +33,15 @@ i18n
     },
   });
 
+// Keep document.documentElement.lang in sync with current language
+if (typeof document !== 'undefined') {
+  document.documentElement.lang = i18n.language || 'en';
+}
+
+i18n.on('languageChanged', (lng) => {
+  if (typeof document !== 'undefined') {
+    document.documentElement.lang = lng;
+  }
+});
+
 export default i18n;

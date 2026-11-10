@@ -8,10 +8,13 @@ const LanguageSwitcher: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const languages = [
-    { code: 'en', label: 'English', flag: '🇺🇸' },
-    { code: 'si', label: 'සිංහල', flag: '🇱🇰' },
-    { code: 'ta', label: 'தமிழ்', flag: '🇱🇰' },
+    { code: 'en', label: 'English', short: 'EN', flag: '🇺🇸' },
+    { code: 'si', label: 'සිංහල', short: 'සිං', flag: '🇱🇰' },
+    { code: 'ta', label: 'தமிழ்', short: 'தமி', flag: '🇱🇰' },
   ];
+
+  const currentLangCode = i18n.language?.split('-')[0] || 'en';
+  const currentLang = languages.find(l => l.code === currentLangCode) || languages[0];
 
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng);
@@ -32,14 +35,17 @@ const LanguageSwitcher: React.FC = () => {
     <div className="relative z-50" ref={dropdownRef}>
       <button 
         onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-(--bg-card) hover:bg-slate-100 dark:bg-white/5 dark:hover:bg-white/10 transition-all border border-(--border-main) text-(--text-main) cursor-pointer shadow-sm"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-(--bg-card) hover:bg-slate-100 dark:bg-white/5 dark:hover:bg-white/10 transition-all border border-(--border-main) text-(--text-main) cursor-pointer shadow-xs"
+        title={currentLang.label}
       >
-        <Globe className="w-4 h-4" />
-        <span className="text-sm font-bold uppercase tracking-widest">{i18n.language?.split('-')[0] || 'EN'}</span>
+        <Globe className="w-4 h-4 text-slate-500" />
+        <span className={`text-xs font-bold ${currentLang.code === 'en' ? 'tracking-wider uppercase' : ''}`}>
+          {currentLang.short}
+        </span>
       </button>
       
       <div 
-        className={`absolute right-0 mt-2 w-36 py-2 bg-(--bg-card) dark:bg-slate-900/95 backdrop-blur-xl border border-(--border-main) rounded-xl shadow-2xl transition-all duration-300 transform origin-top z-50 ${
+        className={`absolute right-0 mt-2 w-40 py-1.5 bg-(--bg-card) dark:bg-slate-900/95 backdrop-blur-xl border border-(--border-main) rounded-xl shadow-2xl transition-all duration-300 transform origin-top z-50 ${
           isOpen ? 'opacity-100 visible scale-100' : 'opacity-0 invisible scale-95'
         }`}
       >
@@ -49,14 +55,17 @@ const LanguageSwitcher: React.FC = () => {
             <button
               key={lang.code}
               onClick={(e) => { e.stopPropagation(); changeLanguage(lang.code); }}
-              className={`w-full px-4 py-2.5 text-left text-sm focus:outline-none transition-colors flex items-center justify-between cursor-pointer ${
+              className={`w-full px-3.5 py-2 text-left text-xs sm:text-sm focus:outline-none transition-colors flex items-center justify-between cursor-pointer ${
                 isActive 
                   ? 'text-primary-600 dark:text-primary-400 font-bold bg-primary-50 dark:bg-primary-900/20' 
                   : 'text-(--text-muted) hover:bg-slate-100 dark:hover:bg-white/5 hover:text-(--text-main)'
               }`}
             >
-              <span>{lang.label}</span>
-              <span className="text-lg leading-none">{lang.flag}</span>
+              <span className="flex items-center gap-1.5">
+                <span>{lang.label}</span>
+                <span className="text-[10px] font-semibold text-slate-400">({lang.short})</span>
+              </span>
+              <span className="text-base leading-none">{lang.flag}</span>
             </button>
           );
         })}

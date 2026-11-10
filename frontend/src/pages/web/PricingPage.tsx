@@ -8,6 +8,7 @@ import PaymentModal from '../../components/modals/PaymentModal';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import PricingCard from '../../components/common/PricingCard';
+import faqBg from '../../assets/pricing/faqbg.webp';
 
 /* ─── Animation Variants ─── */
 const fadeInUp: any = {
@@ -189,33 +190,60 @@ const PricingPage = () => {
             </section>
 
             {/* FAQ Section */}
-            <ScrollAnimatedSection className="bg-white perspective-2000 overflow-hidden flex items-center py-24">
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <ScrollAnimatedSection className="bg-white dark:bg-slate-950 perspective-2000 overflow-hidden flex items-center py-24">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+                    {/* Layer 2: Inner Card Layer with Background Image */}
                     <motion.div 
                         initial="hidden"
                         whileInView="visible"
                         viewport={{ once: true, margin: "-100px" }}
                         variants={staggerContainer}
-                        className="p-12 sm:p-20 glass-panel-strong rounded-[40px] border border-slate-100 text-center shadow-2xl shadow-blue-500/5"
+                        className="relative overflow-hidden p-8 sm:p-14 lg:p-16 rounded-[40px] border border-slate-200/80 dark:border-slate-800/80 text-center shadow-2xl shadow-blue-500/10 group bg-slate-900/5 dark:bg-slate-950"
                     >
-                        <motion.h3 variants={fadeInUp} className="text-2xl sm:text-3xl font-bold text-slate-900 mb-12 tracking-tight">Frequently Asked Questions</motion.h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 text-left">
-                            <motion.div variants={fadeInUp} className="group">
-                                <h4 className="font-bold text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">Can I upgrade later?</h4>
-                                <p className="text-sm text-slate-600 font-sans leading-relaxed">Yes, you can upgrade from Basic to Premium at any time from your dashboard settings.</p>
-                            </motion.div>
-                            <motion.div variants={fadeInUp} className="group">
-                                <h4 className="font-bold text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">What happens after the duration ends?</h4>
-                                <p className="text-sm text-slate-600 font-sans leading-relaxed">Your account will automatically revert to the Basic (Free) plan. You can renew your premium access at any time.</p>
-                            </motion.div>
-                            <motion.div variants={fadeInUp} className="group">
-                                <h4 className="font-bold text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">Is there a recurring charge?</h4>
-                                <p className="text-sm text-slate-600 font-sans leading-relaxed">No, these are one-time payments for the specified duration. We do not store your card for recurring billing.</p>
-                            </motion.div>
-                            <motion.div variants={fadeInUp} className="group">
-                                <h4 className="font-bold text-slate-800 mb-2 group-hover:text-blue-600 transition-colors">How long is the listing active?</h4>
-                                <p className="text-sm text-slate-600 font-sans leading-relaxed">Your profile stays active until you successfully find a match or manually disable it.</p>
-                            </motion.div>
+                        {/* Background image on the FAQ 2nd layer */}
+                        <div 
+                            className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 ease-out group-hover:scale-105 pointer-events-none"
+                            style={{ backgroundImage: `url(${faqBg})` }}
+                        />
+                        {/* Soft overlay gradient for high legibility */}
+                        <div className="absolute inset-0 bg-white/70 dark:bg-slate-950/75 backdrop-blur-[2px] pointer-events-none" />
+                        <div className="absolute inset-0 bg-linear-to-b from-white/60 via-white/75 to-white/90 dark:from-slate-950/60 dark:via-slate-950/80 dark:to-slate-950/90 pointer-events-none" />
+
+                        {/* Content inside 2nd layer */}
+                        <div className="relative z-10">
+                            <motion.h3 variants={fadeInUp} className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-10 tracking-tight">
+                                Frequently Asked Questions
+                            </motion.h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                                <motion.div 
+                                    variants={fadeInUp} 
+                                    className="p-6 rounded-2xl bg-white/75 dark:bg-slate-900/75 backdrop-blur-md border border-white/80 dark:border-white/10 shadow-lg shadow-blue-900/5 dark:shadow-black/20 hover:bg-white/90 dark:hover:bg-slate-900/90 hover:border-blue-300/80 dark:hover:border-blue-500/40 transition-all duration-300 group/item"
+                                >
+                                    <h4 className="font-bold text-slate-800 dark:text-slate-100 mb-2 group-hover/item:text-blue-600 dark:group-hover/item:text-blue-400 transition-colors">Can I upgrade later?</h4>
+                                    <p className="text-sm text-slate-600 dark:text-slate-300 font-sans leading-relaxed">Yes, you can upgrade from Basic to Premium at any time from your dashboard settings.</p>
+                                </motion.div>
+                                <motion.div 
+                                    variants={fadeInUp} 
+                                    className="p-6 rounded-2xl bg-white/75 dark:bg-slate-900/75 backdrop-blur-md border border-white/80 dark:border-white/10 shadow-lg shadow-blue-900/5 dark:shadow-black/20 hover:bg-white/90 dark:hover:bg-slate-900/90 hover:border-blue-300/80 dark:hover:border-blue-500/40 transition-all duration-300 group/item"
+                                >
+                                    <h4 className="font-bold text-slate-800 dark:text-slate-100 mb-2 group-hover/item:text-blue-600 dark:group-hover/item:text-blue-400 transition-colors">What happens after the duration ends?</h4>
+                                    <p className="text-sm text-slate-600 dark:text-slate-300 font-sans leading-relaxed">Your account will automatically revert to the Basic (Free) plan. You can renew your premium access at any time.</p>
+                                </motion.div>
+                                <motion.div 
+                                    variants={fadeInUp} 
+                                    className="p-6 rounded-2xl bg-white/75 dark:bg-slate-900/75 backdrop-blur-md border border-white/80 dark:border-white/10 shadow-lg shadow-blue-900/5 dark:shadow-black/20 hover:bg-white/90 dark:hover:bg-slate-900/90 hover:border-blue-300/80 dark:hover:border-blue-500/40 transition-all duration-300 group/item"
+                                >
+                                    <h4 className="font-bold text-slate-800 dark:text-slate-100 mb-2 group-hover/item:text-blue-600 dark:group-hover/item:text-blue-400 transition-colors">Is there a recurring charge?</h4>
+                                    <p className="text-sm text-slate-600 dark:text-slate-300 font-sans leading-relaxed">No, these are one-time payments for the specified duration. We do not store your card for recurring billing.</p>
+                                </motion.div>
+                                <motion.div 
+                                    variants={fadeInUp} 
+                                    className="p-6 rounded-2xl bg-white/75 dark:bg-slate-900/75 backdrop-blur-md border border-white/80 dark:border-white/10 shadow-lg shadow-blue-900/5 dark:shadow-black/20 hover:bg-white/90 dark:hover:bg-slate-900/90 hover:border-blue-300/80 dark:hover:border-blue-500/40 transition-all duration-300 group/item"
+                                >
+                                    <h4 className="font-bold text-slate-800 dark:text-slate-100 mb-2 group-hover/item:text-blue-600 dark:group-hover/item:text-blue-400 transition-colors">How long is the listing active?</h4>
+                                    <p className="text-sm text-slate-600 dark:text-slate-300 font-sans leading-relaxed">Your profile stays active until you successfully find a match or manually disable it.</p>
+                                </motion.div>
+                            </div>
                         </div>
                     </motion.div>
                 </div>

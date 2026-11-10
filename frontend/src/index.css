@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --font-sans: 'Poppins', system-ui, -apple-system, sans-serif;
-  --font-display: 'Poppins', var(--font-sans);
+  --font-sans: 'Poppins', 'Noto Sans Sinhala', 'Noto Sans Tamil', system-ui, -apple-system, sans-serif;
+  --font-display: 'Poppins', 'Noto Sans Sinhala', 'Noto Sans Tamil', var(--font-sans);
   
   /* Light Mode Variables - Original Clean Look */
   --bg-main: #f8fafc; /* slate-50 */
@@ -11,6 +11,69 @@
   --text-muted: #64748b; /* slate-500 */
   --border-main: #e2e8f0; /* slate-200 */
   --shadow-main: rgba(148, 163, 184, 0.1);
+}
+
+/* Language specific font priority & optical sizing */
+html[lang="si"],
+html[lang^="si"],
+:lang(si) {
+  --font-sans: 'Noto Sans Sinhala', 'Poppins', system-ui, -apple-system, sans-serif;
+  --font-display: 'Noto Sans Sinhala', 'Poppins', var(--font-sans);
+
+  /* Optical size reduction (~11-13%) so Noto Sans Sinhala visually matches English Poppins */
+  --text-xs: 0.675rem;
+  --text-xs--line-height: 1.5;
+  --text-sm: 0.775rem;
+  --text-sm--line-height: 1.55;
+  --text-base: 0.885rem;
+  --text-base--line-height: 1.6;
+  --text-lg: 1rem;
+  --text-lg--line-height: 1.6;
+  --text-xl: 1.115rem;
+  --text-xl--line-height: 1.5;
+  --text-2xl: 1.325rem;
+  --text-2xl--line-height: 1.45;
+  --text-3xl: 1.625rem;
+  --text-3xl--line-height: 1.4;
+  --text-4xl: 2rem;
+  --text-4xl--line-height: 1.3;
+  --text-5xl: 2.65rem;
+  --text-5xl--line-height: 1.25;
+}
+
+html[lang="si"] body,
+html[lang^="si"] body {
+  font-size: 0.915rem;
+  line-height: 1.6;
+}
+
+html[lang="ta"],
+html[lang^="ta"],
+:lang(ta) {
+  --font-sans: 'Noto Sans Tamil', 'Poppins', system-ui, -apple-system, sans-serif;
+  --font-display: 'Noto Sans Tamil', 'Poppins', var(--font-sans);
+
+  /* Optical size calibration for Tamil */
+  --text-xs: 0.7rem;
+  --text-xs--line-height: 1.5;
+  --text-sm: 0.815rem;
+  --text-sm--line-height: 1.55;
+  --text-base: 0.925rem;
+  --text-base--line-height: 1.6;
+  --text-lg: 1.05rem;
+  --text-lg--line-height: 1.6;
+  --text-xl: 1.175rem;
+  --text-xl--line-height: 1.5;
+  --text-2xl: 1.4rem;
+  --text-2xl--line-height: 1.45;
+  --text-3xl: 1.75rem;
+  --text-3xl--line-height: 1.4;
+}
+
+html[lang="ta"] body,
+html[lang^="ta"] body {
+  font-size: 0.94rem;
+  line-height: 1.6;
 }
 
 @custom-variant dark (&:where(.dark, .dark *));

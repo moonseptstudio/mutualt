@@ -1,5 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import toast from 'react-hot-toast';
 import { useState, useEffect } from 'react';
@@ -11,6 +12,7 @@ import logoImg from '../assets/logos/logo.jpg';
 const WebLayout = () => {
     const [scrolled, setScrolled] = useState(false);
     const [mobileMenu, setMobileMenu] = useState(false);
+    const { t } = useTranslation();
     const location = useLocation();
 
     useEffect(() => {
@@ -62,9 +64,9 @@ const WebLayout = () => {
     }, [location.pathname]);
 
     const navLinks = [
-        { to: '/', label: 'Home' },
-        { to: '/about', label: 'About Us' },
-        { to: '/pricing', label: 'Packages' },
+        { to: '/', label: t('common.home', 'Home') },
+        { to: '/about', label: t('common.about_us', 'About Us') },
+        { to: '/pricing', label: t('common.pricing', 'Packages') },
     ];
 
     return (
@@ -120,13 +122,13 @@ const WebLayout = () => {
                             to="/login"
                             className="px-5 py-2.5 text-sm font-semibold text-slate-700 hover:text-blue-600 rounded-xl transition-colors duration-300"
                         >
-                            Login
+                            {t('common.login', 'Login')}
                         </Link>
                         <Link
                             to="/register"
                             className="px-5 py-2.5 text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all duration-300"
                         >
-                            Register
+                            {t('common.register', 'Register')}
                         </Link>
                     </div>
 
@@ -167,10 +169,10 @@ const WebLayout = () => {
                                     <LanguageSwitcher />
                                 </div>
                                 <Link to="/login" className="px-4 py-3 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 text-center">
-                                    Login
+                                    {t('common.login', 'Login')}
                                 </Link>
                                 <Link to="/register" className="px-4 py-3 rounded-xl text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white text-center shadow-lg shadow-blue-500/20 transition-all duration-300">
-                                    Register
+                                    {t('common.register', 'Register')}
                                 </Link>
                             </div>
                         </nav>
