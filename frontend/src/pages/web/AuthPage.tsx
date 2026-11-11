@@ -26,6 +26,8 @@ import { useTranslation } from 'react-i18next';
 import loginBg from '../../assets/auth/login-bg.webp';
 import registerBg from '../../assets/auth/register-bg.webp';
 import logoImg from '../../assets/logos/logo.jpg';
+import SEO from '../../components/SEO';
+import { breadcrumbSchema } from '../../config/seo';
 
 const AuthPage = () => {
     const { t } = useTranslation();
@@ -278,6 +280,17 @@ const AuthPage = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-slate-50 relative overflow-hidden pt-20">
+            <SEO
+                title={isRegister ? 'Create Your Free Account' : 'Login'}
+                description={
+                    isRegister
+                        ? 'Register free on MutualTransfer.lk to find mutual transfer partners across Sri Lanka. NIC-verified profiles, no agents, no middlemen.'
+                        : 'Log in to your MutualTransfer.lk account to manage station preferences, view matches and send mutual transfer requests.'
+                }
+                path={isRegister ? '/register' : '/login'}
+                noindex={!isRegister}
+                structuredData={isRegister ? breadcrumbSchema([['Register', '/register']]) : undefined}
+            />
             {/* Ambient background glows */}
             <div className="absolute top-0 right-0 w-full h-full pointer-events-none opacity-20">
                 <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-400 blur-[120px] rounded-full" />

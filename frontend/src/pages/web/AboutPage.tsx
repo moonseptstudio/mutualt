@@ -5,6 +5,8 @@ import { useRef } from 'react';
 import whyUsImg1 from '../../assets/aboutUs/image01.webp';
 import whyUsImg2 from '../../assets/aboutUs/image02.webp';
 import whyUsImg3 from '../../assets/aboutUs/image03.webp';
+import SEO from '../../components/SEO';
+import { breadcrumbSchema } from '../../config/seo';
 
 /* ─── Animation Variants ─── */
 const fadeInUp: any = {
@@ -142,6 +144,22 @@ const AboutPage = () => {
 
     return (
         <div className="relative">
+            <SEO
+                title="About Us"
+                description="Learn why MutualTransfer.lk was built: a secure, verified platform helping Sri Lankan government employees find mutual transfer partners without agents or middlemen."
+                keywords="about Mutual Transfer Sri Lanka, government transfer platform, mutual transfer service Sri Lanka"
+                path="/about"
+                structuredData={[
+                    breadcrumbSchema([['About Us', '/about']]),
+                    {
+                        '@context': 'https://schema.org',
+                        '@type': 'AboutPage',
+                        name: 'About MutualTransfer.lk',
+                        description:
+                            'Why MutualTransfer.lk was built and how it helps Sri Lankan government employees find mutual transfers.',
+                    },
+                ]}
+            />
             {/* Hero Section */}
             <section ref={heroRef} className="relative mesh-gradient-bg overflow-hidden flex flex-col justify-center min-h-screen pt-24">
                 <FloatingShapes />

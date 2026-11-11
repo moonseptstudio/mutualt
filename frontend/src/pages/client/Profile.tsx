@@ -35,7 +35,7 @@ const ConfigItem = ({ icon: Icon, label, value, action, warning, onClick }: any)
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import apiClient from '../../api/client';
-import PageLoader from '../../components/common/PageLoader';
+import { ProfileSkeleton } from '../../components/common/Skeletons';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -140,7 +140,7 @@ const Profile = () => {
 
 
 
-    if (loading) return <PageLoader />;
+    if (loading) return <ProfileSkeleton />;
 
     if (!profile) return (
         <div className="p-10 text-center glass-card rounded-[32px] bg-(--bg-card) border-(--border-main)">

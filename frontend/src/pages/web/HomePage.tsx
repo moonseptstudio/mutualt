@@ -29,6 +29,8 @@ import apiClient from '../../api/client';
 import toast from 'react-hot-toast';
 import PaymentModal from '../../components/modals/PaymentModal';
 import PricingCard from '../../components/common/PricingCard';
+import SEO from '../../components/SEO';
+import { DEFAULT_KEYWORDS, SITE_URL, absoluteUrl } from '../../config/seo';
 
 
 /* ─── Animation Variants ─── */
@@ -438,6 +440,39 @@ const HomePage = () => {
 
   return (
     <div>
+      <SEO
+        title="Mutual Transfer Sri Lanka | Government Employee Transfers"
+        appendSiteName={false}
+        description="Find mutual transfer partners easily in Sri Lanka. The premier platform connecting Nurses, Doctors, Teachers and all Government Employees for fast, reliable workplace transfers."
+        keywords={DEFAULT_KEYWORDS}
+        path="/"
+        structuredData={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'WebPage',
+            '@id': `${SITE_URL}/#webpage`,
+            url: `${SITE_URL}/`,
+            name: 'Mutual Transfer Sri Lanka | Government Employee Transfers',
+            isPartOf: { '@id': `${SITE_URL}/#website` },
+            about: { '@id': `${SITE_URL}/#organization` },
+            primaryImageOfPage: { '@type': 'ImageObject', url: absoluteUrl('/og-image.png') },
+          },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'Service',
+            name: 'Government Employee Mutual Transfer Matching',
+            serviceType: 'Mutual transfer matching',
+            provider: { '@id': `${SITE_URL}/#organization` },
+            areaServed: { '@type': 'Country', name: 'Sri Lanka' },
+            audience: {
+              '@type': 'Audience',
+              audienceType: 'Sri Lankan government employees, nurses, doctors, teachers',
+            },
+            description:
+              'Matches Sri Lankan government employees seeking mutual workplace transfers, including 2-way and 3-way transfer chains.',
+          },
+        ]}
+      />
       <PaymentModal 
         isOpen={showPaymentModal}
         onClose={() => setShowPaymentModal(false)}

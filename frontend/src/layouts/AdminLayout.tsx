@@ -10,6 +10,7 @@ import {
     Layers
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import SEO from '../components/SEO';
 
 const SidebarItem = ({ icon: Icon, label, to, active }: any) => (
     <Link
@@ -44,6 +45,7 @@ const AdminLayout = () => {
 
     return (
         <div className="flex h-screen bg-[#F8FAFC] overflow-hidden font-sans selection:bg-primary-500/30">
+            <SEO title="Administration" description="Administration area." noindex />
             {/* Sidebar */}
             <aside className="w-72 bg-white border-r border-slate-100 flex flex-col z-30 shadow-[4px_0_24px_rgba(0,0,0,0.02)] translate-x-0 transition-transform lg:translate-x-0 duration-500">
                 <div className="p-8">

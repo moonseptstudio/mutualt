@@ -1,5 +1,6 @@
 package com.moonseptstudio.mutualt.controller;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.MediaType;
@@ -14,12 +15,14 @@ import java.nio.file.Paths;
 @RequestMapping("/api/public/files")
 public class FileController {
 
-    private final Path root = Paths.get("uploads");
+    @Value("${file.upload-dir}")
+    private String uploadDir;
 
     @GetMapping("/{subDir}/{filename:.+}")
     public ResponseEntity<Resource> getFile(@PathVariable("subDir") String subDir,
             @PathVariable("filename") String filename) {
         try {
+            Path root = Paths.get(uploadDir);
             Path file = root.resolve(subDir).resolve(filename);
             Resource resource = new UrlResource(file.toUri());
 

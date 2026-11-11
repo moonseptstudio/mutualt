@@ -18,6 +18,7 @@ import { isValidNic } from '../../utils/validation';
 import { useTranslation } from 'react-i18next';
 import logoImg from '../../assets/logos/logo.jpg';
 import loginBg from '../../assets/auth/login-bg.webp';
+import SEO from '../../components/SEO';
 
 const ForgotPasswordPage = () => {
     const { t } = useTranslation();
@@ -155,6 +156,12 @@ const ForgotPasswordPage = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-slate-50 relative overflow-hidden pt-20">
+            <SEO
+                title="Reset Your Password"
+                description="Reset the password for your MutualTransfer.lk account."
+                path="/forgot-password"
+                noindex
+            />
             {/* Ambient background glows */}
             <div className="absolute top-0 right-0 w-full h-full pointer-events-none opacity-20">
                 <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-400 blur-[120px] rounded-full" />

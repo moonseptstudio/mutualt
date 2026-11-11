@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { X, ShieldCheck, Lock, AlertCircle, Tag, CheckCircle2 } from 'lucide-react';
+import { X, ShieldCheck, Lock, AlertCircle, Tag, CheckCircle2, Gift, Crown, Sparkles, PartyPopper } from 'lucide-react';
 
 interface PaymentModalProps {
     isOpen: boolean;
@@ -7,9 +7,10 @@ interface PaymentModalProps {
     onPaymentSuccess: () => void;
     packageName: string;
     price: string;
+    promoActive?: boolean;
 }
 
-const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentSuccess, packageName, price }) => {
+const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentSuccess, packageName, price, promoActive = false }) => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [cardDetails, setCardDetails] = useState({
         number: '',
@@ -143,6 +144,15 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
         }, 2000);
     };
 
+    const handlePromoActivate = () => {
+        if (isProcessing) return;
+        setIsProcessing(true);
+        setTimeout(() => {
+            setIsProcessing(false);
+            onPaymentSuccess();
+        }, 1500);
+    };
+
     return (
         <div className="fixed inset-0 z-100 flex items-center justify-center p-4 animate-in fade-in duration-200">
             <div 
@@ -158,137 +168,215 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
                     <X size={20} />
                 </button>
 
-                <div className="p-8">
-                    <div className="mb-8">
-                        <h3 className="text-2xl font-bold text-(--text-main)">Complete Payment</h3>
-                        <p className="text-(--text-muted) text-sm mt-1">Confirm your purchase details below</p>
-                    </div>
-
-                    <div className="relative p-6 bg-linear-to-br from-blue-600/10 to-violet-600/10 dark:from-blue-500/5 dark:to-violet-500/5 rounded-3xl mb-8 border border-blue-500/20 overflow-hidden group">
-                        <div className="absolute top-0 left-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
-                            <Tag size={64} className="text-blue-600" rotate={-15} />
+                {promoActive ? (
+                    /* ── PROMO MODE ── */
+                    <div className="p-8">
+                        {/* Promo Header */}
+                        <div className="relative rounded-3xl overflow-hidden mb-8 promo-banner-bg p-8 text-center">
+                            <div className="absolute inset-0 bg-gradient-to-br from-violet-600/30 to-pink-600/20" />
+                            <div className="absolute -top-8 -left-8 w-24 h-24 bg-violet-400/20 rounded-full blur-2xl" />
+                            <div className="absolute -bottom-6 -right-6 w-20 h-20 bg-pink-400/20 rounded-full blur-2xl" />
+                            <div className="relative z-10">
+                                <div className="w-16 h-16 bg-white/15 backdrop-blur-md border border-white/25 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+                                    <Gift size={30} className="text-amber-300" />
+                                </div>
+                                <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-400/20 border border-emerald-400/30 text-emerald-300 text-[10px] font-black uppercase tracking-widest rounded-full mb-3">
+                                    <CheckCircle2 size={10} /> Promo Auto-Applied
+                                </div>
+                                <h3 className="text-2xl font-black text-white tracking-tight">May Offer Active! 🎉</h3>
+                                <p className="text-violet-200/80 text-sm mt-1">No card details needed</p>
+                            </div>
                         </div>
-                        
-                        <div className="relative z-10 space-y-4">
+
+                        {/* Plan Summary with crossed-out price */}
+                        <div className="relative p-6 bg-linear-to-br from-violet-50 to-pink-50 dark:from-violet-900/10 dark:to-pink-900/10 rounded-3xl mb-8 border border-violet-200/50 dark:border-violet-700/30 overflow-hidden">
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <span className="text-[10px] font-bold uppercase tracking-widest text-blue-600 bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 rounded-md mb-2 inline-block">
+                                    <span className="text-[10px] font-bold uppercase tracking-widest text-violet-600 bg-violet-100 dark:bg-violet-900/40 px-2 py-0.5 rounded-md mb-2 inline-block">
                                         Selected Plan
                                     </span>
                                     <h4 className="text-lg font-bold text-(--text-main) leading-none">{packageName}</h4>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-[10px] font-bold text-(--text-muted) uppercase tracking-tight mb-1">Amount to Pay</p>
-                                    <div className="flex items-baseline justify-end space-x-1">
-                                        <span className="text-sm font-bold text-blue-600">Rs.</span>
-                                        <span className="text-3xl font-black text-(--text-main) tracking-tighter tabular-nums">{price}</span>
+                                    <div className="flex items-baseline justify-end gap-2">
+                                        <span className="text-2xl font-black text-(--text-muted) line-through opacity-40">Rs. {price}</span>
                                     </div>
+                                    <div className="flex items-baseline justify-end gap-1 mt-1">
+                                        <span className="text-sm font-bold text-emerald-600">Rs.</span>
+                                        <span className="text-4xl font-black text-emerald-600 tracking-tighter tabular-nums">0</span>
+                                    </div>
+                                    <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">FREE this month</span>
                                 </div>
                             </div>
-                            
-                            <div className="pt-3 border-t border-blue-500/10 flex items-center justify-between text-[11px]">
-                                <span className="flex items-center text-slate-500 font-medium">
-                                    <CheckCircle2 size={12} className="mr-1 text-green-500" />
-                                    One-time payment
-                                </span>
-                                <span className="text-blue-600 font-bold">Secure Checkout</span>
-                            </div>
-                        </div>
-                    </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        <div className="space-y-1.5">
-                            <div className="flex justify-between items-center">
-                                <label className="block text-sm font-semibold text-(--text-muted)">Card Number</label>
-                                {cardType !== 'unknown' && (
-                                    <span className="text-[10px] font-bold uppercase tracking-wider text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-md">
-                                        {cardType}
-                                    </span>
-                                )}
-                            </div>
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    required
-                                    placeholder="0000 0000 0000 0000"
-                                    className={`w-full px-4 py-3.5 bg-(--bg-main) dark:bg-(--bg-main)/50 border rounded-xl focus:ring-4 outline-none transition-all text-(--text-main) placeholder:text-slate-500 ${
-                                        errors.number 
-                                        ? 'border-red-500 focus:ring-red-500/10' 
-                                        : 'border-(--border-main)/50 focus:ring-blue-500/10 focus:border-blue-500'
-                                    }`}
-                                    value={cardDetails.number}
-                                    onChange={handleCardChange}
-                                />
-                                {errors.number ? (
-                                    <AlertCircle size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-red-500" />
-                                ) : (
-                                    <Lock size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                                )}
-                            </div>
-                            {errors.number && <p className="text-[11px] text-red-500 font-medium ml-1">{errors.number}</p>}
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-1.5">
-                                <label className="block text-sm font-semibold text-(--text-muted)">Expiry Date</label>
-                                <input
-                                    type="text"
-                                    required
-                                    placeholder="MM/YY"
-                                    className={`w-full px-4 py-3.5 bg-(--bg-main) dark:bg-(--bg-main)/50 border rounded-xl focus:ring-4 outline-none transition-all text-(--text-main) placeholder:text-slate-500 ${
-                                        errors.expiry 
-                                        ? 'border-red-500 focus:ring-red-500/10' 
-                                        : 'border-(--border-main)/50 focus:ring-blue-500/10 focus:border-blue-500'
-                                    }`}
-                                    value={cardDetails.expiry}
-                                    onChange={handleExpiryChange}
-                                />
-                                {errors.expiry && <p className="text-[11px] text-red-500 font-medium ml-1">{errors.expiry}</p>}
-                            </div>
-                            <div className="space-y-1.5">
-                                <label className="block text-sm font-semibold text-(--text-muted)">CVV</label>
-                                <input
-                                    type="password"
-                                    required
-                                    placeholder="***"
-                                    maxLength={cardType === 'amex' ? 4 : 3}
-                                    className={`w-full px-4 py-3.5 bg-(--bg-main) dark:bg-(--bg-main)/50 border rounded-xl focus:ring-4 outline-none transition-all text-(--text-main) placeholder:text-slate-500 ${
-                                        errors.cvv 
-                                        ? 'border-red-500 focus:ring-red-500/10' 
-                                        : 'border-(--border-main)/50 focus:ring-blue-500/10 focus:border-blue-500'
-                                    }`}
-                                    value={cardDetails.cvv}
-                                    onChange={(e) => setCardDetails(prev => ({...prev, cvv: e.target.value.replace(/\D/g, '')}))}
-                                />
-                                {errors.cvv && <p className="text-[11px] text-red-500 font-medium ml-1">{errors.cvv}</p>}
+                            <div className="mt-4 pt-4 border-t border-violet-100 dark:border-violet-800/30 flex flex-col gap-2">
+                                {[
+                                    '✓ 1 Month Premium Access',
+                                    '✓ No card details required',
+                                    '✓ All premium features unlocked',
+                                    '✓ Promo valid until May 31, 2026',
+                                ].map((item, i) => (
+                                    <span key={i} className="text-xs font-medium text-slate-600 dark:text-slate-400">{item}</span>
+                                ))}
                             </div>
                         </div>
 
+                        {/* Activate button */}
                         <button
-                            type="submit"
-                            disabled={isProcessing || !isValid}
-                            className={`w-full py-4 mt-4 text-white font-bold rounded-2xl flex items-center justify-center space-x-2 shadow-lg transition-all ${
-                                isProcessing || !isValid 
-                                ? 'bg-slate-400 cursor-not-allowed opacity-50' 
-                                : 'bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] shadow-blue-500/20 cursor-pointer'
-                            }`}
+                            onClick={handlePromoActivate}
+                            disabled={isProcessing}
+                            className="w-full py-4 promo-banner-bg text-white font-black rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-violet-500/25 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                             {isProcessing ? (
                                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                             ) : (
-                                <div className="flex items-center space-x-2">
-                                    <span>Pay Rs. {price}</span>
-                                    <ShieldCheck size={18} />
-                                </div>
+                                <>
+                                    <Crown size={18} className="text-amber-300" />
+                                    <span>Activate Free Premium</span>
+                                    <Sparkles size={16} className="text-violet-200" />
+                                </>
                             )}
                         </button>
-                    </form>
 
-                    <p className="mt-6 text-center text-xs text-slate-400 flex items-center justify-center space-x-1">
-                        <Lock size={12} />
-                        <span>Secure SSL Encrypted Payment</span>
-                    </p>
-                </div>
+                        <p className="mt-4 text-center text-xs text-slate-400 flex items-center justify-center gap-1">
+                            <PartyPopper size={12} />
+                            <span>Special offer — May 31 deadline</span>
+                        </p>
+                    </div>
+                ) : (
+                    /* ── NORMAL PAYMENT MODE ── */
+                    <div className="p-8">
+                        <div className="mb-8">
+                            <h3 className="text-2xl font-bold text-(--text-main)">Complete Payment</h3>
+                            <p className="text-(--text-muted) text-sm mt-1">Confirm your purchase details below</p>
+                        </div>
+
+                        <div className="relative p-6 bg-linear-to-br from-blue-600/10 to-violet-600/10 dark:from-blue-500/5 dark:to-violet-500/5 rounded-3xl mb-8 border border-blue-500/20 overflow-hidden group">
+                            <div className="absolute top-0 left-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
+                                <Tag size={64} className="text-blue-600" rotate={-15} />
+                            </div>
+
+                            <div className="relative z-10 space-y-4">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <span className="text-[10px] font-bold uppercase tracking-widest text-blue-600 bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 rounded-md mb-2 inline-block">
+                                            Selected Plan
+                                        </span>
+                                        <h4 className="text-lg font-bold text-(--text-main) leading-none">{packageName}</h4>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-[10px] font-bold text-(--text-muted) uppercase tracking-tight mb-1">Amount to Pay</p>
+                                        <div className="flex items-baseline justify-end space-x-1">
+                                            <span className="text-sm font-bold text-blue-600">Rs.</span>
+                                            <span className="text-3xl font-black text-(--text-main) tracking-tighter tabular-nums">{price}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="pt-3 border-t border-blue-500/10 flex items-center justify-between text-[11px]">
+                                    <span className="flex items-center text-slate-500 font-medium">
+                                        <CheckCircle2 size={12} className="mr-1 text-green-500" />
+                                        One-time payment
+                                    </span>
+                                    <span className="text-blue-600 font-bold">Secure Checkout</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-5">
+                            <div className="space-y-1.5">
+                                <div className="flex justify-between items-center">
+                                    <label className="block text-sm font-semibold text-(--text-muted)">Card Number</label>
+                                    {cardType !== 'unknown' && (
+                                        <span className="text-[10px] font-bold uppercase tracking-wider text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-md">
+                                            {cardType}
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        required
+                                        placeholder="0000 0000 0000 0000"
+                                        className={`w-full px-4 py-3.5 bg-(--bg-main) dark:bg-(--bg-main)/50 border rounded-xl focus:ring-4 outline-none transition-all text-(--text-main) placeholder:text-slate-500 ${
+                                            errors.number 
+                                            ? 'border-red-500 focus:ring-red-500/10' 
+                                            : 'border-(--border-main)/50 focus:ring-blue-500/10 focus:border-blue-500'
+                                        }`}
+                                        value={cardDetails.number}
+                                        onChange={handleCardChange}
+                                    />
+                                    {errors.number ? (
+                                        <AlertCircle size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-red-500" />
+                                    ) : (
+                                        <Lock size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    )}
+                                </div>
+                                {errors.number && <p className="text-[11px] text-red-500 font-medium ml-1">{errors.number}</p>}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="block text-sm font-semibold text-(--text-muted)">Expiry Date</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        placeholder="MM/YY"
+                                        className={`w-full px-4 py-3.5 bg-(--bg-main) dark:bg-(--bg-main)/50 border rounded-xl focus:ring-4 outline-none transition-all text-(--text-main) placeholder:text-slate-500 ${
+                                            errors.expiry 
+                                            ? 'border-red-500 focus:ring-red-500/10' 
+                                            : 'border-(--border-main)/50 focus:ring-blue-500/10 focus:border-blue-500'
+                                        }`}
+                                        value={cardDetails.expiry}
+                                        onChange={handleExpiryChange}
+                                    />
+                                    {errors.expiry && <p className="text-[11px] text-red-500 font-medium ml-1">{errors.expiry}</p>}
+                                </div>
+                                <div className="space-y-1.5">
+                                    <label className="block text-sm font-semibold text-(--text-muted)">CVV</label>
+                                    <input
+                                        type="password"
+                                        required
+                                        placeholder="***"
+                                        maxLength={cardType === 'amex' ? 4 : 3}
+                                        className={`w-full px-4 py-3.5 bg-(--bg-main) dark:bg-(--bg-main)/50 border rounded-xl focus:ring-4 outline-none transition-all text-(--text-main) placeholder:text-slate-500 ${
+                                            errors.cvv 
+                                            ? 'border-red-500 focus:ring-red-500/10' 
+                                            : 'border-(--border-main)/50 focus:ring-blue-500/10 focus:border-blue-500'
+                                        }`}
+                                        value={cardDetails.cvv}
+                                        onChange={(e) => setCardDetails(prev => ({...prev, cvv: e.target.value.replace(/\D/g, '')}))}
+                                    />
+                                    {errors.cvv && <p className="text-[11px] text-red-500 font-medium ml-1">{errors.cvv}</p>}
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={isProcessing || !isValid}
+                                className={`w-full py-4 mt-4 text-white font-bold rounded-2xl flex items-center justify-center space-x-2 shadow-lg transition-all ${
+                                    isProcessing || !isValid 
+                                    ? 'bg-slate-400 cursor-not-allowed opacity-50' 
+                                    : 'bg-blue-600 hover:bg-blue-700 hover:scale-[1.02] active:scale-[0.98] shadow-blue-500/20 cursor-pointer'
+                                }`}
+                            >
+                                {isProcessing ? (
+                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                ) : (
+                                    <div className="flex items-center space-x-2">
+                                        <span>Pay Rs. {price}</span>
+                                        <ShieldCheck size={18} />
+                                    </div>
+                                )}
+                            </button>
+                        </form>
+
+                        <p className="mt-6 text-center text-xs text-slate-400 flex items-center justify-center space-x-1">
+                            <Lock size={12} />
+                            <span>Secure SSL Encrypted Payment</span>
+                        </p>
+                    </div>
+                )}
             </div>
         </div>
     );

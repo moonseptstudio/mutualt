@@ -3,7 +3,7 @@ import { useNavigate, useOutletContext } from 'react-router-dom';
 import apiClient from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
-import PageLoader from '../../components/common/PageLoader';
+import { CardGridSkeleton } from '../../components/common/Skeletons';
 import {
     Users,
     MapPin,
@@ -103,9 +103,9 @@ const MatchRow = ({ match, currentUserId, onViewDetails, hasPackage, onUnlockReq
                 <div className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-4 px-1 sm:px-4 mt-4 xl:mt-0 ${isTriple ? 'min-w-[260px]' : 'min-w-[180px]'}`}>
                     {/* Node 1: You */}
                     <div className="flex-1 text-right group/loc min-w-0">
-                        <p className={`text-[8px] sm:text-[10px] font-bold text-(--text-muted) uppercase tracking-widest mb-0.5 sm:mb-1 group-hover/loc:text-${accentColor}-500 transition-colors`}>{t('matches.labels.you')}</p>
-                        <h5 className="text-xs sm:text-sm font-bold text-(--text-main) line-clamp-1 opacity-90">{sortedParticipants[0]?.stationName}</h5>
-                        <p className="text-[8px] sm:text-[10px] font-medium text-(--text-muted) truncate">{sortedParticipants[0]?.stationDistrict}</p>
+                        <p className={`text-[11px] font-bold text-(--text-muted) uppercase tracking-widest mb-0.5 sm:mb-1 group-hover/loc:text-${accentColor}-500 transition-colors`}>{t('matches.labels.you')}</p>
+                        <h5 className="text-xs sm:text-sm font-bold text-(--text-main) whitespace-normal break-words opacity-90">{sortedParticipants[0]?.stationName}</h5>
+                        <p className="text-[11px] font-medium text-(--text-muted) whitespace-normal break-words">{sortedParticipants[0]?.stationDistrict}</p>
                     </div>
 
                     {/* Arrow 1 */}
@@ -122,9 +122,9 @@ const MatchRow = ({ match, currentUserId, onViewDetails, hasPackage, onUnlockReq
 
                     {/* Node 2: Target */}
                     <div className={`flex-1 ${isTriple ? 'text-center' : 'text-left'} group/loc min-w-0`}>
-                        <p className={`text-[8px] sm:text-[10px] font-bold text-(--text-muted) uppercase tracking-widest mb-0.5 sm:mb-1 group-hover/loc:text-${accentColor}-500 transition-colors`}>{isTriple ? t('matches.labels.target') : t('matches.labels.partner')}</p>
-                        <h5 className="text-xs sm:text-sm font-bold text-(--text-main) line-clamp-1 opacity-90">{sortedParticipants[1]?.stationName}</h5>
-                        <p className="text-[8px] sm:text-[10px] font-medium text-(--text-muted) truncate">{sortedParticipants[1]?.stationDistrict}</p>
+                        <p className={`text-[11px] font-bold text-(--text-muted) uppercase tracking-widest mb-0.5 sm:mb-1 group-hover/loc:text-${accentColor}-500 transition-colors`}>{isTriple ? t('matches.labels.target') : t('matches.labels.partner')}</p>
+                        <h5 className="text-xs sm:text-sm font-bold text-(--text-main) whitespace-normal break-words opacity-90">{sortedParticipants[1]?.stationName}</h5>
+                        <p className="text-[11px] font-medium text-(--text-muted) whitespace-normal break-words">{sortedParticipants[1]?.stationDistrict}</p>
                     </div>
  
                     {/* Optional Arrow 2 & Node 3 for Triple */}
@@ -142,9 +142,9 @@ const MatchRow = ({ match, currentUserId, onViewDetails, hasPackage, onUnlockReq
                             </div>
  
                             <div className="flex-1 text-left group/loc min-w-0">
-                                <p className="text-[8px] sm:text-[10px] font-bold text-(--text-muted) uppercase tracking-widest mb-0.5 sm:mb-1 group-hover/loc:text-indigo-500 transition-colors">{t('matches.labels.third')}</p>
-                                <h5 className="text-xs sm:text-sm font-bold text-(--text-main) line-clamp-1 opacity-90">{sortedParticipants[2]?.stationName}</h5>
-                                <p className="text-[8px] sm:text-[10px] font-medium text-(--text-muted) truncate">{sortedParticipants[2]?.stationDistrict}</p>
+                                <p className="text-[11px] font-bold text-(--text-muted) uppercase tracking-widest mb-0.5 sm:mb-1 group-hover/loc:text-indigo-500 transition-colors">{t('matches.labels.third')}</p>
+                                <h5 className="text-xs sm:text-sm font-bold text-(--text-main) whitespace-normal break-words opacity-90">{sortedParticipants[2]?.stationName}</h5>
+                                <p className="text-[11px] font-medium text-(--text-muted) whitespace-normal break-words">{sortedParticipants[2]?.stationDistrict}</p>
                             </div>
                         </>
                     )}
@@ -154,7 +154,7 @@ const MatchRow = ({ match, currentUserId, onViewDetails, hasPackage, onUnlockReq
                 <div className="flex items-center justify-between xl:justify-end xl:space-x-10 border-t xl:border-t-0 border-(--border-main) pt-6 xl:pt-0">
                     <div className="flex items-center space-x-6">
                         <div className="hidden sm:block text-right">
-                            <p className="text-[10px] font-bold text-(--text-muted) uppercase tracking-widest mb-1">{t('matches.labels.relocation')}</p>
+                            <p className="text-[11px] font-bold text-(--text-muted) uppercase tracking-widest mb-1">{t('matches.labels.relocation')}</p>
                             <div className={`flex items-center gap-1.5 text-${accentColor}-600 dark:text-${accentColor}-400`}>
                                 {isTriple ? <Zap size={14} fill="currentColor" /> : <Users size={14} />}
                                 <span className="text-xs font-bold uppercase tracking-wider">{isTriple ? t('matches.type.chain_label') : t('matches.type.direct_label')}</span>
@@ -267,7 +267,7 @@ const Matches = () => {
         }
     };
 
-    if (loading) return <PageLoader />;
+    if (loading) return <CardGridSkeleton />;
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 space-y-8 pb-10">
@@ -284,8 +284,8 @@ const Matches = () => {
                         <Users size={20} className="sm:w-8 sm:h-8" />
                     </div>
                     <div className="text-center sm:text-left">
-                        <p className="text-xl sm:text-2xl font-medium">{filteredMatches.length}</p>
-                        <p className="text-[9px] sm:text-xs font-medium uppercase tracking-wider opacity-60">{t('matches.opportunities')}</p>
+                        <p className="text-[11px] font-medium">{filteredMatches.length}</p>
+                        <p className="text-[11px] sm:text-xs font-medium uppercase tracking-wider opacity-60">{t('matches.opportunities')}</p>
                     </div>
                 </div>
                 <div className="col-span-1 glass-card rounded-2xl sm:rounded-[32px] p-4 sm:p-8 flex flex-col sm:flex-row items-center sm:space-x-6 space-y-2 sm:space-y-0 border-(--border-main) bg-(--bg-card)">
@@ -294,7 +294,7 @@ const Matches = () => {
                     </div>
                      <div className="text-center sm:text-left">
                         <p className="text-xl sm:text-2xl font-semibold text-(--text-main)">{filteredMatches.filter(m => m.type === 'Triple').length}</p>
-                        <p className="text-[9px] sm:text-xs font-medium uppercase tracking-wider text-(--text-muted)">{t('matches.multi_way')}</p>
+                        <p className="text-[11px] sm:text-xs font-medium uppercase tracking-wider text-(--text-muted)">{t('matches.multi_way')}</p>
                     </div>
                 </div>
                 <div className="col-span-2 glass-card rounded-2xl sm:rounded-[32px] p-4 sm:p-8 border-(--border-main) bg-(--bg-card) flex flex-col sm:flex-row items-center justify-between shadow-sm relative overflow-hidden group/pref">
@@ -304,15 +304,15 @@ const Matches = () => {
                             <span className="p-1 bg-primary-100/50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 rounded-lg"><MapPin size={16} /></span>
                             <h4 className="font-semibold text-(--text-main) tracking-tight text-sm sm:text-lg">{t('matches.preferences_title')}</h4>
                         </div>
-                        <p className="text-[9px] sm:text-xs text-(--text-muted) font-medium hidden sm:block">{t('matches.preferences_desc')}</p>
+                        <p className="text-[11px] sm:text-xs text-(--text-muted) font-medium hidden sm:block">{t('matches.preferences_desc')}</p>
                     </div>
                     <button onClick={() => navigate('/preferences')} className="relative z-10 text-primary-600 dark:text-primary-400 font-bold text-[9px] sm:text-xs uppercase tracking-wider hover:text-primary-800 dark:hover:text-primary-300 bg-primary-50 dark:bg-primary-900/20 hover:bg-primary-100 dark:hover:bg-primary-900/40 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg sm:rounded-xl transition-colors cursor-pointer border border-primary-100 dark:border-primary-800 mt-2 sm:mt-0">{t('matches.adjust')}</button>
                 </div>
             </div>            <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-3 sm:px-4 bg-(--bg-card) p-3 sm:p-4 rounded-2xl sm:rounded-3xl border border-(--border-main)">
                     <div className="flex items-center space-x-3">
-                        <h3 className="text-[10px] sm:text-sm font-bold text-(--text-main) uppercase tracking-wider">{t('matches.results')}</h3>
-                        <span className="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[9px] sm:text-[10px] font-bold rounded-lg uppercase tracking-tight">
+                        <h3 className="text-[11px] sm:text-sm font-bold text-(--text-main) uppercase tracking-wider">{t('matches.results')}</h3>
+                        <span className="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[11px] font-bold rounded-lg uppercase tracking-tight">
                             {t('matches.found_count', { count: filteredMatches.length })}
                         </span>
                     </div>
@@ -328,7 +328,7 @@ const Matches = () => {
                                     }`}
                             >
                                 <span>{t(`matches.filter.${type.toLowerCase()}`)}</span>
-                                <span className={`px-1.5 py-0.5 rounded-md text-[8px] sm:text-[9px] ${typeFilter === type ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400' : 'bg-slate-300/50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400'
+                                <span className={`px-1.5 py-0.5 rounded-md text-[11px] ${typeFilter === type ? 'bg-primary-100 dark:bg-primary-900/40 text-primary-600 dark:text-primary-400' : 'bg-slate-300/50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400'
                                     }`}>
                                     {(counts as any)[type]}
                                 </span>
@@ -400,11 +400,11 @@ const Matches = () => {
                                                             </div>
                                                             <div>
                                                                 <p className="font-bold text-(--text-main) text-base">
-                                                                    {displayName} {isCurrentUser && <span className="text-[8px] ml-2 bg-primary-600 text-white px-2 py-0.5 rounded-full uppercase tracking-widest font-bold align-middle">{t('matches.labels.you')}</span>}
+                                                                    {displayName} {isCurrentUser && <span className="text-[10px] ml-2 bg-primary-600 text-white px-2 py-0.5 rounded-full uppercase tracking-widest font-bold align-middle">{t('matches.labels.you')}</span>}
                                                                 </p>
-                                                                <p className="text-xs text-(--text-muted) font-medium flex items-center mt-1">
+                                                                <p className="text-[11px] sm:text-xs text-(--text-muted) font-medium flex items-center mt-1">
                                                                     <MapPin size={12} className="mr-1 shrink-0" />
-                                                                    <span className="truncate max-w-[150px] sm:max-w-xs">{p.stationName}</span>
+                                                                    <span className="whitespace-normal break-words max-w-[150px] sm:max-w-xs">{p.stationName}</span>
                                                                 </p>
                                                             </div>
                                                         </div>
@@ -414,8 +414,8 @@ const Matches = () => {
                                                                 <ArrowRightLeft size={16} />
                                                             </div>
                                                             <div>
-                                                                <p className={`text-[9px] font-bold uppercase tracking-widest leading-none mb-1 ${isCurrentUser ? 'text-primary-400' : 'text-slate-500'}`}>{t('matches.labels.moves_to')}</p>
-                                                                <p className="text-sm font-bold text-(--text-main) truncate max-w-[150px]">{nextPartner.stationName}</p>
+                                                                <p className={`text-[11px] font-bold uppercase tracking-widest leading-none mb-1 ${isCurrentUser ? 'text-primary-400' : 'text-slate-500'}`}>{t('matches.labels.moves_to')}</p>
+                                                                <p className="text-sm font-bold text-(--text-main) whitespace-normal break-words max-w-[150px]">{nextPartner.stationName}</p>
                                                             </div>
                                                         </div>
                                                     </div>

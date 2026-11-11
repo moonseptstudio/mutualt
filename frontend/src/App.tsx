@@ -2,7 +2,6 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
-  Navigate,
   useLocation
 } from 'react-router-dom';
 import { useEffect } from 'react';
@@ -21,6 +20,7 @@ import PricingPage from './pages/web/PricingPage';
 import LoginPage from './pages/web/LoginPage';
 import RegisterPage from './pages/web/RegisterPage';
 import ForgotPasswordPage from './pages/web/ForgotPasswordPage';
+import NotFoundPage from './pages/web/NotFoundPage';
 
 // Client Pages
 import ClientDashboard from './pages/client/ClientDashboard';
@@ -103,8 +103,13 @@ function App() {
           </Route>
         </Route>
 
-        {/* Redirects */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* 404 - a real not-found page inside the public layout. Do NOT redirect
+            unknown URLs to "/": that returns HTTP 200 with homepage content and
+            search engines treat it as a soft 404, so broken and outdated links
+            end up competing with the real homepage. */}
+        <Route element={<WebLayout />}>
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
       </Routes>
     </Router>
   );

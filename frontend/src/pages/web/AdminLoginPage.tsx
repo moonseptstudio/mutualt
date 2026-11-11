@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import apiClient from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
+import SEO from '../../components/SEO';
 
 const AdminLoginPage = () => {
     const [username, setUsername] = useState('');
@@ -51,6 +52,7 @@ const AdminLoginPage = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center p-6 bg-slate-950 relative overflow-hidden">
+            <SEO title="Admin Portal" description="Administrator sign-in." noindex />
             {/* Abstract Background for Admin */}
             <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20">
                 <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-600 blur-[150px] rounded-full"></div>

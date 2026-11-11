@@ -5,11 +5,11 @@ import com.moonseptstudio.mutualt.model.UserProfile;
 import com.moonseptstudio.mutualt.repository.UserProfileRepository;
 import com.moonseptstudio.mutualt.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -20,7 +20,8 @@ import java.util.UUID;
 @RequestMapping("/api/upload")
 public class UploadController {
 
-    private final String uploadDir = "uploads";
+    @Value("${file.upload-dir}")
+    private String uploadDir;
 
     @Autowired
     UserRepository userRepository;
