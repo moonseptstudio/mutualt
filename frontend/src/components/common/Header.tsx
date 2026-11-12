@@ -177,7 +177,8 @@ const Header = ({ hasPackage }: HeaderProps) => {
     const getAvatarUrl = (url: string | null | undefined, name: string) => {
         if (!url) return `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`;
         if (url.startsWith('http') || url.startsWith('data:')) return url;
-        return `http://localhost:8080${url}`;
+        const baseUrl = import.meta.env.VITE_BASE_URL.replace(/\/$/, "");
+        return `${baseUrl}${url}`;
     };
 
     const executeSignOut = () => {

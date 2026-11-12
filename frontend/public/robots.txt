@@ -1,0 +1,35 @@
+# https://mutualtransfer.lk/robots.txt
+# Canonical host is the apex domain (no www) - the TLS certificate does not
+# cover www.mutualtransfer.lk.
+
+User-agent: *
+Allow: /
+
+# Private, authenticated application areas. These return the SPA shell with no
+# indexable content, so keep crawlers out of them entirely.
+Disallow: /dashboard
+Disallow: /preferences
+Disallow: /matches
+Disallow: /profile
+Disallow: /settings
+Disallow: /requests
+Disallow: /messages
+Disallow: /admin
+
+# API and user-uploaded files (avatars, verification documents).
+Disallow: /api/
+Disallow: /uploads/
+
+# Never index URLs carrying one-time tokens or session parameters.
+Disallow: /*?token=
+Disallow: /*?reset=
+
+# /login and /forgot-password are intentionally crawlable: they carry a
+# "noindex" meta tag, and a robots.txt block would stop crawlers from ever
+# reading that tag.
+
+# Social preview assets must stay fetchable.
+Allow: /og-image.png
+Allow: /logo.png
+
+Sitemap: https://mutualtransfer.lk/sitemap.xml

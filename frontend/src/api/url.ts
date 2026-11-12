@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'http://localhost:8080';
+export const API_BASE_URL = import.meta.env.VITE_BASE_URL.replace(/\/$/, "");
 
 export const getAvatarUrl = (url: string | null | undefined, name: string) => {
     if (!url) return `https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`;

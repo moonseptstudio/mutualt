@@ -11,6 +11,8 @@ import PricingCard from '../../components/common/PricingCard';
 import faqBg from '../../assets/pricing/faqbg.webp';
 import PricingCrystalsBackground from '../../components/hero/PricingCrystalsBackground';
 import StickyFaqSection, { type FaqItem } from '../../components/common/StickyFaqSection';
+import SEO from '../../components/SEO';
+import { breadcrumbSchema, faqSchema, SITE_URL, ORG_NAME } from '../../config/seo';
 
 /* ─── Animation Variants ─── */
 const fadeInUp: any = {
@@ -144,6 +146,66 @@ const PricingPage = () => {
 
     return (
         <div className="relative">
+            <SEO
+                title="Pricing & Packages"
+                description="Simple pricing with no hidden fees. Start free with 2-way matching, or unlock 3-way dynamic matching, unlimited requests and direct messaging from LKR 440."
+                keywords="mutual transfer price Sri Lanka, mutual transfer packages, premium transfer matching Sri Lanka"
+                path="/pricing"
+                structuredData={[
+                    breadcrumbSchema([['Pricing', '/pricing']]),
+                    {
+                        '@context': 'https://schema.org',
+                        '@type': 'Product',
+                        name: 'MutualTransfer.lk Membership',
+                        description:
+                            'Membership packages for Sri Lankan government employees looking for mutual workplace transfers.',
+                        brand: { '@type': 'Brand', name: ORG_NAME },
+                        offers: [
+                            {
+                                '@type': 'Offer',
+                                name: 'Basic',
+                                price: '0',
+                                priceCurrency: 'LKR',
+                                availability: 'https://schema.org/InStock',
+                                url: `${SITE_URL}/pricing`,
+                                description: 'Standard basic features for simple swaps. View-only access.',
+                            },
+                            {
+                                '@type': 'Offer',
+                                name: 'Premium (1 Month)',
+                                price: '440',
+                                priceCurrency: 'LKR',
+                                availability: 'https://schema.org/InStock',
+                                url: `${SITE_URL}/pricing`,
+                                description:
+                                    '2-way and 3-way dynamic matching, unlimited match requests, direct messaging and full contact visibility.',
+                            },
+                        ],
+                    },
+                    faqSchema([
+                        {
+                            question: 'Can I upgrade later?',
+                            answer:
+                                'Yes, you can upgrade from Basic to Premium at any time from your dashboard settings.',
+                        },
+                        {
+                            question: 'What happens after the duration ends?',
+                            answer:
+                                'Your account will automatically revert to the Basic (Free) plan. You can renew your premium access at any time.',
+                        },
+                        {
+                            question: 'Is there a recurring charge?',
+                            answer:
+                                'No, these are one-time payments for the specified duration. We do not store your card for recurring billing.',
+                        },
+                        {
+                            question: 'How long is the listing active?',
+                            answer:
+                                'Your profile stays active until you successfully find a match or manually disable it.',
+                        },
+                    ]),
+                ]}
+            />
             <PaymentModal 
                 isOpen={showPaymentModal}
                 onClose={() => setShowPaymentModal(false)}

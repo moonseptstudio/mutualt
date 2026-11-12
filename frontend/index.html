@@ -3,16 +3,123 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@300;400;500;600;700&family=Noto+Sans+Tamil:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <title>MutualT | Premium Matching</title>
+
+  <!-- Primary meta. Canonical host is the apex domain: the server certificate
+       does not cover www.mutualtransfer.lk, so pointing canonical/og:url there
+       breaks for browsers and crawlers alike. -->
+  <title data-seo-static>Mutual Transfer Sri Lanka | Government Employee Transfers</title>
+  <meta data-seo-static name="description" content="Find mutual transfer partners easily in Sri Lanka. The premier platform connecting Nurses, Doctors, Teachers and all Government Employees for fast, reliable workplace transfers." />
+  <meta data-seo-static name="keywords" content="Mutual Transfer Sri Lanka, Government Transfers, Nurse Transfer Sri Lanka, Teacher Transfer Sri Lanka, Doctor Transfer Sri Lanka, Government Employee Transfers" />
+  <meta name="author" content="MoonSept Studio" />
+  <meta data-seo-static name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+  <link data-seo-static rel="canonical" href="https://mutualtransfer.lk/" />
+
+  <!-- Icons / PWA -->
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <meta name="theme-color" content="#2563eb" />
+  <meta name="apple-mobile-web-app-title" content="MutualTransfer.lk" />
+
+  <!-- Geo / locale targeting -->
+  <meta name="geo.region" content="LK" />
+  <meta name="geo.placename" content="Sri Lanka" />
+
+  <!-- OpenGraph. These static values are what Facebook, WhatsApp, LinkedIn and
+       other non-JS crawlers read; react-helmet-async overrides them per route
+       for crawlers that execute JavaScript. -->
+  <meta data-seo-static property="og:site_name" content="MutualTransfer.lk" />
+  <meta data-seo-static property="og:title" content="Mutual Transfer Sri Lanka | Government Employee Transfers" />
+  <meta data-seo-static property="og:description" content="The premier platform connecting Nurses, Doctors, Teachers and all Government Employees for fast, reliable workplace transfers in Sri Lanka." />
+  <meta data-seo-static property="og:type" content="website" />
+  <meta data-seo-static property="og:url" content="https://mutualtransfer.lk/" />
+  <meta data-seo-static property="og:image" content="https://mutualtransfer.lk/og-image.png" />
+  <meta data-seo-static property="og:image:secure_url" content="https://mutualtransfer.lk/og-image.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta data-seo-static property="og:image:width" content="1200" />
+  <meta data-seo-static property="og:image:height" content="630" />
+  <meta data-seo-static property="og:image:alt" content="MutualTransfer.lk - mutual transfers for Sri Lankan government employees" />
+  <meta data-seo-static property="og:locale" content="en_US" />
+  <meta data-seo-static property="og:locale:alternate" content="si_LK" />
+  <meta data-seo-static property="og:locale:alternate" content="ta_LK" />
+
+  <!-- Twitter / X -->
+  <meta data-seo-static name="twitter:card" content="summary_large_image" />
+  <meta data-seo-static name="twitter:site" content="@mutualtransfer" />
+  <meta data-seo-static name="twitter:creator" content="@mutualtransfer" />
+  <meta data-seo-static name="twitter:title" content="Mutual Transfer Sri Lanka | Connect with Government Employees" />
+  <meta data-seo-static name="twitter:description" content="The premier platform connecting Nurses, Doctors, Teachers and all Government Employees for fast, reliable workplace transfers in Sri Lanka." />
+  <meta data-seo-static name="twitter:image" content="https://mutualtransfer.lk/og-image.png" />
+  <meta data-seo-static name="twitter:image:alt" content="MutualTransfer.lk - mutual transfers for Sri Lankan government employees" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@300;400;500;600;700&family=Noto+Sans+Tamil:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Site-wide structured data. Kept static (not injected by React) so that
+       crawlers which do not run JavaScript still see it. Page-level schemas
+       (WebPage, BreadcrumbList, Product, FAQPage) are added per route. -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://mutualtransfer.lk/#organization",
+          "name": "Mutual Transfer Sri Lanka",
+          "alternateName": "MutualTransfer.lk",
+          "legalName": "MoonSept Studio",
+          "url": "https://mutualtransfer.lk/",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://mutualtransfer.lk/logo.png",
+            "width": 512,
+            "height": 512
+          },
+          "image": "https://mutualtransfer.lk/og-image.png",
+          "description": "Platform connecting Sri Lankan government employees for mutual workplace transfers.",
+          "areaServed": {
+            "@type": "Country",
+            "name": "Sri Lanka"
+          },
+          "sameAs": [
+            "https://www.facebook.com/mutualtransferlk",
+            "https://twitter.com/mutualtransfer"
+          ]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://mutualtransfer.lk/#website",
+          "name": "Mutual Transfer Sri Lanka",
+          "alternateName": "MutualTransfer.lk",
+          "url": "https://mutualtransfer.lk/",
+          "description": "Find mutual transfer partners easily in Sri Lanka.",
+          "inLanguage": ["en", "si", "ta"],
+          "publisher": {
+            "@id": "https://mutualtransfer.lk/#organization"
+          }
+        }
+      ]
+    }
+  </script>
 </head>
 
 <body>
   <div id="root"></div>
+  <!-- Fallback content for crawlers and users without JavaScript. Replaced by
+       the React app on mount. -->
+  <noscript>
+    <p><strong>Mutual Transfer Sri Lanka</strong></p>
+    <p>
+      MutualTransfer.lk helps Sri Lankan government employees - nurses, doctors,
+      teachers and all public service staff - find mutual workplace transfer
+      partners. Please enable JavaScript to use the application.
+    </p>
+  </noscript>
   <script type="module" src="/src/main.tsx"></script>
 </body>
 

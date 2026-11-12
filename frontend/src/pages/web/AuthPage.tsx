@@ -27,6 +27,8 @@ import loginBg from '../../assets/auth/login-bg.webp';
 import registerBg from '../../assets/auth/register-bg.webp';
 import logoImg from '../../assets/logos/logo.jpg';
 import NetworkMeshBackground from '../../components/hero/NetworkMeshBackground';
+import SEO from '../../components/SEO';
+import { breadcrumbSchema } from '../../config/seo';
 
 /* ─── Floating Shapes Component (for parallax & ambient motion) ─── */
 const FloatingShapes = () => {
@@ -320,6 +322,17 @@ const AuthPage = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 mesh-gradient-bg relative overflow-hidden pt-24 pb-12">
+            <SEO
+                title={isRegister ? 'Create Your Free Account' : 'Login'}
+                description={
+                    isRegister
+                        ? 'Register free on MutualTransfer.lk to find mutual transfer partners across Sri Lanka. NIC-verified profiles, no agents, no middlemen.'
+                        : 'Log in to your MutualTransfer.lk account to manage station preferences, view matches and send mutual transfer requests.'
+                }
+                path={isRegister ? '/register' : '/login'}
+                noindex={!isRegister}
+                structuredData={isRegister ? breadcrumbSchema([['Register', '/register']]) : undefined}
+            />
             <NetworkMeshBackground />
             <FloatingShapes />
 

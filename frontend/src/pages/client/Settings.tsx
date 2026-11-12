@@ -12,7 +12,7 @@ import toast from 'react-hot-toast';
 import ChangePasswordModal from '../../components/modals/ChangePasswordModal';
 import { useTheme } from '../../context/ThemeContext';
 import apiClient from '../../api/client';
-import PageLoader from '../../components/common/PageLoader';
+import { ListSkeleton } from '../../components/common/Skeletons';
 
 const SettingToggle = ({ icon: Icon, title, description, enabled, onToggle }: any) => {
     return (
@@ -86,7 +86,7 @@ const Settings = () => {
         }
     };
 
-    if (loading) return <PageLoader />;
+    if (loading) return <ListSkeleton />;
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 space-y-10">

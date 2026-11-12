@@ -643,3 +643,93 @@ h6,
 .reveal-delay-4 { animation-delay: 0.4s; }
 .reveal-delay-5 { animation-delay: 0.5s; }
 .reveal-delay-6 { animation-delay: 0.6s; }
+
+/* ── PROMO BANNER ── */
+@layer utilities {
+  .promo-banner-bg {
+    background: linear-gradient(
+      135deg,
+      #1e1b4b 0%,
+      #312e81 20%,
+      #4c1d95 40%,
+      #6d28d9 60%,
+      #7c3aed 80%,
+      #5b21b6 100%
+    );
+    background-size: 300% 300%;
+    animation: promo-bg-shift 6s ease-in-out infinite;
+  }
+
+  .promo-glow {
+    box-shadow:
+      0 0 0 1px rgba(167, 139, 250, 0.3),
+      0 0 40px rgba(139, 92, 246, 0.25),
+      0 0 80px rgba(109, 40, 217, 0.15),
+      0 4px 20px rgba(0, 0, 0, 0.2);
+  }
+
+  .promo-countdown-cell {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 8px 12px;
+    min-width: 52px;
+    text-align: center;
+  }
+
+  .promo-pill {
+    background: linear-gradient(135deg, #7c3aed, #db2777);
+    animation: promo-pulse 2s ease-in-out infinite;
+  }
+
+  .promo-shimmer-text {
+    background: linear-gradient(
+      110deg,
+      #fbbf24 0%,
+      #f59e0b 20%,
+      #fde68a 40%,
+      #f59e0b 60%,
+      #fbbf24 80%,
+      #fde68a 100%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shimmer 2s ease-in-out infinite;
+  }
+
+  .promo-spark {
+    position: absolute;
+    pointer-events: none;
+    border-radius: 50%;
+    animation: promo-spark-float var(--dur, 4s) var(--del, 0s) ease-in-out infinite;
+  }
+}
+
+@keyframes promo-bg-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50%       { background-position: 100% 50%; }
+}
+
+@keyframes promo-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(124, 58, 237, 0); }
+}
+
+@keyframes promo-spark-float {
+  0%, 100% { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+  10%       { opacity: 0.8; }
+  90%       { opacity: 0.4; }
+  50%       { transform: translateY(calc(var(--ty, -60px))) translateX(calc(var(--tx, 20px))) scale(1.4); }
+}
+
+@keyframes promo-slide-in {
+  from { opacity: 0; transform: translateY(-20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.promo-animate-in {
+  animation: promo-slide-in 0.6s cubic-bezier(0.21, 0.45, 0.32, 0.9) both;
+}

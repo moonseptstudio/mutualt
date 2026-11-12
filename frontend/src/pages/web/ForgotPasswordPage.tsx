@@ -19,6 +19,7 @@ import { useTranslation } from 'react-i18next';
 import logoImg from '../../assets/logos/logo.jpg';
 import loginBg from '../../assets/auth/login-bg.webp';
 import NetworkMeshBackground from '../../components/hero/NetworkMeshBackground';
+import SEO from '../../components/SEO';
 
 /* ─── Floating Shapes Component (for parallax & ambient motion) ─── */
 const FloatingShapes = () => {
@@ -197,6 +198,12 @@ const ForgotPasswordPage = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 mesh-gradient-bg relative overflow-hidden pt-24 pb-12">
+            <SEO
+                title="Reset Your Password"
+                description="Reset the password for your MutualTransfer.lk account."
+                path="/forgot-password"
+                noindex
+            />
             <NetworkMeshBackground />
             <FloatingShapes />
 

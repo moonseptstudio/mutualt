@@ -20,7 +20,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -205,6 +204,7 @@ public class AuthController {
         return ResponseEntity.badRequest().body(new MessageResponse("Error: Invalid or expired OTP!"));
     }
 
+    @CrossOrigin
     @GetMapping("/phone-hint")
     public ResponseEntity<?> getPhoneHint(@RequestParam String nic) {
         return userRepository.findByUsername(nic)
