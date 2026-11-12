@@ -18,6 +18,7 @@ import AdminLayout from './layouts/AdminLayout';
 import HomePage from './pages/web/HomePage';
 import AboutPage from './pages/web/AboutPage';
 import PricingPage from './pages/web/PricingPage';
+import ContactPage from './pages/web/ContactPage';
 import LoginPage from './pages/web/LoginPage';
 import RegisterPage from './pages/web/RegisterPage';
 import ForgotPasswordPage from './pages/web/ForgotPasswordPage';
@@ -65,6 +66,7 @@ function App() {
         <Route element={<WebLayout />}>
           <Route path="/about" element={<AboutPage />} />
           <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/contact" element={<ContactPage />} />
         </Route>
 
         {/* Guest-Only Routes (Redirect to dashboard if logged in) */}

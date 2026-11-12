@@ -67,6 +67,7 @@ const WebLayout = () => {
         { to: '/', label: t('common.home', 'Home') },
         { to: '/about', label: t('common.about_us', 'About Us') },
         { to: '/pricing', label: t('common.pricing', 'Packages') },
+        { to: '/contact', label: t('common.contact_us', 'Contact Us') },
     ];
 
     return (
@@ -197,32 +198,37 @@ const WebLayout = () => {
                                 <span className="text-lg font-bold shimmer-text">MutualTransfer.lk</span>
                             </div>
                             <p className="text-sm leading-relaxed text-slate-500 max-w-xs">
-                                Empowering government employees in Sri Lanka to find mutual transfers securely and efficiently.
+                                {t('footer.tagline', 'Empowering government employees in Sri Lanka to find mutual transfers securely and efficiently.')}
                             </p>
                         </div>
 
                         {/* Quick Links */}
                         <div>
-                            <h4 className="text-slate-800 font-bold mb-5 text-xs uppercase tracking-widest">Quick Links</h4>
+                            <h4 className="text-slate-800 font-bold mb-5 text-xs uppercase tracking-widest">
+                                {t('footer.quick_links', 'Quick Links')}
+                            </h4>
                             <ul className="space-y-3 text-sm">
-                                <li><Link to="/" className="text-slate-500 hover:text-blue-600 transition-colors duration-300">Home</Link></li>
-                                <li><Link to="/about" className="text-slate-500 hover:text-blue-600 transition-colors duration-300">About Us</Link></li>
-                                <li><Link to="/pricing" className="text-slate-500 hover:text-blue-600 transition-colors duration-300">Packages</Link></li>
+                                <li><Link to="/" className="text-slate-500 hover:text-blue-600 transition-colors duration-300">{t('common.home', 'Home')}</Link></li>
+                                <li><Link to="/about" className="text-slate-500 hover:text-blue-600 transition-colors duration-300">{t('common.about_us', 'About Us')}</Link></li>
+                                <li><Link to="/pricing" className="text-slate-500 hover:text-blue-600 transition-colors duration-300">{t('common.pricing', 'Packages')}</Link></li>
+                                <li><Link to="/contact" className="text-slate-500 hover:text-blue-600 transition-colors duration-300">{t('common.contact_us', 'Contact Us')}</Link></li>
                             </ul>
                         </div>
 
                         {/* Legal */}
                         <div>
-                            <h4 className="text-slate-800 font-bold mb-5 text-xs uppercase tracking-widest">Legal</h4>
+                            <h4 className="text-slate-800 font-bold mb-5 text-xs uppercase tracking-widest">
+                                {t('footer.legal', 'Legal')}
+                            </h4>
                             <ul className="space-y-3 text-sm">
                                 <li>
-                                    <button onClick={() => toast('Privacy Policy will be updated soon', { icon: '📄' })} className="text-slate-500 hover:text-blue-600 transition-colors duration-300 cursor-pointer">
-                                        Privacy Policy
+                                    <button onClick={() => toast(t('footer.privacy_soon', 'Privacy Policy will be updated soon'), { icon: '📄' })} className="text-slate-500 hover:text-blue-600 transition-colors duration-300 cursor-pointer">
+                                        {t('footer.privacy_policy', 'Privacy Policy')}
                                     </button>
                                 </li>
                                 <li>
-                                    <button onClick={() => toast('Terms of Service will be updated soon', { icon: '⚖️' })} className="text-slate-500 hover:text-blue-600 transition-colors duration-300 cursor-pointer">
-                                        Terms of Service
+                                    <button onClick={() => toast(t('footer.terms_soon', 'Terms of Service will be updated soon'), { icon: '⚖️' })} className="text-slate-500 hover:text-blue-600 transition-colors duration-300 cursor-pointer">
+                                        {t('footer.terms_of_service', 'Terms of Service')}
                                     </button>
                                 </li>
                             </ul>
@@ -232,7 +238,7 @@ const WebLayout = () => {
                     {/* Bottom bar */}
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-8 border-t border-slate-100 text-center">
                         <p className="text-xs text-slate-400">
-                            &copy; {new Date().getFullYear()} MutualTransfer.lk by MoonSept. All rights reserved.
+                            &copy; {new Date().getFullYear()} MutualTransfer.lk by MoonSept. {t('footer.all_rights_reserved', 'All rights reserved.')}
                         </p>
                     </div>
                 </div>

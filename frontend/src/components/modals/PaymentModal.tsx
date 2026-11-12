@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { X, ShieldCheck, Lock, AlertCircle, Tag, CheckCircle2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface PaymentModalProps {
     isOpen: boolean;
@@ -10,6 +11,7 @@ interface PaymentModalProps {
 }
 
 const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentSuccess, packageName, price }) => {
+    const { t } = useTranslation();
     const [isProcessing, setIsProcessing] = useState(false);
     const [cardDetails, setCardDetails] = useState({
         number: '',
@@ -72,10 +74,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
         const rawNumber = cardDetails.number.replace(/\s/g, '');
         if (rawNumber.length > 0) {
             if (rawNumber.length < 13 || rawNumber.length > 19) {
-                newErrors.number = 'Invalid card length';
+                newErrors.number = t('payment_modal.invalid_card_length', 'Invalid card length');
                 currentIsValid = false;
             } else if (!luhnCheck(rawNumber)) {
-                newErrors.number = 'Invalid card number';
+                newErrors.number = t('payment_modal.invalid_card_number', 'Invalid card number');
                 currentIsValid = false;
             }
         } else {
@@ -90,14 +92,14 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
             const currentMonth = now.getMonth() + 1;
 
             if (month < 1 || month > 12) {
-                newErrors.expiry = 'Invalid month';
+                newErrors.expiry = t('payment_modal.invalid_month', 'Invalid month');
                 currentIsValid = false;
             } else if (year < currentYear || (year === currentYear && month < currentMonth)) {
-                newErrors.expiry = 'Card expired';
+                newErrors.expiry = t('payment_modal.card_expired', 'Card expired');
                 currentIsValid = false;
             }
         } else {
-            if (cardDetails.expiry.length > 0) newErrors.expiry = 'Format MM/YY';
+            if (cardDetails.expiry.length > 0) newErrors.expiry = t('payment_modal.format_mmyy', 'Format MM/YY');
             currentIsValid = false;
         }
 
@@ -105,7 +107,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
         if (cardDetails.cvv.length > 0) {
             const expectedLength = cardType === 'amex' ? 4 : 3;
             if (cardDetails.cvv.length !== expectedLength) {
-                newErrors.cvv = `Must be ${expectedLength} digits`;
+                newErrors.cvv = t('payment_modal.must_be_digits', `Must be ${expectedLength} digits`, { length: expectedLength });
                 currentIsValid = false;
             }
         } else {
@@ -160,8 +162,12 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
 
                 <div className="p-8">
                     <div className="mb-8">
-                        <h3 className="text-2xl font-bold text-(--text-main)">Complete Payment</h3>
-                        <p className="text-(--text-muted) text-sm mt-1">Confirm your purchase details below</p>
+                        <h3 className="text-2xl font-bold text-(--text-main)">
+                            {t('payment_modal.complete_payment', 'Complete Payment')}
+                        </h3>
+                        <p className="text-(--text-muted) text-sm mt-1">
+                            {t('payment_modal.confirm_details', 'Confirm your purchase details below')}
+                        </p>
                     </div>
 
                     <div className="relative p-6 bg-linear-to-br from-blue-600/10 to-violet-600/10 dark:from-blue-500/5 dark:to-violet-500/5 rounded-3xl mb-8 border border-blue-500/20 overflow-hidden group">
@@ -173,12 +179,14 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
                             <div className="flex justify-between items-start">
                                 <div>
                                     <span className="text-[10px] font-bold uppercase tracking-widest text-blue-600 bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 rounded-md mb-2 inline-block">
-                                        Selected Plan
+                                        {t('payment_modal.selected_plan', 'Selected Plan')}
                                     </span>
                                     <h4 className="text-lg font-bold text-(--text-main) leading-none">{packageName}</h4>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-[10px] font-bold text-(--text-muted) uppercase tracking-tight mb-1">Amount to Pay</p>
+                                    <p className="text-[10px] font-bold text-(--text-muted) uppercase tracking-tight mb-1">
+                                        {t('payment_modal.amount_to_pay', 'Amount to Pay')}
+                                    </p>
                                     <div className="flex items-baseline justify-end space-x-1">
                                         <span className="text-sm font-bold text-blue-600">Rs.</span>
                                         <span className="text-3xl font-black text-(--text-main) tracking-tighter tabular-nums">{price}</span>
@@ -189,9 +197,11 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
                             <div className="pt-3 border-t border-blue-500/10 flex items-center justify-between text-[11px]">
                                 <span className="flex items-center text-slate-500 font-medium">
                                     <CheckCircle2 size={12} className="mr-1 text-green-500" />
-                                    One-time payment
+                                    {t('payment_modal.one_time_payment', 'One-time payment')}
                                 </span>
-                                <span className="text-blue-600 font-bold">Secure Checkout</span>
+                                <span className="text-blue-600 font-bold">
+                                    {t('payment_modal.secure_checkout', 'Secure Checkout')}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -199,7 +209,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
                     <form onSubmit={handleSubmit} className="space-y-5">
                         <div className="space-y-1.5">
                             <div className="flex justify-between items-center">
-                                <label className="block text-sm font-semibold text-(--text-muted)">Card Number</label>
+                                <label className="block text-sm font-semibold text-(--text-muted)">
+                                    {t('payment_modal.card_number', 'Card Number')}
+                                </label>
                                 {cardType !== 'unknown' && (
                                     <span className="text-[10px] font-bold uppercase tracking-wider text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-md">
                                         {cardType}
@@ -230,7 +242,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1.5">
-                                <label className="block text-sm font-semibold text-(--text-muted)">Expiry Date</label>
+                                <label className="block text-sm font-semibold text-(--text-muted)">
+                                    {t('payment_modal.expiry_date', 'Expiry Date')}
+                                </label>
                                 <input
                                     type="text"
                                     required
@@ -246,7 +260,9 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
                                 {errors.expiry && <p className="text-[11px] text-red-500 font-medium ml-1">{errors.expiry}</p>}
                             </div>
                             <div className="space-y-1.5">
-                                <label className="block text-sm font-semibold text-(--text-muted)">CVV</label>
+                                <label className="block text-sm font-semibold text-(--text-muted)">
+                                    {t('payment_modal.cvv', 'CVV')}
+                                </label>
                                 <input
                                     type="password"
                                     required
@@ -277,7 +293,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
                                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                             ) : (
                                 <div className="flex items-center space-x-2">
-                                    <span>Pay Rs. {price}</span>
+                                    <span>{t('payment_modal.pay_button', 'Pay Rs. {{price}}', { price })}</span>
                                     <ShieldCheck size={18} />
                                 </div>
                             )}
@@ -286,7 +302,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
 
                     <p className="mt-6 text-center text-xs text-slate-400 flex items-center justify-center space-x-1">
                         <Lock size={12} />
-                        <span>Secure SSL Encrypted Payment</span>
+                        <span>{t('payment_modal.secure_ssl', 'Secure SSL Encrypted Payment')}</span>
                     </p>
                 </div>
             </div>

@@ -1,16 +1,12 @@
 
-import circularMatchingImg from '../../assets/homePage/featurescard01.webp';
 import testimonialBgImg from '../../assets/homePage/testimonial-bg.png';
-import statsCardBg from '../../assets/homePage/stats-card-bg.webp';
 import Network3DBackground from '../../components/home/Network3DBackground';
+import ChainCarouselFeatures from '../../components/home/ChainCarouselFeatures';
 
 import { 
   CheckCircle2, 
   ArrowRight, 
-  Shield, 
-  Zap, 
   Users, 
-  Search,
   ClipboardList,
   Settings2,
   GitMerge,
@@ -155,7 +151,7 @@ const useCountUp = (end: number, duration: number = 2000) => {
   return { count, ref };
 };
 
-/* ─── Stat Item with Count-Up ─── */
+/* ─── Stat Item with Count-Up (Left Border Minimalist) ─── */
 const StatItem = ({ value, suffix = '', label, icon: Icon }: any) => {
   const numericValue = parseInt(value.replace(/[^\d]/g, ''));
   const { count, ref } = useCountUp(numericValue);
@@ -164,108 +160,28 @@ const StatItem = ({ value, suffix = '', label, icon: Icon }: any) => {
     <motion.div 
       ref={ref}
       variants={fadeInUp} 
-      whileHover={{ y: -6, scale: 1.02 }}
-      className="text-center stat-glow rounded-2xl p-6 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl saturate-150 border border-white/80 dark:border-white/15 shadow-lg shadow-blue-900/5 dark:shadow-black/30 hover:bg-white/80 dark:hover:bg-slate-900/80 hover:border-blue-300/80 dark:hover:border-blue-400/40 transition-all duration-300"
+      whileHover={{ x: 6 }}
+      className="relative text-left pl-5 sm:pl-6 border-l-2 border-white/35 hover:border-sky-300 transition-all duration-300 group py-1"
     >
-      <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-blue-500/10 backdrop-blur-md border border-blue-200/50 dark:border-blue-400/20 flex items-center justify-center shadow-xs">
-        <Icon size={22} className="text-blue-600 dark:text-blue-400" />
+      {/* Icon placed at Top-Right without any background */}
+      <div className="absolute top-1 right-2 text-white/50 group-hover:text-sky-300 group-hover:scale-110 transition-all duration-300 pointer-events-none">
+        <Icon size={24} strokeWidth={2} />
       </div>
-      <p className="text-3xl sm:text-4xl font-bold tracking-tight shimmer-text mb-1">
+
+      {/* Luminous Counter Number */}
+      <p className="text-4xl sm:text-5xl font-black tracking-tight text-white drop-shadow-sm mb-1.5 group-hover:text-sky-100 transition-colors">
         {count.toLocaleString()}{suffix}
       </p>
-      <p className="text-slate-600 dark:text-slate-300 text-[10px] sm:text-xs font-bold uppercase tracking-widest">{label}</p>
+
+      {/* Metric Label */}
+      <p className="text-blue-100/90 font-bold uppercase tracking-wider text-xs sm:text-sm group-hover:text-white transition-colors pr-8">
+        {label}
+      </p>
     </motion.div>
   );
 };
 
-/* ─── Feature Card ─── */
-const FeatureCard = ({ icon: Icon, title, description }: any) => {
-  return (
-    <motion.div
-      variants={fadeInUp}
-      whileHover={{ y: -8, scale: 1.015 }}
-      className="glass-panel rounded-[32px] pt-20 sm:pt-24 pb-8 px-7 sm:px-8 group relative overflow-hidden flex flex-col justify-between h-full"
-    >
-      {/* Bookmark Tag at top-left - Single unified brand blue color */}
-      <div className="absolute top-0 left-7 sm:left-8 z-20">
-        <div className="bookmark-ribbon flex items-center justify-center pb-3 text-white">
-          {/* Top highlight line simulating ribbon fold */}
-          <div className="absolute top-0 inset-x-0 h-1 bg-white/40" />
 
-          {/* Icon */}
-          <Icon size={22} className="text-white drop-shadow-sm group-hover:scale-110 transition-transform duration-300" />
-        </div>
-      </div>
-
-      <div className="relative z-10 flex-1 flex flex-col justify-start">
-        <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-3 group-hover:text-blue-600 transition-colors">
-          {title}
-        </h3>
-        <p className="text-slate-500 text-sm leading-relaxed font-medium">
-          {description}
-        </p>
-      </div>
-
-      {/* Hover background effect */}
-      <div className="absolute inset-0 bg-linear-to-br from-blue-50/0 via-transparent to-blue-50/0 group-hover:from-blue-50/40 group-hover:to-sky-50/40 transition-colors duration-500 pointer-events-none" />
-      
-      {/* Decorative corner */}
-      <div className="absolute -bottom-10 -right-10 w-24 h-24 bg-slate-100/30 rounded-full blur-2xl group-hover:bg-blue-100/40 transition-colors duration-500 pointer-events-none" />
-    </motion.div>
-  );
-};
-
-/* ─── Large Feature Card (Bento) ─── */
-const LargeFeatureCard = ({ title, description, imgSrc, badge }: any) => {
-  return (
-    <motion.div
-      variants={fadeInUp}
-      whileHover={{ y: -6, scale: 1.01 }}
-      className="bento-large glass-panel rounded-[32px] group relative overflow-hidden flex flex-col md:flex-row items-stretch"
-    >
-      <div className="flex-1 p-8 sm:p-10 flex flex-col justify-between relative z-10">
-        <div>
-          <div className="flex items-center gap-3 mb-4">
-            <span className="px-3 py-1 bg-blue-100 text-blue-700 text-[10px] font-bold uppercase tracking-widest rounded-full">
-              Featured
-            </span>
-            {badge && (
-              <span className="px-3 py-1 bg-sky-100 text-sky-700 text-[10px] font-bold uppercase tracking-widest rounded-full animate-pulse">
-                {badge}
-              </span>
-            )}
-          </div>
-          <h3 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-4 leading-tight">{title}</h3>
-          <p className="text-slate-500 leading-relaxed mb-8 max-w-sm">
-            {description}
-          </p>
-        </div>
-        
-        <Link 
-          to="/register" 
-          className="inline-flex items-center gap-2 text-sm font-bold text-blue-600 group/btn w-fit"
-        >
-          Explore Feature
-          <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
-        </Link>
-      </div>
-
-      <div className="flex-1 relative min-h-[300px] md:min-h-[360px] overflow-hidden flex items-center justify-center bg-slate-50/40">
-        <img 
-          src={imgSrc} 
-          alt={title} 
-          className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out"
-        />
-        {/* Subtle glass edge blend */}
-        <div className="absolute inset-y-0 left-0 w-16 bg-linear-to-r from-white/70 to-transparent hidden md:block pointer-events-none" />
-      </div>
-
-      {/* Decorative elements */}
-      <div className="absolute -top-24 -right-24 w-48 h-48 bg-sky-200/20 blur-3xl rounded-full pointer-events-none" />
-      <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-blue-200/20 blur-3xl rounded-full pointer-events-none" />
-    </motion.div>
-  );
-};
 
 /* ─── How-it-Works Step (Timeline) ─── */
 const StepCard = ({ step, icon: Icon, title, description, isLast }: any) => {
@@ -309,7 +225,7 @@ const TestimonialCard = ({ name, role, location, quote, rating }: any) => {
       <div>
         <p className="font-bold text-slate-800 text-sm">{name}</p>
         <p className="text-slate-400 text-xs flex items-center gap-1 mt-0.5">
-          <MapPin size={10} /> {t(role)} · {location}
+          <MapPin size={10} /> {t(role)} · {t(location)}
         </p>
       </div>
     </div>
@@ -377,12 +293,12 @@ const WaveDivider = ({ flip = false }: { flip?: boolean }) => (
 
 /* ─── Testimonials data ─── */
 const testimonials = [
-  { name: "Kasun Perera", role: "home.testimonial1_role", location: "Colombo", quote: "home.testimonial1_quote", rating: 5 },
-  { name: "Nimali Fernando", role: "Nurse", location: "Kandy", quote: "home.testimonial2_quote", rating: 5 },
-  { name: "Samantha Wijesinghe", role: "Doctor", location: "Galle", quote: "home.testimonial2_quote", rating: 5 },
-  { name: "Ruwan Jayawardena", role: "Teacher", location: "Matara", quote: "home.testimonial1_quote", rating: 4 },
-  { name: "Dilini Senanayake", role: "Nurse", location: "Jaffna", quote: "home.testimonial2_quote", rating: 5 },
-  { name: "Amal Dissanayake", role: "Teacher", location: "Kurunegala", quote: "home.testimonial1_quote", rating: 5 },
+  { name: "Kasun Perera", role: "home.testimonial_role_teacher", location: "districts.colombo", quote: "home.testimonial1_quote", rating: 5 },
+  { name: "Nimali Fernando", role: "home.testimonial_role_nurse", location: "districts.kandy", quote: "home.testimonial2_quote", rating: 5 },
+  { name: "Samantha Wijesinghe", role: "home.testimonial_role_doctor", location: "districts.galle", quote: "home.testimonial2_quote", rating: 5 },
+  { name: "Ruwan Jayawardena", role: "home.testimonial_role_teacher", location: "districts.matara", quote: "home.testimonial1_quote", rating: 4 },
+  { name: "Dilini Senanayake", role: "home.testimonial_role_nurse", location: "districts.jaffna", quote: "home.testimonial2_quote", rating: 5 },
+  { name: "Amal Dissanayake", role: "home.testimonial_role_teacher", location: "districts.kurunegala", quote: "home.testimonial1_quote", rating: 5 },
 ];
 
 /* ═══════════════════════════════════════════════
@@ -420,11 +336,11 @@ const HomePage = () => {
         login({ ...user, packageName: 'PREMIUM' });
       }
       
-      toast.success("Welcome to Premium! All features unlocked.", { icon: '💎' });
+      toast.success(t('pricing_page.upgrade_success', "Welcome to Premium! All features unlocked."), { icon: '💎' });
       navigate('/dashboard');
     } catch (err: any) {
       console.error("Upgrade failed", err);
-      toast.error(err.response?.data?.message || "Failed to upgrade. Please try again.");
+      toast.error(err.response?.data?.message || t('pricing_page.upgrade_failed', "Failed to upgrade. Please try again."));
     } finally {
       setIsUpgrading(false);
     }
@@ -569,10 +485,19 @@ const HomePage = () => {
         </div>
       </ScrollAnimatedSection>
 
-      {/* ─── STATS BAR ─── */}
-      <ScrollAnimatedSection className="relative overflow-hidden perspective-2000 py-24">
-        <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-blue-200/60 dark:via-blue-500/20 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-blue-200/50 dark:via-blue-500/20 to-transparent" />
+      {/* ─── STATS BAR (Our Impact) ─── */}
+      <ScrollAnimatedSection className="relative overflow-hidden perspective-2000 py-24 bg-linear-to-br from-blue-600 via-blue-700 to-indigo-900 dark:from-slate-950 dark:via-blue-950 dark:to-slate-950 text-white">
+        {/* Background Ambient Glows & Effects */}
+        <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-sky-400/20 dark:bg-sky-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-indigo-500/25 dark:bg-blue-600/15 blur-3xl pointer-events-none" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[350px] bg-blue-400/15 dark:bg-blue-500/10 blur-3xl rounded-full pointer-events-none" />
+        
+        {/* Subtle Particle Field for depth */}
+        <ParticleField />
+
+        {/* Top & Bottom Accent Lines */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-white/30 dark:via-blue-500/30 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-white/25 dark:via-blue-500/30 to-transparent" />
         
         <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Section Header */}
@@ -583,88 +508,46 @@ const HomePage = () => {
             variants={staggerContainer}
             className="text-center max-w-3xl mx-auto mb-14"
           >
-            <motion.span variants={fadeInUp} className="inline-block text-xs font-bold uppercase tracking-widest text-blue-500 dark:text-blue-400 mb-4">
+            <motion.span 
+              variants={fadeInUp} 
+              className="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest text-blue-100 bg-white/15 dark:bg-blue-500/20 backdrop-blur-md border border-white/20 dark:border-blue-400/30 shadow-xs mb-4"
+            >
               {t('home.stats_label')}
             </motion.span>
-            <motion.h2 variants={fadeInUp} className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-5 tracking-tight">
+            <motion.h2 
+              variants={fadeInUp} 
+              className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-5 tracking-tight drop-shadow-xs"
+            >
               {t('home.stats_title')}
             </motion.h2>
-            <motion.p variants={fadeInUp} className="text-slate-600 dark:text-slate-300 leading-relaxed text-base sm:text-lg">
+            <motion.p 
+              variants={fadeInUp} 
+              className="text-blue-100/90 dark:text-blue-200/80 leading-relaxed text-base sm:text-lg max-w-2xl mx-auto"
+            >
               {t('home.stats_subtitle')}
             </motion.p>
           </motion.div>
 
-          {/* 4 Stats Cards Container Layer with Background Image */}
+          {/* Grid of 4 Minimalist Left-Bordered Stat Items */}
           <motion.div 
             initial="hidden"
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
             variants={staggerContainer}
-            className="relative overflow-hidden rounded-[32px] p-6 sm:p-10 lg:p-12 border border-slate-200/80 dark:border-slate-800/80 shadow-2xl shadow-blue-500/10 group bg-slate-900/5 dark:bg-slate-950"
+            className="grid grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-10 sm:gap-10 lg:gap-12"
           >
-            {/* Background image on the 4-cards layer */}
-            <div 
-              className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 ease-out group-hover:scale-105 pointer-events-none"
-              style={{ backgroundImage: `url(${statsCardBg})` }}
-            />
-            {/* Soft overlay gradient for high legibility */}
-            <div className="absolute inset-0 bg-white/30 dark:bg-slate-950/70 backdrop-blur-[1px] pointer-events-none" />
-            <div className="absolute inset-0 bg-linear-to-b from-white/20 via-transparent to-white/40 dark:from-slate-950/50 dark:via-transparent dark:to-slate-950/70 pointer-events-none" />
-
-            {/* Grid of 4 Stat Cards with Glass Effect */}
-            <div className="relative z-10 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
-              <StatItem value="1500" suffix="+" label={t('home.stats_label1')} icon={Users} />
-              <StatItem value="450" suffix="+" label={t('home.stats_label2')} icon={CheckCircle2} />
-              <StatItem value="25" suffix="+" label={t('home.stats_label3')} icon={Globe} />
-              <StatItem value="98" suffix="%" label={t('home.stats_label4')} icon={TrendingUp} />
-            </div>
+            <StatItem value="1500" suffix="+" label={t('home.stats_label1')} icon={Users} />
+            <StatItem value="450" suffix="+" label={t('home.stats_label2')} icon={CheckCircle2} />
+            <StatItem value="25" suffix="+" label={t('home.stats_label3')} icon={Globe} />
+            <StatItem value="98" suffix="%" label={t('home.stats_label4')} icon={TrendingUp} />
           </motion.div>
         </div>
       </ScrollAnimatedSection>
 
-      {/* ─── FEATURES BENTO GRID ─── */}
-      <ScrollAnimatedSection className="relative mesh-gradient-bg perspective-2000 py-24">
+      {/* ─── FEATURES CHAIN CAROUSEL ─── */}
+      <ScrollAnimatedSection className="relative mesh-gradient-bg perspective-2000 py-16 md:py-20">
         <FloatingShapes />
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div 
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            variants={staggerContainer}
-            className="text-center max-w-3xl mx-auto mb-16"
-          >
-            <motion.span variants={fadeInUp} className="inline-block text-xs font-bold uppercase tracking-widest text-blue-500 mb-4">{t('home.features_label')}</motion.span>
-            <motion.h2 variants={fadeInUp} className="text-3xl sm:text-4xl font-bold text-slate-900 mb-6 tracking-tight">
-              {t('home.features_title')}
-            </motion.h2>
-            <motion.p variants={fadeInUp} className="text-slate-600 leading-relaxed">
-              {t('home.features_subtitle')}
-            </motion.p>
-          </motion.div>
-          
-          <motion.div 
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            variants={staggerContainer}
-            className="bento-grid"
-          >
-            {/* Large featured card */}
-            <LargeFeatureCard
-              title={t('home.feat_large_title')}
-              description={t('home.feat_large_desc')}
-              imgSrc={circularMatchingImg}
-              badge={t('home.feat_large_badge')}
-            />
-
-            {/* Regular cards */}
-            <FeatureCard icon={Zap} title={t('home.feat1_title')} description={t('home.feat1_desc')} />
-            <FeatureCard icon={Shield} title={t('home.feat2_title')} description={t('home.feat2_desc')} />
-            <FeatureCard icon={Users} title={t('home.feat3_title')} description={t('home.feat3_desc')} />
-            <FeatureCard icon={Search} title={t('home.feat4_title')} description={t('home.feat4_desc')} />
-            <FeatureCard icon={CheckCircle2} title={t('home.feat5_title')} description={t('home.feat5_desc')} />
-          </motion.div>
-        </div>
+        <ChainCarouselFeatures />
       </ScrollAnimatedSection>
 
       {/* ─── TESTIMONIALS CAROUSEL ─── */}
@@ -788,7 +671,7 @@ const HomePage = () => {
               to="/register"
               className="inline-flex items-center px-10 py-4.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-2xl shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-1 transition-all duration-300 group magnetic-hover"
             >
-              Get Started Now
+              {t('home.cta_btn', 'Get Started Now')}
               <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" size={20} />
             </Link>
           </motion.div>

@@ -9,6 +9,8 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import PricingCard from '../../components/common/PricingCard';
 import faqBg from '../../assets/pricing/faqbg.webp';
+import PricingCrystalsBackground from '../../components/hero/PricingCrystalsBackground';
+import StickyFaqSection, { type FaqItem } from '../../components/common/StickyFaqSection';
 
 /* ─── Animation Variants ─── */
 const fadeInUp: any = {
@@ -86,8 +88,6 @@ const PricingPage = () => {
             return;
         }
 
-
-
         setSelectedPlan(plan);
         setShowPaymentModal(true);
     };
@@ -107,18 +107,40 @@ const PricingPage = () => {
                 login({ ...user, packageName: 'PREMIUM' });
             }
             
-            toast.success("Welcome to Premium! All features unlocked.", { icon: '💎' });
+            toast.success(t('pricing_page.upgrade_success', "Welcome to Premium! All features unlocked."), { icon: '💎' });
             navigate('/dashboard');
         } catch (err: any) {
             console.error("Upgrade failed", err);
-            toast.error(err.response?.data?.message || "Failed to upgrade. Please try again.");
+            toast.error(err.response?.data?.message || t('pricing_page.upgrade_failed', "Failed to upgrade. Please try again."));
         } finally {
             setIsUpgrading(false);
         }
     };
 
-    const pricingRef = useRef<HTMLDivElement>(null);
-    useScroll({ target: pricingRef, offset: ["start start", "end start"] });
+    const heroRef = useRef<HTMLDivElement>(null);
+    const { scrollYProgress: heroScroll } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
+    const heroY = useTransform(heroScroll, [0, 1], [0, 150]);
+    const heroScale = useTransform(heroScroll, [0, 1], [1, 0.9]);
+    const heroOpacity = useTransform(heroScroll, [0, 0.8], [1, 0]);
+
+    const faqItems: FaqItem[] = [
+        {
+            question: t('home.pricing_faq_q1', 'Can I upgrade later?'),
+            answer: t('home.pricing_faq_a1', 'Yes, you can upgrade from Basic to Premium at any time from your dashboard settings.')
+        },
+        {
+            question: t('home.pricing_faq_q2', 'What happens after the duration ends?'),
+            answer: t('home.pricing_faq_a2', 'Your account will automatically revert to the Basic (Free) plan. You can renew your premium access at any time.')
+        },
+        {
+            question: t('home.pricing_faq_q3', 'Is there a recurring charge?'),
+            answer: t('home.pricing_faq_a3', 'No, these are one-time payments for the specified duration. We do not store your card for recurring billing.')
+        },
+        {
+            question: t('home.pricing_faq_q4', 'How long is the listing active?'),
+            answer: t('home.pricing_faq_a4', 'Your profile stays active until you successfully find a match or manually disable it.')
+        }
+    ];
 
     return (
         <div className="relative">
@@ -130,28 +152,55 @@ const PricingPage = () => {
                 price={selectedPlan?.price || "0"}
             />
 
-            {/* Pricing Cards Section */}
-            <section ref={pricingRef} className="relative mesh-gradient-bg overflow-hidden flex flex-col justify-center min-h-screen pt-24 pb-24">
+            {/* ─── Hero Section ─── */}
+            <section ref={heroRef} className="relative mesh-gradient-bg overflow-hidden flex flex-col justify-center min-h-screen pt-24 pb-12">
+                <PricingCrystalsBackground />
                 <FloatingShapes />
                 <motion.div 
-                  
-                  className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true }}
+                    variants={staggerContainer}
+                    style={{ y: heroY, scale: heroScale, opacity: heroOpacity }}
+                    className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 my-auto"
                 >
-                    <div className="text-center max-w-3xl mx-auto mb-20">
-                        <motion.div variants={fadeInUp} className="inline-block px-4 py-1.5 bg-blue-50 text-blue-600 text-xs font-bold uppercase tracking-wider rounded-full mb-6 mx-auto text-center">
-                            Pricing
-                        </motion.div>
-                        <motion.h1 variants={fadeInUp} className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6 tracking-tight">
-                            Simple Pricing, <span className="shimmer-text">No Hidden Fees.</span>
-                        </motion.h1>
-                        <motion.p variants={fadeInUp} className="text-xl text-slate-600 leading-relaxed font-sans">
-                            Choose the package that helps you reach your preferred station faster.
+                    <motion.div variants={fadeInUp} className="inline-block px-4 py-1.5 bg-blue-50 text-blue-600 text-xs font-bold uppercase tracking-wider rounded-full mb-6 text-center mx-auto">
+                        {t('common.pricing', 'Packages')}
+                    </motion.div>
+                    <motion.h1 variants={fadeInUp} className="text-4xl md:text-6xl font-extrabold text-slate-900 mb-8 tracking-tight">
+                        {t('pricing_page.hero_title_1', 'Simple Pricing,')}{' '}
+                        <span className="shimmer-text">{t('pricing_page.hero_title_highlight', 'No Hidden Fees.')}</span>
+                    </motion.h1>
+                    <motion.p variants={fadeInUp} className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed font-sans">
+                        {t('pricing_page.hero_subtitle', 'Choose the package that helps you reach your preferred station faster.')}
+                    </motion.p>
+                </motion.div>
+            </section>
+
+            {/* ─── Pricing Plans Section ─── */}
+            <ScrollAnimatedSection className="bg-white perspective-2000 overflow-hidden py-24">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <motion.div 
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true, margin: "-100px" }}
+                        variants={staggerContainer}
+                        className="text-center mb-16"
+                    >
+                        <motion.h2 variants={fadeInUp} className="text-3xl font-bold text-slate-900 mb-4 tracking-tight">
+                            {t('pricing_page.plans_title', 'Choose Your Plan')}
+                        </motion.h2>
+                        <motion.p variants={fadeInUp} className="text-slate-600 font-sans max-w-xl mx-auto">
+                            {t('pricing_page.plans_subtitle', 'Transparent, one-time pricing tailored for government officers across Sri Lanka.')}
                         </motion.p>
-                    </div>
+                    </motion.div>
 
                     <motion.div 
+                        initial="hidden"
+                        whileInView="visible"
+                        viewport={{ once: true, margin: "-100px" }}
                         variants={staggerContainer}
-                        className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto"
+                        className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch"
                     >
                         <PricingCard
                             name={t('home.pricing_plan_basic', 'Basic')}
@@ -186,87 +235,51 @@ const PricingPage = () => {
                             periodLabel={t('home.pricing_one_time', '/ one-time')}
                         />
                     </motion.div>
-                </motion.div>
-            </section>
-
-            {/* FAQ Section */}
-            <ScrollAnimatedSection className="bg-white dark:bg-slate-950 perspective-2000 overflow-hidden flex items-center py-24">
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-                    {/* Layer 2: Inner Card Layer with Background Image */}
-                    <motion.div 
-                        initial="hidden"
-                        whileInView="visible"
-                        viewport={{ once: true, margin: "-100px" }}
-                        variants={staggerContainer}
-                        className="relative overflow-hidden p-8 sm:p-14 lg:p-16 rounded-[40px] border border-slate-200/80 dark:border-slate-800/80 text-center shadow-2xl shadow-blue-500/10 group bg-slate-900/5 dark:bg-slate-950"
-                    >
-                        {/* Background image on the FAQ 2nd layer */}
-                        <div 
-                            className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 ease-out group-hover:scale-105 pointer-events-none"
-                            style={{ backgroundImage: `url(${faqBg})` }}
-                        />
-                        {/* Soft overlay gradient for high legibility */}
-                        <div className="absolute inset-0 bg-white/70 dark:bg-slate-950/75 backdrop-blur-[2px] pointer-events-none" />
-                        <div className="absolute inset-0 bg-linear-to-b from-white/60 via-white/75 to-white/90 dark:from-slate-950/60 dark:via-slate-950/80 dark:to-slate-950/90 pointer-events-none" />
-
-                        {/* Content inside 2nd layer */}
-                        <div className="relative z-10">
-                            <motion.h3 variants={fadeInUp} className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-10 tracking-tight">
-                                Frequently Asked Questions
-                            </motion.h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-                                <motion.div 
-                                    variants={fadeInUp} 
-                                    className="p-6 rounded-2xl bg-white/75 dark:bg-slate-900/75 backdrop-blur-md border border-white/80 dark:border-white/10 shadow-lg shadow-blue-900/5 dark:shadow-black/20 hover:bg-white/90 dark:hover:bg-slate-900/90 hover:border-blue-300/80 dark:hover:border-blue-500/40 transition-all duration-300 group/item"
-                                >
-                                    <h4 className="font-bold text-slate-800 dark:text-slate-100 mb-2 group-hover/item:text-blue-600 dark:group-hover/item:text-blue-400 transition-colors">Can I upgrade later?</h4>
-                                    <p className="text-sm text-slate-600 dark:text-slate-300 font-sans leading-relaxed">Yes, you can upgrade from Basic to Premium at any time from your dashboard settings.</p>
-                                </motion.div>
-                                <motion.div 
-                                    variants={fadeInUp} 
-                                    className="p-6 rounded-2xl bg-white/75 dark:bg-slate-900/75 backdrop-blur-md border border-white/80 dark:border-white/10 shadow-lg shadow-blue-900/5 dark:shadow-black/20 hover:bg-white/90 dark:hover:bg-slate-900/90 hover:border-blue-300/80 dark:hover:border-blue-500/40 transition-all duration-300 group/item"
-                                >
-                                    <h4 className="font-bold text-slate-800 dark:text-slate-100 mb-2 group-hover/item:text-blue-600 dark:group-hover/item:text-blue-400 transition-colors">What happens after the duration ends?</h4>
-                                    <p className="text-sm text-slate-600 dark:text-slate-300 font-sans leading-relaxed">Your account will automatically revert to the Basic (Free) plan. You can renew your premium access at any time.</p>
-                                </motion.div>
-                                <motion.div 
-                                    variants={fadeInUp} 
-                                    className="p-6 rounded-2xl bg-white/75 dark:bg-slate-900/75 backdrop-blur-md border border-white/80 dark:border-white/10 shadow-lg shadow-blue-900/5 dark:shadow-black/20 hover:bg-white/90 dark:hover:bg-slate-900/90 hover:border-blue-300/80 dark:hover:border-blue-500/40 transition-all duration-300 group/item"
-                                >
-                                    <h4 className="font-bold text-slate-800 dark:text-slate-100 mb-2 group-hover/item:text-blue-600 dark:group-hover/item:text-blue-400 transition-colors">Is there a recurring charge?</h4>
-                                    <p className="text-sm text-slate-600 dark:text-slate-300 font-sans leading-relaxed">No, these are one-time payments for the specified duration. We do not store your card for recurring billing.</p>
-                                </motion.div>
-                                <motion.div 
-                                    variants={fadeInUp} 
-                                    className="p-6 rounded-2xl bg-white/75 dark:bg-slate-900/75 backdrop-blur-md border border-white/80 dark:border-white/10 shadow-lg shadow-blue-900/5 dark:shadow-black/20 hover:bg-white/90 dark:hover:bg-slate-900/90 hover:border-blue-300/80 dark:hover:border-blue-500/40 transition-all duration-300 group/item"
-                                >
-                                    <h4 className="font-bold text-slate-800 dark:text-slate-100 mb-2 group-hover/item:text-blue-600 dark:group-hover/item:text-blue-400 transition-colors">How long is the listing active?</h4>
-                                    <p className="text-sm text-slate-600 dark:text-slate-300 font-sans leading-relaxed">Your profile stays active until you successfully find a match or manually disable it.</p>
-                                </motion.div>
-                            </div>
-                        </div>
-                    </motion.div>
                 </div>
             </ScrollAnimatedSection>
 
-            {/* CTA Section */}
-            <ScrollAnimatedSection className="mesh-gradient-bg flex items-center justify-center py-24">
-                <FloatingShapes />
+            {/* ─── FAQ Section with Sticky Scroll Cards ─── */}
+            <StickyFaqSection
+                badge={t('home.pricing_faq_badge', 'Help & FAQ')}
+                title={t('home.pricing_faq_title', 'Frequently Asked Questions')}
+                subtitle={t('home.pricing_faq_subtitle', 'Find quick answers to common questions about our plans, billing, and membership features.')}
+                items={faqItems}
+                bgImage={faqBg}
+                supportLink="/contact#contact-form"
+                supportTitle={t('contact_page.support_title', 'Still have questions?')}
+                supportDesc={t('contact_page.support_desc', 'Our support team is always ready to guide you.')}
+                supportActionLabel={t('contact_page.support_action', 'Send a Message')}
+            />
+
+            {/* ─── CTA Section ─── */}
+            <ScrollAnimatedSection className="bg-white perspective-2000 overflow-hidden flex items-center justify-center py-24">
                 <motion.div 
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
+                    initial={{ opacity: 0, y: 50 }}
+                    whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.8 }}
-                    className="text-center relative z-10"
+                    className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center"
                 >
-                    <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mb-10 tracking-tight">Still have questions?</h2>
-                    <Link 
-                        to="/register" 
-                        className="inline-flex items-center px-10 py-4.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-2xl shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-1 transition-all duration-300 group"
-                    >
-                        Contact Support
-                        <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" size={20} />
-                    </Link>
+                    <div className="glass-panel-strong rounded-[40px] p-12 sm:p-20 shadow-2xl shadow-blue-500/5">
+                        <h2 className="text-3xl md:text-5xl font-bold text-slate-900 mb-10 tracking-tight">
+                            {t('pricing_page.cta_title', 'Still have questions?')}
+                        </h2>
+                        <div className="flex flex-col sm:flex-row justify-center items-center gap-6">
+                            <Link 
+                                to="/register" 
+                                className="w-full sm:w-auto px-12 py-5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-2xl shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-1 transition-all duration-300 flex items-center justify-center group"
+                            >
+                                {t('pricing_page.cta_get_started', 'Get Started')}
+                                <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" size={20} />
+                            </Link>
+                            <Link 
+                                to="/contact" 
+                                className="w-full sm:w-auto px-12 py-5 glass-panel text-slate-900 font-bold rounded-2xl hover:bg-slate-50 transition-all border border-slate-200"
+                            >
+                                {t('pricing_page.cta_contact_support', 'Contact Support')}
+                            </Link>
+                        </div>
+                    </div>
                 </motion.div>
             </ScrollAnimatedSection>
         </div>

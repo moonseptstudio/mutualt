@@ -3,15 +3,22 @@ import logoImg from '../../assets/logos/logo.jpg';
 
 interface Station {
   id: number;
-  type: 'hospital' | 'school' | 'ministry' | 'secretariat' | 'tower' | 'maternity' | 'college' | 'clinic' | 'vocational';
-  angle: number; // angle in heptagon (radians)
+  type: 'hospital' | 'school' | 'ministry' | 'clinic' | 'secretariat' | 'college' | 'service';
+  angle: number;
   glowColor: string;
   themeColor: string;
   driftSpeed: number;
   phaseX: number;
   phaseY: number;
-  ampX: number;
-  ampY: number;
+  clickPop?: number;
+}
+
+interface StationScreenInfo {
+  id: number;
+  screenX: number;
+  screenY: number;
+  radius: number;
+  themeColor: string;
 }
 
 interface ActiveTransfer {
@@ -21,13 +28,23 @@ interface ActiveTransfer {
   glowColor: string;
   originStation: number;
   destStation: number;
-  phase: 'SPAWN' | 'INBOUND' | 'AT_HUB' | 'OUTBOUND' | 'ARRIVED' | 'DONE';
-  progress: number; // 0.0 to 1.0 along current leg
+  phase: 'SPAWN' | 'INBOUND' | 'AT_HUB' | 'OUTBOUND' | 'ARRIVED';
+  progress: number;
   speed: number;
-  opacity: number; // 0.0 to 1.0
-  hubWait: number; // frames to pause at hub
-  arrivalTimer: number; // frames to fade out at destination
-  arrivalPulse: number; // 0 to 1 ripple at destination
+  opacity: number;
+  hubWait: number;
+  arrivalTimer: number;
+  arrivalPulse: number;
+}
+
+interface AmbientNode {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  radius: number;
+  color: string;
+  baseAlpha: number;
 }
 
 export const Network3DBackground: React.FC = () => {
@@ -40,10 +57,10 @@ export const Network3DBackground: React.FC = () => {
     if (!ctx) return;
 
     let animationFrameId: number;
-    let width = (canvas.width = canvas.parentElement?.clientWidth || window.innerWidth);
-    let height = (canvas.height = canvas.parentElement?.clientHeight || window.innerHeight);
+    let width = 0;
+    let height = 0;
 
-    // ── 1. Load MutualTransfer.lk Official Logo ──
+    // ── 1. Load Official Logo ──
     const logoImage = new Image();
     let logoLoaded = false;
     logoImage.onload = () => {
@@ -51,26 +68,20 @@ export const Network3DBackground: React.FC = () => {
     };
     logoImage.src = logoImg;
 
-    // ── 2. Pre-render 6 Stylized 3D Professional Avatars (Doctors, Nurses, Teachers) ──
+    // ── 2. Pre-render 6 Stylized Professional Avatars (Doctors, Nurses, Teachers) ──
     const avatarCanvases: HTMLCanvasElement[] = [];
     const professions = [
-      // 0. DOCTOR (Male) - White Coat, Stethoscope
-      { type: 'doctor' as const, bg1: '#0284c7', bg2: '#0369a1', skin: '#fed7aa', hair: '#1f2937', glow: 'rgba(2, 132, 199, 0.5)' },
-      // 1. NURSE (Female) - Teal Scrubs, White Nurse Cap with Red Cross
-      { type: 'nurse' as const, bg1: '#0ea5e9', bg2: '#0284c7', skin: '#fef08a', hair: '#78350f', glow: 'rgba(14, 165, 233, 0.5)' },
-      // 2. TEACHER (Female) - Academic Mortarboard Graduation Cap, Glasses
-      { type: 'teacher' as const, bg1: '#3b82f6', bg2: '#1d4ed8', skin: '#fcd34d', hair: '#451a03', glow: 'rgba(59, 130, 246, 0.5)' },
-      // 3. DOCTOR (Female) - White Coat, Stethoscope
-      { type: 'doctor' as const, bg1: '#2563eb', bg2: '#1d4ed8', skin: '#fed7aa', hair: '#374151', glow: 'rgba(37, 99, 235, 0.5)' },
-      // 4. NURSE (Male) - Hospital Scrubs, ID Badge
-      { type: 'nurse' as const, bg1: '#1d4ed8', bg2: '#1e3a8a', skin: '#ffedd5', hair: '#111827', glow: 'rgba(29, 78, 216, 0.5)' },
-      // 5. TEACHER (Male) - Educator Sweater Vest, Glasses
-      { type: 'teacher' as const, bg1: '#0284c7', bg2: '#1d4ed8', skin: '#fde68a', hair: '#92400e', glow: 'rgba(2, 132, 199, 0.5)' },
+      { type: 'doctor' as const, bg1: '#0284c7', bg2: '#0369a1', skin: '#fed7aa', hair: '#1f2937', glow: 'rgba(2, 132, 199, 0.45)' },
+      { type: 'nurse' as const, bg1: '#0ea5e9', bg2: '#0284c7', skin: '#fef08a', hair: '#78350f', glow: 'rgba(14, 165, 233, 0.45)' },
+      { type: 'teacher' as const, bg1: '#3b82f6', bg2: '#1d4ed8', skin: '#fcd34d', hair: '#451a03', glow: 'rgba(59, 130, 246, 0.45)' },
+      { type: 'doctor' as const, bg1: '#2563eb', bg2: '#1d4ed8', skin: '#fed7aa', hair: '#374151', glow: 'rgba(37, 99, 235, 0.45)' },
+      { type: 'nurse' as const, bg1: '#1d4ed8', bg2: '#1e3a8a', skin: '#ffedd5', hair: '#111827', glow: 'rgba(29, 78, 216, 0.45)' },
+      { type: 'teacher' as const, bg1: '#0284c7', bg2: '#1d4ed8', skin: '#fde68a', hair: '#92400e', glow: 'rgba(2, 132, 199, 0.45)' },
     ];
 
     const createAvatars = () => {
       avatarCanvases.length = 0;
-      const size = 160;
+      const size = 120;
 
       for (let k = 0; k < professions.length; k++) {
         const prof = professions[k];
@@ -82,7 +93,7 @@ export const Network3DBackground: React.FC = () => {
 
         const cx = size / 2;
         const cy = size / 2;
-        const r = size / 2 - 4;
+        const r = size / 2 - 3;
 
         octx.save();
         octx.beginPath();
@@ -97,175 +108,70 @@ export const Network3DBackground: React.FC = () => {
         octx.fillRect(0, 0, size, size);
 
         // Head Aura
-        const aura = octx.createRadialGradient(cx, cy - 8, 10, cx, cy - 8, 55);
+        const aura = octx.createRadialGradient(cx, cy - 6, 8, cx, cy - 6, 42);
         aura.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
         aura.addColorStop(1, 'rgba(255, 255, 255, 0)');
         octx.fillStyle = aura;
         octx.beginPath();
-        octx.arc(cx, cy - 8, 55, 0, Math.PI * 2);
+        octx.arc(cx, cy - 6, 42, 0, Math.PI * 2);
         octx.fill();
 
-        // Uniforms
-        if (prof.type === 'doctor') {
-          octx.fillStyle = '#ffffff';
-          octx.beginPath();
-          octx.ellipse(cx, size + 10, 48, 52, 0, 0, Math.PI * 2);
-          octx.fill();
-
-          octx.fillStyle = k === 0 ? '#1e3a8a' : '#06b6d4';
-          octx.beginPath();
-          octx.moveTo(cx - 16, size - 32);
-          octx.lineTo(cx, size - 12);
-          octx.lineTo(cx + 16, size - 32);
-          octx.closePath();
-          octx.fill();
-
-          octx.strokeStyle = '#334155';
-          octx.lineWidth = 4.2;
-          octx.beginPath();
-          octx.arc(cx, size - 22, 22, 0.15 * Math.PI, 0.85 * Math.PI);
-          octx.stroke();
-
-          octx.fillStyle = '#94a3b8';
-          octx.beginPath();
-          octx.arc(cx, size - 12, 6.5, 0, Math.PI * 2);
-          octx.fill();
-        } else if (prof.type === 'nurse') {
-          octx.fillStyle = k === 1 ? '#0d9488' : '#1e3a8a';
-          octx.beginPath();
-          octx.ellipse(cx, size + 10, 48, 52, 0, 0, Math.PI * 2);
-          octx.fill();
-
-          octx.fillStyle = '#ffffff';
-          octx.beginPath();
-          octx.moveTo(cx - 15, size - 32);
-          octx.lineTo(cx, size - 14);
-          octx.lineTo(cx + 15, size - 32);
-          octx.closePath();
-          octx.fill();
-        } else {
-          octx.fillStyle = k === 2 ? '#1e40af' : '#831843';
-          octx.beginPath();
-          octx.ellipse(cx, size + 10, 48, 52, 0, 0, Math.PI * 2);
-          octx.fill();
-
-          octx.fillStyle = '#ffffff';
-          octx.beginPath();
-          octx.moveTo(cx - 18, size - 32);
-          octx.lineTo(cx, size - 14);
-          octx.lineTo(cx + 18, size - 32);
-          octx.closePath();
-          octx.fill();
-        }
+        // Uniform body
+        octx.fillStyle = prof.type === 'doctor' ? '#ffffff' : (prof.type === 'nurse' ? '#0d9488' : '#1e3a8a');
+        octx.beginPath();
+        octx.ellipse(cx, size + 8, 36, 40, 0, 0, Math.PI * 2);
+        octx.fill();
 
         // Neck
         octx.fillStyle = prof.skin;
-        octx.fillRect(cx - 12, cy + 12, 24, 20);
+        octx.fillRect(cx - 9, cy + 9, 18, 16);
 
         // Head
         octx.beginPath();
-        octx.arc(cx, cy - 4, 32, 0, Math.PI * 2);
-        octx.fill();
-
-        // Cheek blush
-        octx.fillStyle = 'rgba(239, 68, 68, 0.18)';
-        octx.beginPath();
-        octx.arc(cx - 18, cy + 4, 7, 0, Math.PI * 2);
-        octx.arc(cx + 18, cy + 4, 7, 0, Math.PI * 2);
+        octx.arc(cx, cy - 3, 24, 0, Math.PI * 2);
         octx.fill();
 
         // Hair
         octx.fillStyle = prof.hair;
         octx.beginPath();
-        octx.arc(cx, cy - 14, 34, Math.PI, 2 * Math.PI);
-        octx.lineTo(cx + 34, cy + 6);
-        octx.lineTo(cx + 26, cy - 8);
-        octx.lineTo(cx - 26, cy - 8);
-        octx.lineTo(cx - 34, cy + 6);
+        octx.arc(cx, cy - 10, 26, Math.PI, 2 * Math.PI);
+        octx.lineTo(cx + 26, cy + 4);
+        octx.lineTo(cx + 20, cy - 6);
+        octx.lineTo(cx - 20, cy - 6);
+        octx.lineTo(cx - 26, cy + 4);
         octx.closePath();
         octx.fill();
 
         // Eyes
         octx.fillStyle = '#1e293b';
         octx.beginPath();
-        octx.arc(cx - 11, cy - 4, 3.5, 0, Math.PI * 2);
-        octx.arc(cx + 11, cy - 4, 3.5, 0, Math.PI * 2);
+        octx.arc(cx - 8, cy - 3, 2.6, 0, Math.PI * 2);
+        octx.arc(cx + 8, cy - 3, 2.6, 0, Math.PI * 2);
         octx.fill();
-
-        // Glasses
-        if (prof.type === 'teacher' || k === 3) {
-          octx.strokeStyle = k === 2 ? '#d97706' : (k === 5 ? '#1e293b' : '#0284c7');
-          octx.lineWidth = 2.5;
-          octx.beginPath();
-          octx.arc(cx - 11, cy - 4, 8.5, 0, Math.PI * 2);
-          octx.arc(cx + 11, cy - 4, 8.5, 0, Math.PI * 2);
-          octx.moveTo(cx - 2.5, cy - 4);
-          octx.lineTo(cx + 2.5, cy - 4);
-          octx.stroke();
-        }
 
         // Smile
         octx.strokeStyle = '#7c2d12';
-        octx.lineWidth = 2.2;
+        octx.lineWidth = 1.8;
         octx.beginPath();
-        octx.arc(cx, cy + 5, 8, 0.15 * Math.PI, 0.85 * Math.PI);
+        octx.arc(cx, cy + 4, 6, 0.15 * Math.PI, 0.85 * Math.PI);
         octx.stroke();
 
-        // Distinct Headwear
-        if (k === 1) {
-          // Nurse Cap with Red Cross
-          octx.fillStyle = '#ffffff';
-          octx.beginPath();
-          octx.moveTo(cx - 22, cy - 24);
-          octx.lineTo(cx + 22, cy - 24);
-          octx.lineTo(cx + 17, cy - 44);
-          octx.lineTo(cx - 17, cy - 44);
-          octx.closePath();
-          octx.fill();
-
-          octx.fillStyle = '#ef4444';
-          octx.fillRect(cx - 2, cy - 39, 4, 10);
-          octx.fillRect(cx - 5, cy - 36, 10, 4);
-        } else if (k === 2) {
-          // Teacher Graduation Cap
-          octx.fillStyle = '#0f172a';
-          octx.beginPath();
-          octx.moveTo(cx, cy - 52);
-          octx.lineTo(cx + 38, cy - 40);
-          octx.lineTo(cx, cy - 28);
-          octx.lineTo(cx - 38, cy - 40);
-          octx.closePath();
-          octx.fill();
-
-          octx.beginPath();
-          octx.ellipse(cx, cy - 28, 19, 8, 0, 0, Math.PI * 2);
-          octx.fill();
-
-          octx.strokeStyle = '#fbbf24';
-          octx.lineWidth = 2.2;
-          octx.beginPath();
-          octx.moveTo(cx, cy - 40);
-          octx.lineTo(cx + 26, cy - 32);
-          octx.lineTo(cx + 30, cy - 16);
-          octx.stroke();
-        }
-
-        // 3D Specular Curved Gloss
-        const glint = octx.createLinearGradient(0, 0, 0, size * 0.55);
-        glint.addColorStop(0, 'rgba(255, 255, 255, 0.75)');
+        // Glint highlight
+        const glint = octx.createLinearGradient(0, 0, 0, size * 0.5);
+        glint.addColorStop(0, 'rgba(255, 255, 255, 0.65)');
         glint.addColorStop(1, 'rgba(255, 255, 255, 0)');
         octx.fillStyle = glint;
         octx.beginPath();
-        octx.ellipse(cx, 28, 52, 24, 0, 0, Math.PI * 2);
+        octx.ellipse(cx, 22, 38, 18, 0, 0, Math.PI * 2);
         octx.fill();
 
         octx.restore();
 
-        // Outer Crisp Pod Rim
+        // Pod Rim
         octx.beginPath();
         octx.arc(cx, cy, r, 0, Math.PI * 2);
-        octx.lineWidth = 4;
-        octx.strokeStyle = 'rgba(255, 255, 255, 0.95)';
+        octx.lineWidth = 3;
+        octx.strokeStyle = '#ffffff';
         octx.stroke();
 
         avatarCanvases.push(off);
@@ -274,629 +180,58 @@ export const Network3DBackground: React.FC = () => {
 
     createAvatars();
 
-    // ── 3. Pre-render 7 Stylized Isometric 3D Public Sector Workplace Buildings ──
-    // Handcrafted with true isometric 3D geometry, directional lighting, and minimalist modern SaaS aesthetics
-    // 0: National General Hospital (Stepped Wings, Emerald Glass Band & Rooftop Beacon)
-    // 1: Royal National Academy (Collegiate Gabled Hall, Doric Steps & Clock Steeple)
-    // 2: Government Secretariat / Ministry (Civic Plinth, Colonnade & Renaissance Dome)
-    // 3: Pediatric & Maternity Care (Biophilic Rounded Terraces, Living Garden Roof & Heart-Cross)
-    // 4: District Community Clinic (Cantilevered Bauhaus Block, Teal Louvers & Emergency Bay)
-    // 5: National Technical Institute (High-Tech Crystalline Prism, Solar Roof & Cyber Beacon)
-    // 6: Teachers' Training College (Stepped Ziggurat Library, Campanile Tower & Torch of Knowledge)
-    // ── 3. Pre-render 7 Realistic Architectural Institutions (Not cartoon/AI icons) ──
-    // 0: National General Hospital (Helipad [H], multi-floor curtain-wall windows, ambulance entry)
-    // 1: National Higher Secondary College (Classical portico colonnade, slate hipped roof & clock tower)
-    // 2: Public Administration Complex / Ministry (Classical pediment, grand colonnade & ribbed civic dome)
-    // 3: Maternity & Specialist Hospital (Biophilic stepped terraces, living green roof & glass parapets)
-    // 4: District Community Clinic (Cantilevered medical pavilion, sun louvers & ambulance canopy)
-    // 5: National Technology Institute (Crystalline glass prism, solar photovoltaic grid & communications mast)
-    // 6: Teachers' Training College & Faculty Library (Stepped masonry archives, arched windows & campanile)
-    const buildingCanvases: HTMLCanvasElement[] = [];
-
-    const createBuildings = () => {
-      buildingCanvases.length = 0;
-      const bSize = 140;
-
-      // Mathematical Isometric Prism Helper with realistic light casting
-      const drawIsoBlock = (
-        bctx: CanvasRenderingContext2D,
-        x: number,
-        y: number,
-        w: number,
-        d: number,
-        h: number,
-        topColor: string | CanvasGradient,
-        leftColor: string | CanvasGradient,
-        rightColor: string | CanvasGradient
-      ) => {
-        // Left face (ambient light)
-        bctx.fillStyle = leftColor;
-        bctx.beginPath();
-        bctx.moveTo(x - w, y);
-        bctx.lineTo(x, y + d);
-        bctx.lineTo(x, y + d - h);
-        bctx.lineTo(x - w, y - h);
-        bctx.closePath();
-        bctx.fill();
-
-        // Right face (shadow side)
-        bctx.fillStyle = rightColor;
-        bctx.beginPath();
-        bctx.moveTo(x, y + d);
-        bctx.lineTo(x + w, y);
-        bctx.lineTo(x + w, y - h);
-        bctx.lineTo(x, y + d - h);
-        bctx.closePath();
-        bctx.fill();
-
-        // Top face (highlighted roof plane)
-        bctx.fillStyle = topColor;
-        bctx.beginPath();
-        bctx.moveTo(x, y - d - h);
-        bctx.lineTo(x + w, y - h);
-        bctx.lineTo(x, y + d - h);
-        bctx.lineTo(x - w, y - h);
-        bctx.closePath();
-        bctx.fill();
-      };
-
-      // Realistic multi-story window matrices on left facade
-      const drawWindowsLeft = (
-        bctx: CanvasRenderingContext2D,
-        x: number,
-        y: number,
-        w: number,
-        d: number,
-        h: number,
-        floors: number,
-        bays: number,
-        glassColor: string
-      ) => {
-        bctx.fillStyle = glassColor;
-        for (let f = 0; f < floors; f++) {
-          const v1 = 0.16 + f * (0.76 / floors);
-          const v2 = v1 + (0.58 / floors);
-          for (let b = 0; b < bays; b++) {
-            const u1 = 0.12 + b * (0.78 / bays);
-            const u2 = u1 + (0.62 / bays);
-            bctx.beginPath();
-            bctx.moveTo(x - w + u1 * w, y + u1 * d - v1 * h);
-            bctx.lineTo(x - w + u2 * w, y + u2 * d - v1 * h);
-            bctx.lineTo(x - w + u2 * w, y + u2 * d - v2 * h);
-            bctx.lineTo(x - w + u1 * w, y + u1 * d - v2 * h);
-            bctx.closePath();
-            bctx.fill();
-          }
-        }
-      };
-
-      // Realistic multi-story window matrices on right facade
-      const drawWindowsRight = (
-        bctx: CanvasRenderingContext2D,
-        x: number,
-        y: number,
-        w: number,
-        d: number,
-        h: number,
-        floors: number,
-        bays: number,
-        glassColor: string
-      ) => {
-        bctx.fillStyle = glassColor;
-        for (let f = 0; f < floors; f++) {
-          const v1 = 0.16 + f * (0.76 / floors);
-          const v2 = v1 + (0.58 / floors);
-          for (let b = 0; b < bays; b++) {
-            const u1 = 0.12 + b * (0.78 / bays);
-            const u2 = u1 + (0.62 / bays);
-            bctx.beginPath();
-            bctx.moveTo(x + u1 * w, y + d - u1 * d - v1 * h);
-            bctx.lineTo(x + u2 * w, y + d - u2 * d - v1 * h);
-            bctx.lineTo(x + u2 * w, y + d - u2 * d - v2 * h);
-            bctx.lineTo(x + u1 * w, y + d - u1 * d - v2 * h);
-            bctx.closePath();
-            bctx.fill();
-          }
-        }
-      };
-
-      // Realistic Ground Contact Shadow
-      const drawGroundShadow = (bctx: CanvasRenderingContext2D, cx: number) => {
-        const occGrad = bctx.createRadialGradient(cx, 116, 4, cx, 116, 46);
-        occGrad.addColorStop(0, 'rgba(15, 23, 42, 0.20)');
-        occGrad.addColorStop(0.4, 'rgba(51, 65, 85, 0.06)');
-        occGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-        bctx.beginPath();
-        bctx.ellipse(cx, 116, 46, 14, 0, 0, Math.PI * 2);
-        bctx.fillStyle = occGrad;
-        bctx.fill();
-      };
-
-      // ─────────────────────────────────────────────────────────────
-      // Building 0: National General Hospital (Healthcare Hub)
-      // ─────────────────────────────────────────────────────────────
-      {
-        const b = document.createElement('canvas');
-        b.width = bSize;
-        b.height = bSize;
-        const bctx = b.getContext('2d');
-        if (bctx) {
-          const cx = bSize / 2;
-          drawGroundShadow(bctx, cx);
-
-          // Paved Entrance Plaza
-          drawIsoBlock(bctx, cx, 114, 44, 22, 4, '#e2e8f0', '#cbd5e1', '#94a3b8');
-
-          // Left Wing (Patient Care Suites - 3 floors)
-          drawIsoBlock(bctx, cx - 18, 102, 16, 8, 28, '#ffffff', '#f1f5f9', '#cbd5e1');
-          drawWindowsLeft(bctx, cx - 18, 102, 16, 8, 28, 3, 2, '#0284c7');
-
-          // Right Wing (Specialist Clinics - 3 floors)
-          drawIsoBlock(bctx, cx + 18, 102, 16, 8, 28, '#ffffff', '#e2e8f0', '#94a3b8');
-          drawWindowsRight(bctx, cx + 18, 102, 16, 8, 28, 3, 2, '#0369a1');
-
-          // Main Central Hospital Tower (5 floors of glass & precast concrete)
-          drawIsoBlock(bctx, cx, 104, 20, 10, 52, '#ffffff', '#f8fafc', '#cbd5e1');
-          drawWindowsLeft(bctx, cx, 104, 20, 10, 52, 4, 2, '#0284c7');
-          drawWindowsRight(bctx, cx, 104, 20, 10, 52, 4, 2, '#0369a1');
-
-          // Emergency Entrance Canopy & Glass Lobby
-          drawIsoBlock(bctx, cx, 108, 12, 6, 8, '#38bdf8', '#0284c7', '#0369a1');
-
-          // Discrete Architectural Medical Cross etched on front facade
-          bctx.fillStyle = '#ef4444';
-          bctx.fillRect(cx - 1.5, 84, 3, 9);
-          bctx.fillRect(cx - 4.5, 87, 9, 3);
-
-          // Rooftop Elevator Penthouse & Helipad Base
-          drawIsoBlock(bctx, cx, 52, 13, 6.5, 4, '#64748b', '#475569', '#334155');
-
-          // Realistic Circular Helipad with White 'H' Marking
-          bctx.beginPath();
-          bctx.ellipse(cx, 46, 10, 5, 0, 0, Math.PI * 2);
-          bctx.fillStyle = '#334155';
-          bctx.fill();
-          bctx.strokeStyle = '#f8fafc';
-          bctx.lineWidth = 1.2;
-          bctx.stroke();
-
-          bctx.fillStyle = '#ffffff';
-          bctx.font = 'bold 8px sans-serif';
-          bctx.textAlign = 'center';
-          bctx.textBaseline = 'middle';
-          bctx.fillText('H', cx, 46);
-        }
-        buildingCanvases.push(b);
-      }
-
-      // ─────────────────────────────────────────────────────────────
-      // Building 1: Royal National Academy / High School (Education Hub)
-      // ─────────────────────────────────────────────────────────────
-      {
-        const b = document.createElement('canvas');
-        b.width = bSize;
-        b.height = bSize;
-        const bctx = b.getContext('2d');
-        if (bctx) {
-          const cx = bSize / 2;
-          drawGroundShadow(bctx, cx);
-
-          // Stepped Classical Plaza
-          drawIsoBlock(bctx, cx, 114, 46, 23, 4, '#e2e8f0', '#cbd5e1', '#94a3b8');
-
-          // Main Academic Hall (3 floors)
-          drawIsoBlock(bctx, cx, 108, 38, 19, 34, '#ffffff', '#f8fafc', '#cbd5e1');
-          drawWindowsLeft(bctx, cx, 108, 38, 19, 34, 3, 3, '#1e293b');
-          drawWindowsRight(bctx, cx, 108, 38, 19, 34, 3, 3, '#0f172a');
-
-          // Classical Colonnade Portico (White Pillars)
-          bctx.fillStyle = '#ffffff';
-          for (let p = 0; p < 4; p++) {
-            bctx.fillRect(cx - 9 + p * 6, 92, 2.2, 14);
-          }
-
-          // Slate Hipped Roof
-          bctx.fillStyle = '#334155';
-          bctx.beginPath();
-          bctx.moveTo(cx - 40, 74);
-          bctx.lineTo(cx, 93);
-          bctx.lineTo(cx - 14, 56);
-          bctx.closePath();
-          bctx.fill();
-
-          bctx.fillStyle = '#1e293b';
-          bctx.beginPath();
-          bctx.moveTo(cx, 93);
-          bctx.lineTo(cx + 40, 74);
-          bctx.lineTo(cx + 14, 56);
-          bctx.lineTo(cx - 14, 56);
-          bctx.closePath();
-          bctx.fill();
-
-          // Central Steeple Clock Tower
-          drawIsoBlock(bctx, cx, 68, 10, 5, 22, '#475569', '#334155', '#1e293b');
-
-          // Copper Pyramid Steeple
-          bctx.fillStyle = '#d97706';
-          bctx.beginPath();
-          bctx.moveTo(cx - 10, 46);
-          bctx.lineTo(cx, 51);
-          bctx.lineTo(cx, 30);
-          bctx.closePath();
-          bctx.fill();
-
-          bctx.fillStyle = '#b45309';
-          bctx.beginPath();
-          bctx.moveTo(cx, 51);
-          bctx.lineTo(cx + 10, 46);
-          bctx.lineTo(cx, 30);
-          bctx.closePath();
-          bctx.fill();
-
-          // Embedded Architectural Clock Face
-          bctx.beginPath();
-          bctx.arc(cx - 3, 56, 3.5, 0, Math.PI * 2);
-          bctx.fillStyle = '#f8fafc';
-          bctx.fill();
-          bctx.strokeStyle = '#0f172a';
-          bctx.lineWidth = 0.8;
-          bctx.stroke();
-
-          // Clock Hands
-          bctx.beginPath();
-          bctx.moveTo(cx - 3, 56);
-          bctx.lineTo(cx - 3, 53.5);
-          bctx.moveTo(cx - 3, 56);
-          bctx.lineTo(cx - 1, 56);
-          bctx.strokeStyle = '#0f172a';
-          bctx.lineWidth = 0.7;
-          bctx.stroke();
-        }
-        buildingCanvases.push(b);
-      }
-
-      // ─────────────────────────────────────────────────────────────
-      // Building 2: Government Secretariat / Ministry (Civic Core)
-      // ─────────────────────────────────────────────────────────────
-      {
-        const b = document.createElement('canvas');
-        b.width = bSize;
-        b.height = bSize;
-        const bctx = b.getContext('2d');
-        if (bctx) {
-          const cx = bSize / 2;
-          drawGroundShadow(bctx, cx);
-
-          // Monumental Civic Plinth
-          drawIsoBlock(bctx, cx, 114, 46, 23, 5, '#cbd5e1', '#94a3b8', '#64748b');
-
-          // Main Civic Administrative Edifice (4 stories)
-          drawIsoBlock(bctx, cx, 109, 38, 19, 36, '#ffffff', '#f1f5f9', '#cbd5e1');
-          drawWindowsLeft(bctx, cx, 109, 38, 19, 36, 4, 3, '#1e293b');
-          drawWindowsRight(bctx, cx, 109, 38, 19, 36, 4, 3, '#0f172a');
-
-          // Grand Portico Pillars & Pediment
-          bctx.fillStyle = '#ffffff';
-          for (let p = 0; p < 4; p++) {
-            bctx.fillRect(cx - 9 + p * 6, 92, 2.2, 16);
-          }
-          bctx.fillStyle = '#f8fafc';
-          bctx.beginPath();
-          bctx.moveTo(cx - 12, 92);
-          bctx.lineTo(cx + 12, 92);
-          bctx.lineTo(cx, 84);
-          bctx.closePath();
-          bctx.fill();
-          bctx.strokeStyle = '#cbd5e1';
-          bctx.stroke();
-
-          // Octagonal Drum
-          drawIsoBlock(bctx, cx, 73, 18, 9, 10, '#e2e8f0', '#cbd5e1', '#94a3b8');
-          bctx.fillStyle = '#1e293b';
-          for (let w = 0; w < 4; w++) {
-            bctx.fillRect(cx - 12 + w * 7, 65, 2.5, 6);
-          }
-
-          // Ribbed Civic Dome
-          bctx.beginPath();
-          bctx.ellipse(cx, 63, 17, 13, 0, Math.PI, 2 * Math.PI);
-          bctx.fillStyle = '#475569';
-          bctx.fill();
-          bctx.strokeStyle = '#334155';
-          bctx.lineWidth = 1;
-          bctx.stroke();
-
-          // Dome Architectural Rib Lines
-          bctx.strokeStyle = '#64748b';
-          bctx.lineWidth = 0.8;
-          bctx.beginPath();
-          bctx.moveTo(cx - 10, 63);
-          bctx.quadraticCurveTo(cx - 6, 54, cx, 50);
-          bctx.moveTo(cx + 10, 63);
-          bctx.quadraticCurveTo(cx + 6, 54, cx, 50);
-          bctx.moveTo(cx, 63);
-          bctx.lineTo(cx, 50);
-          bctx.stroke();
-
-          // Bronze Finial Lantern
-          bctx.fillStyle = '#d97706';
-          bctx.fillRect(cx - 1.2, 45, 2.4, 6);
-          bctx.beginPath();
-          bctx.arc(cx, 44, 2, 0, Math.PI * 2);
-          bctx.fill();
-        }
-        buildingCanvases.push(b);
-      }
-
-      // ─────────────────────────────────────────────────────────────
-      // Building 3: Pediatric & Maternity Care (Biophilic Terraced Pavilion)
-      // ─────────────────────────────────────────────────────────────
-      {
-        const b = document.createElement('canvas');
-        b.width = bSize;
-        b.height = bSize;
-        const bctx = b.getContext('2d');
-        if (bctx) {
-          const cx = bSize / 2;
-          drawGroundShadow(bctx, cx);
-
-          // Tier 1 Base Pavilion (2 floors)
-          drawIsoBlock(bctx, cx, 112, 42, 21, 20, '#ffffff', '#fff1f2', '#fecdd3');
-          drawWindowsLeft(bctx, cx, 112, 42, 21, 20, 2, 3, '#0284c7');
-          drawWindowsRight(bctx, cx, 112, 42, 21, 20, 2, 3, '#0369a1');
-
-          // Rooftop Living Garden on Tier 1
-          bctx.fillStyle = '#059669';
-          bctx.beginPath();
-          bctx.moveTo(cx, 112 - 21 - 20);
-          bctx.lineTo(cx + 40, 112 - 20);
-          bctx.lineTo(cx, 112 + 21 - 20);
-          bctx.lineTo(cx - 40, 112 - 20);
-          bctx.closePath();
-          bctx.fill();
-
-          // Glass Balustrade around garden
-          bctx.strokeStyle = '#38bdf8';
-          bctx.lineWidth = 1;
-          bctx.beginPath();
-          bctx.moveTo(cx - 38, 92);
-          bctx.lineTo(cx, 111);
-          bctx.lineTo(cx + 38, 92);
-          bctx.stroke();
-
-          // Recessed Upper Tier (Maternity Care Unit - 2 floors)
-          drawIsoBlock(bctx, cx, 92, 24, 12, 24, '#ffffff', '#f8fafc', '#cbd5e1');
-          drawWindowsLeft(bctx, cx, 92, 24, 12, 24, 2, 2, '#0284c7');
-          drawWindowsRight(bctx, cx, 92, 24, 12, 24, 2, 2, '#0369a1');
-
-          // Subtle Healthcare Red Cross on upper parapet
-          bctx.fillStyle = '#ef4444';
-          bctx.fillRect(cx - 1, 64, 2, 6);
-          bctx.fillRect(cx - 3, 66, 6, 2);
-        }
-        buildingCanvases.push(b);
-      }
-
-      // ─────────────────────────────────────────────────────────────
-      // Building 4: District Administrative Secretariat (Kachcheri / Civic Complex)
-      // ─────────────────────────────────────────────────────────────
-      {
-        const b = document.createElement('canvas');
-        b.width = bSize;
-        b.height = bSize;
-        const bctx = b.getContext('2d');
-        if (bctx) {
-          const cx = bSize / 2;
-          drawGroundShadow(bctx, cx);
-
-          // Paved Civic Plaza Plinth
-          drawIsoBlock(bctx, cx, 114, 46, 23, 4, '#e2e8f0', '#cbd5e1', '#94a3b8');
-
-          // Symmetrical Left Wing (Administrative Registry - 3 floors)
-          drawIsoBlock(bctx, cx - 18, 104, 16, 8, 28, '#ffffff', '#f1f5f9', '#cbd5e1');
-          drawWindowsLeft(bctx, cx - 18, 104, 16, 8, 28, 3, 2, '#1e293b');
-
-          // Symmetrical Right Wing (Public Services Division - 3 floors)
-          drawIsoBlock(bctx, cx + 18, 104, 16, 8, 28, '#ffffff', '#e2e8f0', '#94a3b8');
-          drawWindowsRight(bctx, cx + 18, 104, 16, 8, 28, 3, 2, '#0f172a');
-
-          // Central Stately Atrium & Main Portico (3.5 floors)
-          drawIsoBlock(bctx, cx, 106, 20, 10, 36, '#ffffff', '#f8fafc', '#cbd5e1');
-          drawWindowsLeft(bctx, cx, 94, 20, 10, 24, 2, 2, '#0f172a');
-          drawWindowsRight(bctx, cx, 94, 20, 10, 24, 2, 2, '#1e293b');
-
-          // Ground Floor Glass Reception & Grand Entrance
-          drawIsoBlock(bctx, cx, 108, 12, 6, 12, '#38bdf8', '#0284c7', '#0369a1');
-
-          // Classical Architectural Colonnade Pillars
-          bctx.fillStyle = '#ffffff';
-          for (let p = 0; p < 4; p++) {
-            bctx.fillRect(cx - 9 + p * 6, 94, 2.2, 14);
-          }
-
-          // Recessed Executive Penthouse & Roof Parapet
-          drawIsoBlock(bctx, cx, 70, 14, 7, 8, '#f1f5f9', '#e2e8f0', '#cbd5e1');
-
-          // Parapet Perimeter Edge Line
-          bctx.strokeStyle = '#94a3b8';
-          bctx.lineWidth = 1;
-          bctx.beginPath();
-          bctx.moveTo(cx - 20, 70);
-          bctx.lineTo(cx, 80);
-          bctx.lineTo(cx + 20, 70);
-          bctx.stroke();
-
-          // Slender Architectural Flagpole atop building
-          bctx.strokeStyle = '#64748b';
-          bctx.lineWidth = 1.2;
-          bctx.beginPath();
-          bctx.moveTo(cx, 62);
-          bctx.lineTo(cx, 46);
-          bctx.stroke();
-
-          // Gold Finial Spherical Cap
-          bctx.fillStyle = '#d97706';
-          bctx.beginPath();
-          bctx.arc(cx, 46, 2, 0, Math.PI * 2);
-          bctx.fill();
-        }
-        buildingCanvases.push(b);
-      }
-
-      // ─────────────────────────────────────────────────────────────
-      // Building 5: National Public Service Center / Administrative Tower
-      // ─────────────────────────────────────────────────────────────
-      {
-        const b = document.createElement('canvas');
-        b.width = bSize;
-        b.height = bSize;
-        const bctx = b.getContext('2d');
-        if (bctx) {
-          const cx = bSize / 2;
-          drawGroundShadow(bctx, cx);
-
-          // Paved Modern Architectural Terrace Plinth (Clean Stone)
-          drawIsoBlock(bctx, cx, 114, 42, 21, 5, '#e2e8f0', '#cbd5e1', '#94a3b8');
-          drawIsoBlock(bctx, cx, 110, 36, 18, 4, '#f8fafc', '#e2e8f0', '#cbd5e1');
-
-          // Main Modern High-Rise Tower (5 stories of architectural glass & white precast)
-          drawIsoBlock(bctx, cx, 106, 26, 13, 56, '#ffffff', '#f8fafc', '#cbd5e1');
-
-          // Crisp Multi-Floor Sky-Blue Architectural Glass Windows
-          drawWindowsLeft(bctx, cx, 106, 26, 13, 56, 5, 3, '#0284c7');
-          drawWindowsRight(bctx, cx, 106, 26, 13, 56, 5, 3, '#0369a1');
-
-          // Architectural Vertical Sun-Shading Fins (Mullions) on Left Face
-          bctx.strokeStyle = '#ffffff';
-          bctx.lineWidth = 1.2;
-          for (let m = 1; m <= 2; m++) {
-            const u = m / 3;
-            bctx.beginPath();
-            bctx.moveTo(cx - 26 + u * 26, 106 + u * 13 - 10);
-            bctx.lineTo(cx - 26 + u * 26, 106 + u * 13 - 54);
-            bctx.stroke();
-          }
-
-          // Architectural Vertical Fins on Right Face
-          for (let m = 1; m <= 2; m++) {
-            const u = m / 3;
-            bctx.beginPath();
-            bctx.moveTo(cx + u * 26, 106 + 13 - u * 13 - 10);
-            bctx.lineTo(cx + u * 26, 106 + 13 - u * 13 - 54);
-            bctx.stroke();
-          }
-
-          // Double-Height Glass Entrance Lobby at Ground Floor
-          drawIsoBlock(bctx, cx, 107, 14, 7, 10, '#38bdf8', '#0284c7', '#0369a1');
-          bctx.fillStyle = '#ffffff';
-          bctx.fillRect(cx - 1, 98, 2, 9); // Center door divider
-
-          // Recessed Executive Penthouse & Roof Terrace
-          drawIsoBlock(bctx, cx, 50, 16, 8, 10, '#f1f5f9', '#e2e8f0', '#cbd5e1');
-          drawWindowsLeft(bctx, cx, 50, 16, 8, 10, 1, 2, '#0284c7');
-          drawWindowsRight(bctx, cx, 50, 16, 8, 10, 1, 2, '#0369a1');
-
-          // Sleek Architectural Glass Crown Parapet
-          bctx.strokeStyle = '#38bdf8';
-          bctx.lineWidth = 1.2;
-          bctx.beginPath();
-          bctx.moveTo(cx - 16, 40);
-          bctx.lineTo(cx, 48);
-          bctx.lineTo(cx + 16, 40);
-          bctx.stroke();
-        }
-        buildingCanvases.push(b);
-      }
-
-      // ─────────────────────────────────────────────────────────────
-      // Building 6: Teachers' Training College & Faculty Library
-      // ─────────────────────────────────────────────────────────────
-      {
-        const b = document.createElement('canvas');
-        b.width = bSize;
-        b.height = bSize;
-        const bctx = b.getContext('2d');
-        if (bctx) {
-          const cx = bSize / 2;
-          drawGroundShadow(bctx, cx);
-
-          // Tier 1 Library Hall (2 stories)
-          drawIsoBlock(bctx, cx + 8, 112, 30, 15, 16, '#ffffff', '#f8fafc', '#cbd5e1');
-          drawWindowsLeft(bctx, cx + 8, 112, 30, 15, 16, 2, 3, '#b45309');
-          drawWindowsRight(bctx, cx + 8, 112, 30, 15, 16, 2, 3, '#78350f');
-
-          // Tier 2 Reading Gallery
-          drawIsoBlock(bctx, cx + 8, 96, 22, 11, 14, '#fef3c7', '#fde68a', '#f59e0b');
-          drawWindowsLeft(bctx, cx + 8, 96, 22, 11, 14, 1, 2, '#b45309');
-
-          // Tier 3 Special Archives
-          drawIsoBlock(bctx, cx + 8, 82, 14, 7, 12, '#fde68a', '#fbbf24', '#d97706');
-
-          // Classical Campanile / Academic Bell Tower
-          drawIsoBlock(bctx, cx - 22, 112, 9, 4.5, 60, '#d97706', '#b45309', '#92400e');
-
-          // Belfry Louvers
-          bctx.fillStyle = '#451a03';
-          for (let l = 0; l < 3; l++) {
-            bctx.fillRect(cx - 26, 62 + l * 4, 6, 2);
-          }
-
-          // Campanile Steeple Cap
-          bctx.fillStyle = '#fbbf24';
-          bctx.beginPath();
-          bctx.moveTo(cx - 31, 52);
-          bctx.lineTo(cx - 22, 57);
-          bctx.lineTo(cx - 22, 34);
-          bctx.closePath();
-          bctx.fill();
-
-          bctx.fillStyle = '#b45309';
-          bctx.beginPath();
-          bctx.moveTo(cx - 22, 57);
-          bctx.lineTo(cx - 13, 52);
-          bctx.lineTo(cx - 22, 34);
-          bctx.closePath();
-          bctx.fill();
-        }
-        buildingCanvases.push(b);
+    // ── 3. Ambient 2D Floating Mesh (Identical to About Us Page) ──
+    const ambientColors = [
+      'rgba(37, 99, 235,',
+      'rgba(59, 130, 246,',
+      'rgba(14, 165, 233,',
+      'rgba(99, 102, 241,',
+    ];
+
+    const ambientNodes: AmbientNode[] = [];
+    const ambientCount = 32;
+
+    const initAmbientNodes = (w: number, h: number) => {
+      ambientNodes.length = 0;
+      for (let i = 0; i < ambientCount; i++) {
+        ambientNodes.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          vx: (Math.random() - 0.5) * 0.40,
+          vy: (Math.random() - 0.5) * 0.40,
+          radius: 1.6 + Math.random() * 1.8,
+          color: ambientColors[Math.floor(Math.random() * ambientColors.length)],
+          baseAlpha: 0.18 + Math.random() * 0.22,
+        });
       }
     };
 
-    createBuildings();
-
-    // ── 4. Heptagon Symmetrical Stations with Organic Floating Drift (7 Stations) ──
-    // Vertices of regular heptagon: angle step = 2*PI / 7 ≈ 51.43 deg
-    // Glow auras softened to match the page's light mesh gradient & floating blurred bubbles
+    // ── 4. 7 Public Sector Workplace Stations in 3D Space ──
     const stations: Station[] = [
-      { id: 0, type: 'hospital',   angle: -Math.PI / 2 + (0 * 2 * Math.PI) / 7, glowColor: 'rgba(37, 99, 235, 0.22)',  themeColor: '#2563eb', driftSpeed: 0.85, phaseX: 0.2, phaseY: 1.5, ampX: 22, ampY: 26 }, // Top (0 deg)
-      { id: 1, type: 'school',     angle: -Math.PI / 2 + (1 * 2 * Math.PI) / 7, glowColor: 'rgba(59, 130, 246, 0.22)',  themeColor: '#3b82f6', driftSpeed: 0.75, phaseX: 2.1, phaseY: 0.8, ampX: 25, ampY: 22 }, // Top-Right (51.4 deg)
-      { id: 2, type: 'ministry',   angle: -Math.PI / 2 + (2 * 2 * Math.PI) / 7, glowColor: 'rgba(2, 132, 199, 0.22)',   themeColor: '#0284c7', driftSpeed: 0.80, phaseX: 4.0, phaseY: 3.2, ampX: 22, ampY: 25 }, // Mid-Right (102.9 deg)
-      { id: 3, type: 'maternity',  angle: -Math.PI / 2 + (3 * 2 * Math.PI) / 7, glowColor: 'rgba(14, 165, 233, 0.22)',  themeColor: '#0ea5e9', driftSpeed: 0.78, phaseX: 1.8, phaseY: 4.1, ampX: 24, ampY: 24 }, // Bottom-Right (154.3 deg)
-      { id: 4, type: 'secretariat', angle: -Math.PI / 2 + (4 * 2 * Math.PI) / 7, glowColor: 'rgba(30, 58, 138, 0.20)',  themeColor: '#1e3a8a', driftSpeed: 0.70, phaseX: 1.1, phaseY: 4.8, ampX: 24, ampY: 24 }, // Bottom-Left (205.7 deg) - District Secretariat
-      { id: 5, type: 'tower',       angle: -Math.PI / 2 + (5 * 2 * Math.PI) / 7, glowColor: 'rgba(29, 78, 216, 0.20)',  themeColor: '#1d4ed8', driftSpeed: 0.82, phaseX: 3.4, phaseY: 1.9, ampX: 23, ampY: 25 }, // Mid-Left (257.1 deg) - Public Service Tower
-      { id: 6, type: 'college',    angle: -Math.PI / 2 + (6 * 2 * Math.PI) / 7, glowColor: 'rgba(37, 99, 235, 0.22)',  themeColor: '#2563eb', driftSpeed: 0.90, phaseX: 5.3, phaseY: 2.4, ampX: 26, ampY: 21 }, // Top-Left (308.6 deg)
+      { id: 0, type: 'hospital',    angle: (0 * 2 * Math.PI) / 7, glowColor: 'rgba(37, 99, 235, 0.28)',  themeColor: '#2563eb', driftSpeed: 0.65, phaseX: 0.2, phaseY: 1.5 },
+      { id: 1, type: 'school',      angle: (1 * 2 * Math.PI) / 7, glowColor: 'rgba(59, 130, 246, 0.28)',  themeColor: '#3b82f6', driftSpeed: 0.58, phaseX: 2.1, phaseY: 0.8 },
+      { id: 2, type: 'ministry',    angle: (2 * 2 * Math.PI) / 7, glowColor: 'rgba(2, 132, 199, 0.28)',   themeColor: '#0284c7', driftSpeed: 0.62, phaseX: 4.0, phaseY: 3.2 },
+      { id: 3, type: 'clinic',      angle: (3 * 2 * Math.PI) / 7, glowColor: 'rgba(14, 165, 233, 0.28)',  themeColor: '#0ea5e9', driftSpeed: 0.60, phaseX: 1.8, phaseY: 4.1 },
+      { id: 4, type: 'secretariat', angle: (4 * 2 * Math.PI) / 7, glowColor: 'rgba(30, 58, 138, 0.26)',  themeColor: '#1e40af', driftSpeed: 0.55, phaseX: 1.1, phaseY: 4.8 },
+      { id: 5, type: 'college',     angle: (5 * 2 * Math.PI) / 7, glowColor: 'rgba(79, 70, 229, 0.26)',  themeColor: '#4f46e5', driftSpeed: 0.62, phaseX: 3.4, phaseY: 1.9 },
+      { id: 6, type: 'service',     angle: (6 * 2 * Math.PI) / 7, glowColor: 'rgba(37, 99, 235, 0.28)',  themeColor: '#2563eb', driftSpeed: 0.68, phaseX: 5.3, phaseY: 2.4 },
     ];
 
-    // Spoke Line Curvature offsets for visual rhythm (quadratic Bezier for 7 spokes)
-    // Enhanced sweeping curves for spokes 1, 3, 4, and 6
-    const spokeCurvatures = [20, -54, 22, -52, -78, 18, 78];
-
-    // Traveling Photons on the 7 Spokes connecting Hub to Stations (calm, elegant speed)
+    // Traveling photons on the 7 3D spokes
     const spokePhotons = [
-      { progress: 0.15, speed: 0.0032 },
-      { progress: 0.55, speed: 0.0036 },
-      { progress: 0.85, speed: 0.0030 },
-      { progress: 0.35, speed: 0.0034 },
-      { progress: 0.70, speed: 0.0032 },
-      { progress: 0.20, speed: 0.0035 },
-      { progress: 0.60, speed: 0.0029 },
+      { progress: 0.10, speed: 0.0014 },
+      { progress: 0.45, speed: 0.0016 },
+      { progress: 0.80, speed: 0.0013 },
+      { progress: 0.30, speed: 0.0015 },
+      { progress: 0.65, speed: 0.0014 },
+      { progress: 0.18, speed: 0.0016 },
+      { progress: 0.55, speed: 0.0012 },
     ];
 
-    // ── 5. Active Transfers (Strictly 1 Avatar per line in the same direction) ──
+    // ── 5. Active Transfers (Gentle, Slow Glide in 3D) ──
     const activeTransfers: ActiveTransfer[] = [
-      // Transfer 0: Doctor starting journey from Station 0 towards Hub
       {
-        id: 0.1,
+        id: 1,
         avatarIndex: 0,
         roleType: 'doctor',
         glowColor: professions[0].glow,
@@ -904,39 +239,22 @@ export const Network3DBackground: React.FC = () => {
         destStation: 3,
         phase: 'INBOUND',
         progress: 0.35,
-        speed: 0.0025,
+        speed: 0.0014,
         opacity: 1.0,
         hubWait: 0,
         arrivalTimer: 0,
         arrivalPulse: 0,
       },
-      // Transfer 1: Nurse moving from Hub towards Station 4
       {
-        id: 0.2,
+        id: 2,
         avatarIndex: 1,
         roleType: 'nurse',
         glowColor: professions[1].glow,
         originStation: 2,
         destStation: 4,
         phase: 'OUTBOUND',
-        progress: 0.45,
-        speed: 0.0026,
-        opacity: 1.0,
-        hubWait: 0,
-        arrivalTimer: 0,
-        arrivalPulse: 0,
-      },
-      // Transfer 2: Teacher moving from Station 6 towards Hub
-      {
-        id: 0.3,
-        avatarIndex: 2,
-        roleType: 'teacher',
-        glowColor: professions[2].glow,
-        originStation: 6,
-        destStation: 1,
-        phase: 'INBOUND',
-        progress: 0.82,
-        speed: 0.0024,
+        progress: 0.65,
+        speed: 0.0015,
         opacity: 1.0,
         hubWait: 0,
         arrivalTimer: 0,
@@ -944,10 +262,97 @@ export const Network3DBackground: React.FC = () => {
       },
     ];
 
-    let nextAvatarIdx = 3;
+    let nextAvatarIdx = 2;
     let spawnTimer = 0;
 
-    // ── Interactive Mouse Sensitivity & Parallax Tracking ──
+    // ── 6. Interactive Click-to-Launch Station Transfers ──
+    let latestStationCoords: StationScreenInfo[] = [];
+    let latestHubCoord = { screenX: 0, screenY: 0, radius: 45 };
+    const destinationCounters: number[] = [0, 0, 0, 0, 0, 0, 0];
+
+    const triggerStationTransfer = (stationId: number) => {
+      // Cycle through other 6 stations so multiple clicks naturally distribute across network
+      const otherStations = [0, 1, 2, 3, 4, 5, 6].filter((s) => s !== stationId);
+      const dest = otherStations[destinationCounters[stationId] % otherStations.length];
+      destinationCounters[stationId]++;
+
+      const aIdx = nextAvatarIdx % professions.length;
+      nextAvatarIdx++;
+      const prof = professions[aIdx];
+
+      // Responsive, fluid transfer speed
+      const speed = 0.0022 + Math.random() * 0.0004;
+
+      activeTransfers.push({
+        id: Math.random(),
+        avatarIndex: aIdx,
+        roleType: prof.type,
+        glowColor: prof.glow,
+        originStation: stationId,
+        destStation: dest,
+        phase: 'INBOUND',
+        progress: 0.0,
+        speed,
+        opacity: 1.0,
+        hubWait: 22,
+        arrivalTimer: 0,
+        arrivalPulse: 0,
+      });
+
+      // Keep array bounded under rapid continuous clicking
+      if (activeTransfers.length > 30) {
+        activeTransfers.shift();
+      }
+
+      // Gentle tactile spring bounce on clicked station
+      if (stations[stationId]) {
+        stations[stationId].clickPop = 0.25;
+      }
+    };
+
+    const handlePointerDown = (e: PointerEvent | MouseEvent) => {
+      if (!canvas) return;
+
+      // Prevent interfering with actual buttons, links, or form controls
+      const target = e.target as HTMLElement | null;
+      if (target && target.closest('a, button, input, textarea, select, [role="button"]')) {
+        return;
+      }
+
+      const rect = canvas.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+
+      // 1. Check if clicking central hub
+      const hubDist = Math.hypot(clickX - latestHubCoord.screenX, clickY - latestHubCoord.screenY);
+      if (hubDist <= latestHubCoord.radius + 12) {
+        const randomOrigin = Math.floor(Math.random() * 7);
+        triggerStationTransfer(randomOrigin);
+        return;
+      }
+
+      // 2. Find closest station within generous hit radius (supports rapid/continuous clicks)
+      let closestSt: StationScreenInfo | null = null;
+      let minDist = Infinity;
+
+      for (let i = 0; i < latestStationCoords.length; i++) {
+        const st = latestStationCoords[i];
+        const dist = Math.hypot(clickX - st.screenX, clickY - st.screenY);
+        const hitRadius = Math.max(40, st.radius * 2.2);
+        if (dist <= hitRadius && dist < minDist) {
+          minDist = dist;
+          closestSt = st;
+        }
+      }
+
+      if (closestSt) {
+        triggerStationTransfer(closestSt.id);
+      }
+    };
+
+    window.addEventListener('pointerdown', handlePointerDown);
+
+    // ── 7. Interactive Mouse Tracking & 3D Tilt Orbit ──
     let targetMouseX = 0;
     let targetMouseY = 0;
     let mouseX = 0;
@@ -960,7 +365,6 @@ export const Network3DBackground: React.FC = () => {
       const rect = canvas.getBoundingClientRect();
       rawMouseX = e.clientX - rect.left;
       rawMouseY = e.clientY - rect.top;
-      // Normalized mouse offset relative to canvas center: -1.0 to 1.0
       targetMouseX = ((e.clientX - rect.left) / width - 0.5) * 2;
       targetMouseY = ((e.clientY - rect.top) / height - 0.5) * 2;
     };
@@ -975,7 +379,6 @@ export const Network3DBackground: React.FC = () => {
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseleave', handleMouseLeave);
 
-    // Handle Window Resize
     const handleResize = () => {
       if (!canvas || !canvas.parentElement) return;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -983,7 +386,14 @@ export const Network3DBackground: React.FC = () => {
       height = canvas.parentElement.clientHeight;
       canvas.width = width * dpr;
       canvas.height = height * dpr;
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      ctx.resetTransform?.();
       ctx.scale(dpr, dpr);
+
+      if (ambientNodes.length === 0) {
+        initAmbientNodes(width, height);
+      }
     };
 
     handleResize();
@@ -991,581 +401,674 @@ export const Network3DBackground: React.FC = () => {
 
     let time = 0;
 
+    // ── 7. Render Loop with Bulletproof Safety ──
     const render = () => {
-      time += 0.012;
-      ctx.clearRect(0, 0, width, height);
+      try {
+        time += 0.009; // Calm time step
+        ctx.clearRect(0, 0, width, height);
 
-      // Smooth spring interpolation for responsive mouse parallax
-      mouseX += (targetMouseX - mouseX) * 0.055;
-      mouseY += (targetMouseY - mouseY) * 0.055;
+        // Smooth mouse interpolation for 3D camera gyro tilt
+        mouseX += (targetMouseX - mouseX) * 0.045;
+        mouseY += (targetMouseY - mouseY) * 0.045;
 
-      const isMobile = width < 768;
+        const isMobile = width < 768;
 
-      // ── DESKTOP PAGE ALIGNMENT (CONTAINER & COLUMNS) ──
-      // Aligns with the landing page max-w-7xl layout so stations frame the headline & CTA button without overlapping
-      const containerWidth = Math.min(width - 64, 1280);
-      const containerLeft = (width - containerWidth) / 2;
-      const colWidth = (containerWidth - 48) / 2;
+        // Layout geometry: Keeps constellation anchored in the showcase area
+        const containerWidth = Math.min(width - 64, 1280);
+        const containerLeft = (width - containerWidth) / 2;
+        const colWidth = (containerWidth - 48) / 2;
 
-      // ── LIVE ORGANIC FLOATING CENTRAL HUB WITH MOUSE PARALLAX ──
-      const hubBaseX = isMobile
-        ? width * 0.5
-        : containerLeft + colWidth + colWidth * 0.52;
-      const hubBaseY = isMobile
-        ? Math.max(215, Math.min(height * 0.28, 240))
-        : height * 0.50;
-      const hubRadius = isMobile ? 28 : 38;
+        // Central Hub Screen Position
+        const hubBaseX = isMobile
+          ? width * 0.5
+          : containerLeft + colWidth + colWidth * 0.52;
+        const hubBaseY = isMobile
+          ? Math.max(190, Math.min(height * 0.26, 220))
+          : height * 0.47;
+        const hubRadius = isMobile ? 26 : 45;
+        const safeHubR = Math.max(5, hubRadius);
 
-      // Subtle gentle organic breathing + interactive mouse parallax for central hub
-      const hubParallaxX = mouseX * (isMobile ? 8 : 16);
-      const hubParallaxY = mouseY * (isMobile ? 6 : 14);
-      const hubX = hubBaseX + Math.sin(time * 0.6) * 4 + hubParallaxX;
-      const hubY = hubBaseY + Math.cos(time * 0.5) * 4 + hubParallaxY;
+        // Majestic ocean sway of the central hub
+        const hubFloatX = Math.sin(time * 0.45) * 6;
+        const hubFloatY = Math.cos(time * 0.40) * 5;
+        const hubX = hubBaseX + hubFloatX;
+        const hubY = hubBaseY + hubFloatY;
 
-      // ── LIVE ORGANIC FLOATING STATIONS (7 STATIONS) ──
-      const radiusX = isMobile ? Math.min(width * 0.40, 160) : 215;
-      const radiusY = isMobile ? 118 : 210;
+        // ── 3D CAMERA ORIENTATION & ELEVATED ISOMETRIC PITCH ANGLE ──
+        // Continuous calm 3D revolution around Y-axis (orbital spin)
+        const baseOrbitalRotation = time * 0.24;
+        // Elevated perspective tilt angled gracefully from above (~42 degrees pitch)
+        const baseTiltX = isMobile ? 0.60 : 0.72;
+        // Mouse interaction tilts the entire 3D space with spring-damped parallax
+        const rotX = baseTiltX + mouseY * 0.24;
+        const rotY = baseOrbitalRotation + mouseX * 0.35;
 
-      // 3D Parallax shift for stations layer (creates true depth separation against hub)
-      const stationParallaxX = mouseX * (isMobile ? 18 : 34);
-      const stationParallaxY = mouseY * (isMobile ? 15 : 28);
+        const cosX = Math.cos(rotX);
+        const sinX = Math.sin(rotX);
+        const cosY = Math.cos(rotY);
+        const sinY = Math.sin(rotY);
 
-      // Calculate LIVE coordinates for the 7 Stations
-      // On Desktop: Station 6 frames the "Find Your / Dream Match" headline (upper-left)
-      //             Station 4 frames the "Join Network" CTA button (lower-left)
-      //             Station 5 bridges the column gutter (mid-left)
-      //             Stations 0, 1, 2, 3 frame the right showcase space
-      // On Mobile:  Symmetrical compact heptagon around the upper showcase space
-      const stationCoords = stations.map((st) => {
-        let baseX = 0;
-        let baseY = 0;
+        // Bulletproof 3D Perspective Projection Function (Never produces NaN or negative scales)
+        const fov = 650;
+        const project3D = (px: number, py: number, pz: number) => {
+          const x1 = px * cosY - pz * sinY;
+          const z1 = px * sinY + pz * cosY;
 
-        if (isMobile) {
-          baseX = hubBaseX + radiusX * Math.cos(st.angle);
-          baseY = hubBaseY + radiusY * Math.sin(st.angle);
-        } else {
-          if (st.id === 6) {
-            // Station 6: Shifted higher up above the "Find Your / Dream Match" headline
-            baseX = containerLeft + Math.min(colWidth * 0.88, 510);
-            baseY = Math.max(height * 0.13, Math.min(height * 0.20, 160));
-          } else if (st.id === 4) {
-            // Station 4: Reach extended further down cleanly below CTA button
-            baseX = containerLeft + Math.min(colWidth * 0.90, 520);
-            baseY = Math.max(height * 0.76, Math.min(height * 0.86, hubBaseY + 250));
-          } else if (st.id === 5) {
-            // Station 5: Mid-left column gutter bridging the headline and button
-            baseX = containerLeft + colWidth + 24;
-            baseY = hubBaseY + 20;
-          } else if (st.id === 0) {
-            // Station 0: Top above Hub
-            baseX = hubBaseX + 10;
-            baseY = hubBaseY - 210;
-          } else if (st.id === 1) {
-            // Station 1: Top-Right (increased reach/length)
-            baseX = hubBaseX + 275 * Math.cos(-Math.PI / 4.5);
-            baseY = hubBaseY + 250 * Math.sin(-Math.PI / 4.5);
-          } else if (st.id === 2) {
-            // Station 2: Mid-Right
-            baseX = hubBaseX + 235 * Math.cos(Math.PI / 14);
-            baseY = hubBaseY + 205 * Math.sin(Math.PI / 14);
-          } else {
-            // Station 3: Bottom-Right (increased reach/length)
-            baseX = hubBaseX + 250 * Math.cos(Math.PI / 3.2);
-            baseY = hubBaseY + 265 * Math.sin(Math.PI / 3.2);
-          }
-        }
+          const y2 = py * cosX - z1 * sinX;
+          const z2 = py * sinX + z1 * cosX;
 
-        // Dampen drift amplitude on stations framing text to guarantee zero overlap
-        const driftDamp = (!isMobile && (st.id === 6 || st.id === 4)) ? 0.6 : 1.0;
-        const ampScale = (isMobile ? 0.7 : 1.0) * driftDamp;
+          const denom = Math.max(80, fov + z2);
+          const scale = Math.max(0.35, Math.min(2.2, fov / denom));
+          const screenX = hubX + x1 * scale;
+          const screenY = hubY + y2 * scale;
 
-        const driftX = (Math.sin(time * st.driftSpeed + st.phaseX) * st.ampX
-                     + Math.cos(time * (st.driftSpeed * 0.5) + st.phaseY) * (st.ampX * 0.35)) * ampScale;
-        const driftY = (Math.cos(time * (st.driftSpeed * 0.8) + st.phaseY) * st.ampY
-                     + Math.sin(time * (st.driftSpeed * 0.4) + st.phaseX) * (st.ampY * 0.35)) * ampScale;
-
-        // Base coordinates with drift and parallax
-        let x = baseX + driftX + stationParallaxX;
-        let y = baseY + driftY + stationParallaxY;
-
-        // Interactive Proximity to Mouse Cursor (magnetic attraction & hover expansion)
-        const distToMouse = Math.hypot(rawMouseX - x, rawMouseY - y);
-        let hoverFactor = 0;
-        if (distToMouse < 140) {
-          hoverFactor = 1 - distToMouse / 140;
-          // Magnetic lean towards cursor
-          x += (rawMouseX - x) * hoverFactor * 0.12;
-          y += (rawMouseY - y) * hoverFactor * 0.12;
-        }
-
-        const baseBuildingSize = isMobile ? 40 : 54;
-        const buildingSize = baseBuildingSize * (1 + hoverFactor * 0.14);
-
-        return {
-          ...st,
-          x,
-          y,
-          size: buildingSize,
-          hoverFactor,
+          return {
+            screenX,
+            screenY,
+            scale,
+            depthZ: z2,
+            alpha: Math.min(1.0, Math.max(0.35, (scale - 0.45) * 1.4)),
+          };
         };
-      });
 
-      // Interactive Ambient Pointer Light Glow
-      if (rawMouseX > -100 && rawMouseX < width + 100 && rawMouseY > -100 && rawMouseY < height + 100) {
-        const mouseAura = ctx.createRadialGradient(rawMouseX, rawMouseY, 0, rawMouseX, rawMouseY, 130);
-        mouseAura.addColorStop(0, 'rgba(59, 130, 246, 0.08)');
-        mouseAura.addColorStop(0.5, 'rgba(99, 102, 241, 0.04)');
-        mouseAura.addColorStop(1, 'rgba(255, 255, 255, 0)');
-        ctx.beginPath();
-        ctx.arc(rawMouseX, rawMouseY, 130, 0, Math.PI * 2);
-        ctx.fillStyle = mouseAura;
-        ctx.fill();
-      }
+        // ── Layer A: Ambient 2D Floating Mesh (Background Atmosphere, Zero 3D distortion) ──
+        for (let i = 0; i < ambientNodes.length; i++) {
+          const node = ambientNodes[i];
+          node.x += node.vx;
+          node.y += node.vy;
 
-      // ── 1. RENDER 7 CURVED CONNECTION LINES (HUB <-> 7 STATIONS ONLY) ──
-      for (let i = 0; i < 7; i++) {
-        const st = stationCoords[i];
-        const curv = spokeCurvatures[i] * (isMobile ? 0.6 : 1.0);
+          if (node.x < 0 || node.x > width) node.vx *= -1;
+          if (node.y < 0 || node.y > height) node.vy *= -1;
 
-        const dx = st.x - hubX;
-        const dy = st.y - hubY;
-        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        const nx = -dy / dist;
-        const ny = dx / dist;
+          // Mouse fluid repulsion
+          if (rawMouseX > 0 && rawMouseY > 0) {
+            const mdx = rawMouseX - node.x;
+            const mdy = rawMouseY - node.y;
+            const mDist = Math.hypot(mdx, mdy);
+            if (mDist < 130 && mDist > 0) {
+              node.x -= (mdx / mDist) * 0.4;
+              node.y -= (mdy / mDist) * 0.4;
+            }
+          }
 
-        const ctrlX = (hubX + st.x) / 2 + nx * curv;
-        const ctrlY = (hubY + st.y) / 2 + ny * curv;
+          // Draw connections between close ambient particles
+          for (let j = i + 1; j < ambientNodes.length; j++) {
+            const other = ambientNodes[j];
+            const dx = other.x - node.x;
+            const dy = other.y - node.y;
+            const dist = Math.hypot(dx, dy);
 
-        // Draw curved connection line (Subtle continuous underlay + Soft flowing dashed stream)
-        ctx.save();
-        ctx.beginPath();
-        ctx.moveTo(hubX, hubY);
-        ctx.quadraticCurveTo(ctrlX, ctrlY, st.x, st.y);
-        ctx.strokeStyle = 'rgba(147, 197, 253, 0.12)';
-        ctx.lineWidth = isMobile ? 1.2 : 1.5;
-        ctx.stroke();
+            if (dist < 115) {
+              const lineAlpha = (1 - dist / 115) * 0.12;
+              ctx.beginPath();
+              ctx.moveTo(node.x, node.y);
+              ctx.lineTo(other.x, other.y);
+              ctx.strokeStyle = `rgba(59, 130, 246, ${lineAlpha})`;
+              ctx.lineWidth = 0.8;
+              ctx.stroke();
+            }
+          }
 
-        const lineGrad = ctx.createLinearGradient(hubX, hubY, st.x, st.y);
-        lineGrad.addColorStop(0, 'rgba(59, 130, 246, 0.28)');
-        lineGrad.addColorStop(0.5, 'rgba(139, 92, 246, 0.22)');
-        lineGrad.addColorStop(1, 'rgba(6, 182, 212, 0.25)');
-
-        ctx.beginPath();
-        ctx.moveTo(hubX, hubY);
-        ctx.quadraticCurveTo(ctrlX, ctrlY, st.x, st.y);
-        ctx.setLineDash([7, 6]);
-        ctx.lineDashOffset = -time * 15;
-        ctx.strokeStyle = lineGrad;
-        ctx.lineWidth = isMobile ? 1.6 : 1.9;
-        ctx.shadowColor = 'rgba(99, 102, 241, 0.12)';
-        ctx.shadowBlur = 4;
-        ctx.stroke();
-        ctx.restore();
-
-        // Traveling photon pulses along this spoke
-        const photon = spokePhotons[i];
-        photon.progress += photon.speed;
-        if (photon.progress > 1) photon.progress = 0;
-
-        const pt = photon.progress;
-        const invPt = 1 - pt;
-        const px = invPt * invPt * hubX + 2 * invPt * pt * ctrlX + pt * pt * st.x;
-        const py = invPt * invPt * hubY + 2 * invPt * pt * ctrlY + pt * pt * st.y;
-
-        // Pulse glow
-        ctx.beginPath();
-        ctx.arc(px, py, isMobile ? 4.5 : 5.5, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(99, 102, 241, 0.45)';
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(px, py, isMobile ? 2.2 : 2.8, 0, Math.PI * 2);
-        ctx.fillStyle = '#ffffff';
-        ctx.shadowColor = '#60a5fa';
-        ctx.shadowBlur = 10;
-        ctx.fill();
-
-        ctx.restore();
-      }
-
-      // ── 2. RENDER THE 7 HEPTAGON BUILDING STATIONS (NO TEXT) ──
-      for (let i = 0; i < 7; i++) {
-        const st = stationCoords[i];
-        const bCanvas = buildingCanvases[st.id];
-
-        ctx.save();
-
-        // Realistic soft diffuse ground contact shadow (ambient occlusion matching daylight)
-        const contactShadow = ctx.createRadialGradient(st.x, st.y + st.size * 0.30, 2, st.x, st.y + st.size * 0.30, st.size * 0.44);
-        contactShadow.addColorStop(0, 'rgba(15, 23, 42, 0.18)');
-        contactShadow.addColorStop(0.5, 'rgba(51, 65, 85, 0.05)');
-        contactShadow.addColorStop(1, 'rgba(255, 255, 255, 0)');
-        ctx.beginPath();
-        ctx.ellipse(st.x, st.y + st.size * 0.30, st.size * 0.44, st.size * 0.14, 0, 0, Math.PI * 2);
-        ctx.fillStyle = contactShadow;
-        ctx.fill();
-
-        // Subtle interactive hover highlight (clean ambient lift, no tacky AI neon glow)
-        if (st.hoverFactor && st.hoverFactor > 0.02) {
-          const hoverAura = ctx.createRadialGradient(st.x, st.y, st.size * 0.2, st.x, st.y, st.size * 0.65);
-          hoverAura.addColorStop(0, 'rgba(255, 255, 255, 0.35)');
-          hoverAura.addColorStop(1, 'rgba(255, 255, 255, 0)');
           ctx.beginPath();
-          ctx.arc(st.x, st.y, st.size * 0.65, 0, Math.PI * 2);
-          ctx.fillStyle = hoverAura;
+          ctx.arc(node.x, node.y, Math.max(0.5, node.radius), 0, Math.PI * 2);
+          ctx.fillStyle = `${node.color} ${node.baseAlpha})`;
           ctx.fill();
         }
 
-        // Draw 3D Stylized Workplace Building
-        if (bCanvas) {
-          ctx.drawImage(
-            bCanvas,
-            st.x - st.size / 2,
-            st.y - st.size / 2,
-            st.size,
-            st.size
-          );
-        }
+        // ── Layer B: Calculate 3D Station Coordinates ──
+        const orbitR = isMobile ? 135 : 265;
 
-        ctx.restore();
-      }
+        const station3DCoords = stations.map((st) => {
+          const theta = st.angle;
+          const rawX = Math.cos(theta) * orbitR;
+          const rawZ = Math.sin(theta) * orbitR;
+          // 3D elevation saddle wave: gives realistic celestial curvature
+          const rawY = Math.sin(theta * 2) * (isMobile ? 22 : 44);
 
-      // ── 3. RENDER TRAVELING AVATARS (UNDERNEATH CENTRAL LOGO HUB) ──
-      // Dynamic Spawner: ensures a new transfer spawns from a free origin station
-      spawnTimer++;
-      const maxTransfers = isMobile ? 3 : 5;
+          // Organic 3D harmonic wander
+          const wanderX = Math.sin(time * st.driftSpeed + st.phaseX) * 18;
+          const wanderY = Math.cos(time * 0.45 + st.phaseY) * 14;
+          const wanderZ = Math.sin(time * 0.35 + st.phaseY) * 18;
 
-      if (activeTransfers.length < maxTransfers && spawnTimer > 35) {
-        // Find candidate origin stations that have NO avatar currently INBOUND or SPAWNING
-        const occupiedInbound = new Set<number>();
-        for (const t of activeTransfers) {
-          if (t.phase === 'SPAWN' || t.phase === 'INBOUND') {
-            occupiedInbound.add(t.originStation);
+          const ptX = rawX + wanderX;
+          const ptY = rawY + wanderY;
+          const ptZ = rawZ + wanderZ;
+
+          const proj = project3D(ptX, ptY, ptZ);
+
+          // Mouse proximity interaction on screen
+          const distToMouse = Math.hypot(rawMouseX - proj.screenX, rawMouseY - proj.screenY);
+          let hoverFactor = 0;
+          if (distToMouse < 140) {
+            hoverFactor = 1 - distToMouse / 140;
+          }
+
+          // Smoothly decay click pop bounce
+          if (st.clickPop && st.clickPop > 0.01) {
+            st.clickPop *= 0.86;
+          } else {
+            st.clickPop = 0;
+          }
+
+          const baseRadius = Math.max(3, (isMobile ? 9.5 : 16.5) * proj.scale * (1 + hoverFactor * 0.15 + (st.clickPop || 0)));
+
+          // Quadratic Bezier 3D Midpoint for spokes (Hub <-> Station)
+          const midX = ptX * 0.52 - ptZ * 0.15;
+          const midY = ptY * 0.50 + Math.sin(theta) * 18;
+          const midZ = ptZ * 0.52 + ptX * 0.15;
+          const ctrlProj = project3D(midX, midY, midZ);
+
+          return {
+            ...st,
+            ptX,
+            ptY,
+            ptZ,
+            midX,
+            midY,
+            midZ,
+            screenX: proj.screenX,
+            screenY: proj.screenY,
+            scale: proj.scale,
+            depthZ: proj.depthZ,
+            alpha: proj.alpha,
+            radius: baseRadius,
+            hoverFactor,
+            ctrlProj,
+          };
+        });
+
+        // Update latest screen coordinates for click hit testing
+        latestStationCoords = station3DCoords.map((s) => ({
+          id: s.id,
+          screenX: s.screenX,
+          screenY: s.screenY,
+          radius: s.radius,
+          themeColor: s.themeColor,
+        }));
+        latestHubCoord = {
+          screenX: hubX,
+          screenY: hubY,
+          radius: safeHubR,
+        };
+
+        // Interactive Cursor Affordance: pointer if hovering any station or central hub
+        const isHoverHub = Math.hypot(rawMouseX - hubX, rawMouseY - hubY) <= safeHubR + 10;
+        const isHoverStation = latestStationCoords.some((s) => {
+          return Math.hypot(rawMouseX - s.screenX, rawMouseY - s.screenY) <= Math.max(38, s.radius * 2.0);
+        });
+
+        if (isHoverStation || isHoverHub) {
+          if (canvas.style.cursor !== 'pointer') {
+            canvas.style.cursor = 'pointer';
+            document.body.style.cursor = 'pointer';
+          }
+        } else {
+          if (canvas.style.cursor === 'pointer') {
+            canvas.style.cursor = 'default';
+            document.body.style.cursor = '';
           }
         }
 
-        const freeOrigins: number[] = [];
-        for (let s = 0; s < 7; s++) {
-          if (!occupiedInbound.has(s)) {
-            freeOrigins.push(s);
-          }
-        }
+        // ── Layer C: 3D Inter-Station Constellation Web Lines ──
+        for (let i = 0; i < 7; i++) {
+          for (let j = i + 1; j < 7; j++) {
+            const stA = station3DCoords[i];
+            const stB = station3DCoords[j];
+            const dx = stB.ptX - stA.ptX;
+            const dy = stB.ptY - stA.ptY;
+            const dz = stB.ptZ - stA.ptZ;
+            const dist3D = Math.hypot(dx, dy, dz);
 
-        if (freeOrigins.length > 0) {
-          // Find candidate destination stations that have NO avatar currently OUTBOUND or ARRIVED
-          const occupiedOutbound = new Set<number>();
-          for (const t of activeTransfers) {
-            if (t.phase === 'AT_HUB' || t.phase === 'OUTBOUND' || t.phase === 'ARRIVED') {
-              occupiedOutbound.add(t.destStation);
+            const maxDist = isMobile ? 190 : 350;
+            if (dist3D < maxDist) {
+              const lineAlpha = (1 - dist3D / maxDist) * 0.22 * Math.min(stA.alpha, stB.alpha);
+              ctx.beginPath();
+              ctx.moveTo(stA.screenX, stA.screenY);
+              ctx.lineTo(stB.screenX, stB.screenY);
+              ctx.strokeStyle = `rgba(147, 197, 253, ${lineAlpha})`;
+              ctx.lineWidth = 1.0;
+              ctx.stroke();
             }
           }
-
-          const origin = freeOrigins[Math.floor(Math.random() * freeOrigins.length)];
-          const freeDests: number[] = [];
-          for (let d = 0; d < 7; d++) {
-            if (d !== origin && !occupiedOutbound.has(d)) {
-              freeDests.push(d);
-            }
-          }
-
-          if (freeDests.length > 0) {
-            const dest = freeDests[Math.floor(Math.random() * freeDests.length)];
-            const aIdx = nextAvatarIdx % professions.length;
-            nextAvatarIdx++;
-            const prof = professions[aIdx];
-
-            activeTransfers.push({
-              id: Math.random(),
-              avatarIndex: aIdx,
-              roleType: prof.type,
-              glowColor: prof.glow,
-              originStation: origin,
-              destStation: dest,
-              phase: 'SPAWN',
-              progress: 0.0,
-              speed: 0.0024 + Math.random() * 0.0004,
-              opacity: 0.0,
-              hubWait: 0,
-              arrivalTimer: 0,
-              arrivalPulse: 0,
-            });
-            spawnTimer = 0;
-          }
-        }
-      }
-
-      // Update and Render each active transfer
-      for (let i = activeTransfers.length - 1; i >= 0; i--) {
-        const tr = activeTransfers[i];
-
-        if (tr.phase === 'SPAWN') {
-          tr.opacity += 0.04;
-          if (tr.opacity >= 1.0) {
-            tr.opacity = 1.0;
-            tr.phase = 'INBOUND';
-            tr.progress = 0.0;
-          }
-        } else if (tr.phase === 'INBOUND') {
-          tr.progress += tr.speed;
-          if (tr.progress >= 1.0) {
-            tr.progress = 1.0;
-            tr.phase = 'AT_HUB';
-            tr.hubWait = 22; // Brief pause inside logo hub while matching
-          }
-        } else if (tr.phase === 'AT_HUB') {
-          tr.hubWait--;
-          if (tr.hubWait <= 0) {
-            // Check if designated destStation spoke is free in OUTBOUND
-            const occupiedOutbound = new Set<number>();
-            for (const other of activeTransfers) {
-              if (other !== tr && (other.phase === 'OUTBOUND' || other.phase === 'ARRIVED')) {
-                occupiedOutbound.add(other.destStation);
-              }
-            }
-
-            if (occupiedOutbound.has(tr.destStation)) {
-              // Re-pick any free destination station
-              for (let d = 0; d < 7; d++) {
-                if (d !== tr.originStation && !occupiedOutbound.has(d)) {
-                  tr.destStation = d;
-                  break;
-                }
-              }
-            }
-
-            tr.phase = 'OUTBOUND';
-            tr.progress = 0.0;
-          }
-        } else if (tr.phase === 'OUTBOUND') {
-          tr.progress += tr.speed;
-          if (tr.progress >= 1.0) {
-            tr.progress = 1.0;
-            tr.phase = 'ARRIVED';
-            tr.arrivalTimer = 28;
-            tr.arrivalPulse = 1.0;
-          }
-        } else if (tr.phase === 'ARRIVED') {
-          // Transfer is complete! Fade out into the station building. Do NOT morph!
-          tr.arrivalTimer--;
-          tr.opacity = Math.max(0, tr.arrivalTimer / 28);
-          tr.arrivalPulse = Math.max(0, tr.arrivalPulse - 0.035);
-
-          if (tr.arrivalTimer <= 0) {
-            tr.phase = 'DONE';
-            activeTransfers.splice(i, 1);
-            continue;
-          }
         }
 
-        // Draw Arrival Celebration Ripple at destination station
-        if (tr.phase === 'ARRIVED' && tr.arrivalPulse > 0) {
-          const destSt = stationCoords[tr.destStation];
-          const rippleR = destSt.size * 0.45 + (1.0 - tr.arrivalPulse) * 24;
+        // ── Layer D: 3D Curved Spokes (Hub <-> Stations) ──
+        for (let i = 0; i < 7; i++) {
+          const st = station3DCoords[i];
+          const ctrl = st.ctrlProj;
+
+          ctx.save();
+          // Base curved glow spoke
+          ctx.beginPath();
+          ctx.moveTo(hubX, hubY);
+          ctx.quadraticCurveTo(ctrl.screenX, ctrl.screenY, st.screenX, st.screenY);
+          ctx.strokeStyle = `rgba(147, 197, 253, ${0.18 * st.alpha})`;
+          ctx.lineWidth = isMobile ? 1.2 : 1.8;
+          ctx.stroke();
+
+          // Gradient overlay spoke
+          const spokeGrad = ctx.createLinearGradient(hubX, hubY, st.screenX, st.screenY);
+          spokeGrad.addColorStop(0, `rgba(59, 130, 246, ${0.35 * st.alpha})`);
+          spokeGrad.addColorStop(0.5, `rgba(99, 102, 241, ${0.22 * st.alpha})`);
+          spokeGrad.addColorStop(1, `rgba(14, 165, 233, ${0.30 * st.alpha})`);
+
+          ctx.beginPath();
+          ctx.moveTo(hubX, hubY);
+          ctx.quadraticCurveTo(ctrl.screenX, ctrl.screenY, st.screenX, st.screenY);
+          ctx.strokeStyle = spokeGrad;
+          ctx.lineWidth = Math.max(0.6, (isMobile ? 1.4 : 2.2) * st.scale);
+          ctx.stroke();
+          ctx.restore();
+
+          // 3D Traveling Photon along the curved spoke
+          const photon = spokePhotons[i];
+          photon.progress += photon.speed;
+          if (photon.progress > 1) photon.progress = 0;
+
+          const u = photon.progress;
+          const invU = 1 - u;
+          const phX = invU * invU * 0 + 2 * invU * u * st.midX + u * u * st.ptX;
+          const phY = invU * invU * 0 + 2 * invU * u * st.midY + u * u * st.ptY;
+          const phZ = invU * invU * 0 + 2 * invU * u * st.midZ + u * u * st.ptZ;
+          const phProj = project3D(phX, phY, phZ);
+
           ctx.save();
           ctx.beginPath();
-          ctx.arc(destSt.x, destSt.y, rippleR, 0, Math.PI * 2);
-          ctx.strokeStyle = `rgba(16, 185, 129, ${tr.arrivalPulse * 0.85})`;
-          ctx.lineWidth = 2.4 * tr.arrivalPulse;
-          ctx.shadowColor = '#10b981';
+          ctx.arc(phProj.screenX, phProj.screenY, Math.max(0.5, (isMobile ? 4.5 : 6.0) * phProj.scale), 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(99, 102, 241, ${0.35 * phProj.alpha})`;
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.arc(phProj.screenX, phProj.screenY, Math.max(0.5, (isMobile ? 2.2 : 3.0) * phProj.scale), 0, Math.PI * 2);
+          ctx.fillStyle = '#ffffff';
+          ctx.shadowColor = '#60a5fa';
           ctx.shadowBlur = 8;
-          ctx.stroke();
+          ctx.fill();
           ctx.restore();
         }
 
-        // Compute (curX, curY)
-        let curX = hubX;
-        let curY = hubY;
+        // ── Layer E: Render 3D Station Nodes with Depth-Sorting ──
+        const renderStationNode = (st: typeof station3DCoords[0]) => {
+          const sr = Math.max(3, st.radius);
+          ctx.save();
+          ctx.globalAlpha = Math.min(1.0, Math.max(0.1, st.alpha));
 
-        if (tr.phase === 'SPAWN') {
-          const st = stationCoords[tr.originStation];
-          curX = st.x;
-          curY = st.y - st.size * 0.28;
-        } else if (tr.phase === 'ARRIVED') {
-          const st = stationCoords[tr.destStation];
-          curX = st.x;
-          curY = st.y - st.size * 0.28;
-        } else if (tr.phase === 'AT_HUB') {
-          curX = hubX;
-          curY = hubY;
-        } else {
-          const spokeIdx = tr.phase === 'INBOUND' ? tr.originStation : tr.destStation;
-          const st = stationCoords[spokeIdx];
-          const curv = spokeCurvatures[spokeIdx] * (isMobile ? 0.6 : 1.0);
-
-          const dx = st.x - hubX;
-          const dy = st.y - hubY;
-          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-          const nx = -dy / dist;
-          const ny = dx / dist;
-
-          const ctrlX = (hubX + st.x) / 2 + nx * curv;
-          const ctrlY = (hubY + st.y) / 2 + ny * curv;
-
-          // u parameter along spoke:
-          // INBOUND: from Station (u=1) to Hub (u=0)
-          // OUTBOUND: from Hub (u=0) to Station (u=1)
-          const u = tr.phase === 'INBOUND'
-            ? Math.max(0, Math.min(1, 1 - tr.progress))
-            : Math.max(0, Math.min(1, tr.progress));
-
-          const invU = 1 - u;
-          curX = invU * invU * hubX + 2 * invU * u * ctrlX + u * u * st.x;
-          curY = invU * invU * hubY + 2 * invU * u * ctrlY + u * u * st.y;
-        }
-
-        // Draw Avatar Pod
-        const avatarRadius = isMobile ? 13 : 17;
-        const avatarImg = avatarCanvases[tr.avatarIndex];
-        if (!avatarImg) continue;
-
-        ctx.save();
-        ctx.globalAlpha = tr.opacity;
-
-        // Ambient Outer Glow Aura
-        const auraGrad = ctx.createRadialGradient(curX, curY, avatarRadius * 0.7, curX, curY, avatarRadius * 1.8);
-        auraGrad.addColorStop(0, tr.glowColor);
-        auraGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-        ctx.beginPath();
-        ctx.arc(curX, curY, avatarRadius * 1.8, 0, Math.PI * 2);
-        ctx.fillStyle = auraGrad;
-        ctx.fill();
-
-        // 3D Portrait with soft slate/blue shadow matching page typography
-        ctx.shadowColor = 'rgba(30, 41, 59, 0.16)';
-        ctx.shadowBlur = 10;
-        ctx.shadowOffsetY = 3;
-        ctx.drawImage(
-          avatarImg,
-          curX - avatarRadius,
-          curY - avatarRadius,
-          avatarRadius * 2,
-          avatarRadius * 2
-        );
-
-        // Crisp White Glass Pod Rim
-        ctx.beginPath();
-        ctx.arc(curX, curY, avatarRadius, 0, Math.PI * 2);
-        ctx.lineWidth = isMobile ? 2.2 : 2.8;
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.98)';
-        ctx.stroke();
-
-        // Profession Emblem Badge at Bottom-Right (🩺, ✚, 🎓)
-        const iconScale = isMobile ? 0.55 : 0.72;
-        const badgeX = curX + avatarRadius * 0.65;
-        const badgeY = curY + avatarRadius * 0.65;
-        const badgeR = isMobile ? 5.2 : 6.8;
-
-        ctx.beginPath();
-        ctx.arc(badgeX, badgeY, badgeR, 0, Math.PI * 2);
-        ctx.fillStyle = '#ffffff';
-        ctx.shadowColor = 'rgba(30, 41, 59, 0.12)';
-        ctx.shadowBlur = 4;
-        ctx.fill();
-        ctx.lineWidth = 1.0;
-        ctx.strokeStyle = '#e2e8f0';
-        ctx.stroke();
-
-        if (tr.roleType === 'doctor') {
-          ctx.strokeStyle = '#059669';
-          ctx.lineWidth = 1.8 * iconScale;
+          // 1. Soft 3D Ground/Atmosphere Shadow
+          const shadowGrad = ctx.createRadialGradient(st.screenX, st.screenY + sr * 0.4, 1, st.screenX, st.screenY + sr * 0.4, Math.max(2, sr * 1.8));
+          shadowGrad.addColorStop(0, 'rgba(15, 23, 42, 0.14)');
+          shadowGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
           ctx.beginPath();
-          ctx.arc(badgeX, badgeY - 1 * iconScale, 4.4 * iconScale, 0.2 * Math.PI, 0.8 * Math.PI);
+          ctx.ellipse(st.screenX, st.screenY + sr * 0.4, Math.max(1, sr * 1.8), Math.max(1, sr * 0.65), 0, 0, Math.PI * 2);
+          ctx.fillStyle = shadowGrad;
+          ctx.fill();
+
+          // 2. Ambient Theme Aura (Breathing)
+          const auraBreath = 1 + 0.14 * Math.sin(time * 2.2 + st.phaseX);
+          const auraRadius = Math.max(3, sr * 3.2 * auraBreath);
+          const auraGrad = ctx.createRadialGradient(st.screenX, st.screenY, Math.max(1, sr * 0.3), st.screenX, st.screenY, auraRadius);
+          auraGrad.addColorStop(0, st.glowColor);
+          auraGrad.addColorStop(0.5, 'rgba(59, 130, 246, 0.08)');
+          auraGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+          ctx.beginPath();
+          ctx.arc(st.screenX, st.screenY, auraRadius, 0, Math.PI * 2);
+          ctx.fillStyle = auraGrad;
+          ctx.fill();
+
+          // 3. Dual Concentric Sonar Waves (Signal Broadcasting)
+          for (let w = 0; w < 2; w++) {
+            const waveProg = ((time * 0.32 + (st.id * 0.14) + w * 0.5) % 1);
+            const waveRadius = Math.max(2, sr + waveProg * (sr * 2.8));
+            const waveAlpha = Math.max(0, (1 - waveProg) * 0.36 * st.alpha);
+            ctx.beginPath();
+            ctx.arc(st.screenX, st.screenY, waveRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(59, 130, 246, ${waveAlpha})`;
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+          }
+
+          // 4. 3D Tilted Orbital Gyro Ring & Micro-Satellite
+          const orbitRx = Math.max(2, sr * 2.1);
+          const orbitRy = Math.max(1, sr * 1.05);
+          const tiltAngle = (st.id * Math.PI) / 3.5;
+
+          ctx.save();
+          ctx.translate(st.screenX, st.screenY);
+          ctx.rotate(tiltAngle);
+
+          ctx.beginPath();
+          ctx.ellipse(0, 0, orbitRx, orbitRy, 0, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(147, 197, 253, ${0.28 * st.alpha})`;
+          ctx.lineWidth = 1.0;
+          ctx.setLineDash([2, 4]);
           ctx.stroke();
-          ctx.fillStyle = '#059669';
+
+          // Orbiting Micro-Satellite Photon
+          const orbitSpeed = 1.6 + st.driftSpeed * 0.5;
+          const orbitT = time * orbitSpeed + st.phaseY;
+          const satX = Math.cos(orbitT) * orbitRx;
+          const satY = Math.sin(orbitT) * orbitRy;
+
           ctx.beginPath();
-          ctx.arc(badgeX, badgeY + 3.4 * iconScale, 1.8 * iconScale, 0, Math.PI * 2);
+          ctx.arc(satX, satY, Math.max(0.5, 2.8 * st.scale), 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(59, 130, 246, ${0.40 * st.alpha})`;
           ctx.fill();
-        } else if (tr.roleType === 'nurse') {
-          ctx.fillStyle = '#ef4444';
-          const crossW = 2.4 * iconScale;
-          const crossL = 7.0 * iconScale;
-          ctx.fillRect(badgeX - crossW / 2, badgeY - crossL / 2, crossW, crossL);
-          ctx.fillRect(badgeX - crossL / 2, badgeY - crossW / 2, crossL, crossW);
-        } else {
-          ctx.fillStyle = '#2563eb';
+
           ctx.beginPath();
-          ctx.moveTo(badgeX, badgeY - 3.4 * iconScale);
-          ctx.lineTo(badgeX + 5.0 * iconScale, badgeY - 0.5 * iconScale);
-          ctx.lineTo(badgeX, badgeY + 2.4 * iconScale);
-          ctx.lineTo(badgeX - 5.0 * iconScale, badgeY - 0.5 * iconScale);
-          ctx.closePath();
+          ctx.arc(satX, satY, Math.max(0.5, 1.5 * st.scale), 0, Math.PI * 2);
+          ctx.fillStyle = '#ffffff';
+          ctx.shadowColor = '#60a5fa';
+          ctx.shadowBlur = 6;
           ctx.fill();
+          ctx.restore();
+
+          // 5. Solid Elevated Base Node Disc
+          ctx.beginPath();
+          ctx.arc(st.screenX, st.screenY, sr, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffffff';
+          ctx.shadowColor = 'rgba(37, 99, 235, 0.20)';
+          ctx.shadowBlur = Math.max(1, 10 * st.scale);
+          ctx.shadowOffsetY = Math.max(0.5, 2 * st.scale);
+          ctx.fill();
+
+          // Outer Glass Border in Theme Color
+          ctx.beginPath();
+          ctx.arc(st.screenX, st.screenY, sr, 0, Math.PI * 2);
+          ctx.strokeStyle = st.themeColor;
+          ctx.lineWidth = Math.max(0.5, 1.8 * st.scale);
+          ctx.stroke();
+
+          // 6. Radiant Inner Pulsing Core Bead
+          const corePulse = 0.48 + 0.10 * Math.sin(time * 2.5 + st.phaseX);
+          const coreRadius = Math.max(1, sr * corePulse);
+          const coreGrad = ctx.createRadialGradient(st.screenX, st.screenY, 0, st.screenX, st.screenY, coreRadius);
+          coreGrad.addColorStop(0, '#ffffff');
+          coreGrad.addColorStop(0.5, st.themeColor);
+          coreGrad.addColorStop(1, st.themeColor);
+
+          ctx.beginPath();
+          ctx.arc(st.screenX, st.screenY, coreRadius, 0, Math.PI * 2);
+          ctx.fillStyle = coreGrad;
+          ctx.shadowColor = st.themeColor;
+          ctx.shadowBlur = Math.max(1, 8 * st.scale);
+          ctx.fill();
+
+          // 7. Top Specular Glint Highlight
+          const glint = ctx.createLinearGradient(st.screenX, st.screenY - sr, st.screenX, st.screenY);
+          glint.addColorStop(0, 'rgba(255, 255, 255, 0.90)');
+          glint.addColorStop(1, 'rgba(255, 255, 255, 0)');
+          ctx.fillStyle = glint;
+          ctx.beginPath();
+          ctx.ellipse(st.screenX, st.screenY - sr * 0.35, Math.max(1, sr * 0.70), Math.max(0.5, sr * 0.35), 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.restore();
+        };
+
+        // Separate stations into Back (depthZ > 0) and Front (depthZ <= 0)
+        const backStations = station3DCoords.filter((s) => s.depthZ > 0).sort((a, b) => b.depthZ - a.depthZ);
+        const frontStations = station3DCoords.filter((s) => s.depthZ <= 0).sort((a, b) => a.depthZ - b.depthZ);
+
+        // Render Stations in the Back (behind the central hub)
+        backStations.forEach(renderStationNode);
+
+        // ── Layer F: Traveling Public Servants (Doctor, Nurse, Teacher) in 3D ──
+        // Rendered BEFORE the Central Hub so avatars glide cleanly UNDERNEATH the Mutual logo!
+        spawnTimer++;
+        const maxTransfers = isMobile ? 1 : 2;
+
+        if (activeTransfers.length < maxTransfers && spawnTimer > 180) {
+          const occupiedInbound = new Set(activeTransfers.map((t) => t.originStation));
+          const freeOrigins: number[] = [];
+          for (let s = 0; s < 7; s++) {
+            if (!occupiedInbound.has(s)) freeOrigins.push(s);
+          }
+
+          if (freeOrigins.length > 0) {
+            const origin = freeOrigins[Math.floor(Math.random() * freeOrigins.length)];
+            const freeDests: number[] = [];
+            for (let d = 0; d < 7; d++) {
+              if (d !== origin) freeDests.push(d);
+            }
+
+            if (freeDests.length > 0) {
+              const dest = freeDests[Math.floor(Math.random() * freeDests.length)];
+              const aIdx = nextAvatarIdx % professions.length;
+              nextAvatarIdx++;
+              const prof = professions[aIdx];
+
+              activeTransfers.push({
+                id: Math.random(),
+                avatarIndex: aIdx,
+                roleType: prof.type,
+                glowColor: prof.glow,
+                originStation: origin,
+                destStation: dest,
+                phase: 'SPAWN',
+                progress: 0.0,
+                speed: 0.0012 + Math.random() * 0.0003,
+                opacity: 0.0,
+                hubWait: 0,
+                arrivalTimer: 0,
+                arrivalPulse: 0,
+              });
+              spawnTimer = 0;
+            }
+          }
         }
 
+        for (let i = activeTransfers.length - 1; i >= 0; i--) {
+          const tr = activeTransfers[i];
+
+          if (tr.phase === 'SPAWN') {
+            tr.opacity += 0.025;
+            if (tr.opacity >= 1.0) {
+              tr.opacity = 1.0;
+              tr.phase = 'INBOUND';
+              tr.progress = 0.0;
+            }
+          } else if (tr.phase === 'INBOUND') {
+            tr.progress += tr.speed;
+            if (tr.progress >= 1.0) {
+              tr.progress = 1.0;
+              tr.phase = 'AT_HUB';
+              tr.hubWait = 45; // Peaceful pause at central hub
+            }
+          } else if (tr.phase === 'AT_HUB') {
+            tr.hubWait--;
+            if (tr.hubWait <= 0) {
+              tr.phase = 'OUTBOUND';
+              tr.progress = 0.0;
+            }
+          } else if (tr.phase === 'OUTBOUND') {
+            tr.progress += tr.speed;
+            if (tr.progress >= 1.0) {
+              tr.progress = 1.0;
+              tr.phase = 'ARRIVED';
+              tr.arrivalTimer = 35;
+              tr.arrivalPulse = 1.0;
+            }
+          } else if (tr.phase === 'ARRIVED') {
+            tr.arrivalTimer--;
+            tr.opacity = Math.max(0, tr.arrivalTimer / 35);
+            tr.arrivalPulse = Math.max(0, tr.arrivalPulse - 0.03);
+
+            if (tr.arrivalTimer <= 0) {
+              activeTransfers.splice(i, 1);
+              continue;
+            }
+          }
+
+          // Arrival celebration ripple at destination
+          if (tr.phase === 'ARRIVED' && tr.arrivalPulse > 0) {
+            const destSt = station3DCoords[tr.destStation];
+            if (destSt) {
+              const rippleR = Math.max(3, destSt.radius + (1.0 - tr.arrivalPulse) * 22);
+              ctx.save();
+              ctx.beginPath();
+              ctx.arc(destSt.screenX, destSt.screenY, rippleR, 0, Math.PI * 2);
+              ctx.strokeStyle = `rgba(16, 185, 129, ${tr.arrivalPulse * 0.75})`;
+              ctx.lineWidth = 2.0 * tr.arrivalPulse;
+              ctx.stroke();
+              ctx.restore();
+            }
+          }
+
+          // 3D Avatar Coordinates along the curved spoke
+          let curX = hubX;
+          let curY = hubY;
+          let curScale = 1.0;
+
+          if (tr.phase === 'SPAWN') {
+            const st = station3DCoords[tr.originStation];
+            if (st) {
+              curX = st.screenX;
+              curY = st.screenY;
+              curScale = st.scale;
+            }
+          } else if (tr.phase === 'ARRIVED') {
+            const st = station3DCoords[tr.destStation];
+            if (st) {
+              curX = st.screenX;
+              curY = st.screenY;
+              curScale = st.scale;
+            }
+          } else if (tr.phase === 'AT_HUB') {
+            curX = hubX;
+            curY = hubY;
+            curScale = 1.0;
+          } else {
+            const spokeIdx = tr.phase === 'INBOUND' ? tr.originStation : tr.destStation;
+            const st = station3DCoords[spokeIdx];
+
+            if (st) {
+              // Smooth sinusoidal ease in/out
+              const easedProgress = 0.5 - 0.5 * Math.cos(tr.progress * Math.PI);
+              const u = tr.phase === 'INBOUND' ? 1 - easedProgress : easedProgress;
+              const invU = 1 - u;
+
+              // 3D point along quadratic bezier
+              const avPtX = invU * invU * 0 + 2 * invU * u * st.midX + u * u * st.ptX;
+              const avPtY = invU * invU * 0 + 2 * invU * u * st.midY + u * u * st.ptY;
+              const avPtZ = invU * invU * 0 + 2 * invU * u * st.midZ + u * u * st.ptZ;
+
+              const avProj = project3D(avPtX, avPtY, avPtZ);
+              curX = avProj.screenX;
+              curY = avProj.screenY;
+              curScale = avProj.scale;
+            }
+          }
+
+          // Render Avatar Pod (Compact & Sleek Size: diameter ~25px desktop, ~18px mobile)
+          const avatarRadius = Math.max(3, (isMobile ? 9 : 12.5) * curScale);
+          const avatarImg = avatarCanvases[tr.avatarIndex];
+          if (!avatarImg) continue;
+
+          ctx.save();
+          ctx.globalAlpha = Math.min(1.0, Math.max(0, tr.opacity));
+
+          // Outer glow
+          const auraGrad = ctx.createRadialGradient(curX, curY, avatarRadius * 0.6, curX, curY, avatarRadius * 1.6);
+          auraGrad.addColorStop(0, tr.glowColor);
+          auraGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+          ctx.beginPath();
+          ctx.arc(curX, curY, avatarRadius * 1.6, 0, Math.PI * 2);
+          ctx.fillStyle = auraGrad;
+          ctx.fill();
+
+          // 3D Avatar Image
+          ctx.shadowColor = 'rgba(30, 41, 59, 0.16)';
+          ctx.shadowBlur = Math.max(1, 6 * curScale);
+          ctx.shadowOffsetY = Math.max(0.5, 1.5 * curScale);
+          ctx.drawImage(
+            avatarImg,
+            curX - avatarRadius,
+            curY - avatarRadius,
+            avatarRadius * 2,
+            avatarRadius * 2
+          );
+
+          // White Rim
+          ctx.beginPath();
+          ctx.arc(curX, curY, avatarRadius, 0, Math.PI * 2);
+          ctx.lineWidth = Math.max(1, 1.8 * curScale);
+          ctx.strokeStyle = '#ffffff';
+          ctx.stroke();
+
+          ctx.restore();
+        }
+
+        // ── Layer G: Central Hub (Official MutualTransfer.lk Logo at 3D Origin - Rendered OVER Avatars!) ──
+        ctx.save();
+        // Ambient outer brand halo
+        const hubHalo = ctx.createRadialGradient(hubX, hubY, safeHubR * 0.6, hubX, hubY, safeHubR * 2.2);
+        hubHalo.addColorStop(0, 'rgba(59, 130, 246, 0.35)');
+        hubHalo.addColorStop(0.6, 'rgba(99, 102, 241, 0.14)');
+        hubHalo.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.beginPath();
+        ctx.arc(hubX, hubY, safeHubR * 2.2, 0, Math.PI * 2);
+        ctx.fillStyle = hubHalo;
+        ctx.fill();
+
+        // Rotating dashed energy ring
+        ctx.save();
+        ctx.translate(hubX, hubY);
+        ctx.rotate(time * 0.15);
+        ctx.setLineDash([5, 7]);
+        ctx.beginPath();
+        ctx.arc(0, 0, safeHubR + 5, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(59, 130, 246, 0.65)';
+        ctx.lineWidth = 1.6;
+        ctx.stroke();
         ctx.restore();
+
+        // Elevated Disc Base (Solid Opaque White Disc)
+        ctx.beginPath();
+        ctx.arc(hubX, hubY, safeHubR, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = 'rgba(37, 99, 235, 0.20)';
+        ctx.shadowBlur = 18;
+        ctx.shadowOffsetY = 5;
+        ctx.fill();
+
+        // Logo Image
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(hubX, hubY, safeHubR, 0, Math.PI * 2);
+        ctx.clip();
+
+        if (logoLoaded && logoImage.complete && logoImage.naturalWidth > 0) {
+          ctx.drawImage(logoImage, hubX - safeHubR, hubY - safeHubR, safeHubR * 2, safeHubR * 2);
+        } else {
+          const fallbackGrad = ctx.createLinearGradient(hubX - safeHubR, hubY - safeHubR, hubX + safeHubR, hubY + safeHubR);
+          fallbackGrad.addColorStop(0, '#2563eb');
+          fallbackGrad.addColorStop(1, '#6366f1');
+          ctx.fillStyle = fallbackGrad;
+          ctx.fillRect(hubX - safeHubR, hubY - safeHubR, safeHubR * 2, safeHubR * 2);
+        }
+
+        // Specular Glint
+        const hubGlint = ctx.createLinearGradient(hubX, hubY - safeHubR, hubX, hubY + safeHubR * 0.2);
+        hubGlint.addColorStop(0, 'rgba(255, 255, 255, 0.65)');
+        hubGlint.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = hubGlint;
+        ctx.beginPath();
+        ctx.ellipse(hubX, hubY - safeHubR * 0.35, safeHubR * 0.75, safeHubR * 0.35, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // White Elevated Rim
+        ctx.beginPath();
+        ctx.arc(hubX, hubY, safeHubR, 0, Math.PI * 2);
+        ctx.lineWidth = 3.2;
+        ctx.strokeStyle = '#ffffff';
+        ctx.stroke();
+        ctx.restore();
+
+        // Render Stations in the Front (passing gracefully in front of the central hub)
+        frontStations.forEach(renderStationNode);
+      } catch (err) {
+        console.error('Animation frame render error:', err);
       }
-
-      // ── 4. RENDER CENTRAL MUTUALTRANSFER.LK LOGO HUB (HIGHEST Z-INDEX - AVATARS GLIDE UNDERNEATH) ──
-      ctx.save();
-
-      // A. Ambient outer brand halo
-      const hubHalo = ctx.createRadialGradient(hubX, hubY, hubRadius * 0.7, hubX, hubY, hubRadius * 2.3);
-      hubHalo.addColorStop(0, 'rgba(59, 130, 246, 0.45)');
-      hubHalo.addColorStop(0.6, 'rgba(139, 92, 246, 0.20)');
-      hubHalo.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      ctx.beginPath();
-      ctx.arc(hubX, hubY, hubRadius * 2.3, 0, Math.PI * 2);
-      ctx.fillStyle = hubHalo;
-      ctx.fill();
-
-      // B. Rotating dashed energy ring
-      ctx.save();
-      ctx.translate(hubX, hubY);
-      ctx.rotate(time * 0.35);
-      ctx.setLineDash([6, 6]);
-      ctx.beginPath();
-      ctx.arc(0, 0, hubRadius + 6, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(59, 130, 246, 0.75)';
-      ctx.lineWidth = 1.8;
-      ctx.stroke();
-      ctx.restore();
-
-      // C. Solid Opaque White Base Disc with Elevated Drop Shadow (matching page's signature blue-violet elevated glow)
-      ctx.beginPath();
-      ctx.arc(hubX, hubY, hubRadius, 0, Math.PI * 2);
-      ctx.fillStyle = '#ffffff';
-      ctx.shadowColor = 'rgba(37, 99, 235, 0.22)';
-      ctx.shadowBlur = 20;
-      ctx.shadowOffsetY = 6;
-      ctx.fill();
-
-      // D. Official Logo Circle
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(hubX, hubY, hubRadius, 0, Math.PI * 2);
-      ctx.clip();
-
-      if (logoLoaded && logoImage.complete && logoImage.naturalWidth > 0) {
-        ctx.drawImage(logoImage, hubX - hubRadius, hubY - hubRadius, hubRadius * 2, hubRadius * 2);
-      } else {
-        const fallbackGrad = ctx.createLinearGradient(hubX - hubRadius, hubY - hubRadius, hubX + hubRadius, hubY + hubRadius);
-        fallbackGrad.addColorStop(0, '#2563eb');
-        fallbackGrad.addColorStop(1, '#7c3aed');
-        ctx.fillStyle = fallbackGrad;
-        ctx.fillRect(hubX - hubRadius, hubY - hubRadius, hubRadius * 2, hubRadius * 2);
-      }
-
-      // E. 3D Glass Specular Curved Glint
-      const hubGlint = ctx.createLinearGradient(hubX, hubY - hubRadius, hubX, hubY + hubRadius * 0.2);
-      hubGlint.addColorStop(0, 'rgba(255, 255, 255, 0.70)');
-      hubGlint.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      ctx.fillStyle = hubGlint;
-      ctx.beginPath();
-      ctx.ellipse(hubX, hubY - hubRadius * 0.35, hubRadius * 0.75, hubRadius * 0.35, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-
-      // F. Crisp White 3D Elevated Outer Rim
-      ctx.beginPath();
-      ctx.arc(hubX, hubY, hubRadius, 0, Math.PI * 2);
-      ctx.lineWidth = 3.8;
-      ctx.strokeStyle = '#ffffff';
-      ctx.shadowColor = 'rgba(30, 41, 59, 0.15)';
-      ctx.shadowBlur = 10;
-      ctx.shadowOffsetY = 3;
-      ctx.stroke();
-
-      ctx.restore();
 
       animationFrameId = requestAnimationFrame(render);
     };
@@ -1577,13 +1080,17 @@ export const Network3DBackground: React.FC = () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseleave', handleMouseLeave);
+      window.removeEventListener('pointerdown', handlePointerDown);
+      if (document.body.style.cursor === 'pointer') {
+        document.body.style.cursor = '';
+      }
     };
   }, []);
 
   return (
     <canvas
       ref={canvasRef}
-      className="absolute inset-0 w-full h-full pointer-events-none"
+      className="absolute inset-0 w-full h-full pointer-events-auto"
       style={{ zIndex: 0 }}
     />
   );

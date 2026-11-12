@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import {
     ArrowRight,
     Lock,
@@ -26,6 +26,48 @@ import { useTranslation } from 'react-i18next';
 import loginBg from '../../assets/auth/login-bg.webp';
 import registerBg from '../../assets/auth/register-bg.webp';
 import logoImg from '../../assets/logos/logo.jpg';
+import NetworkMeshBackground from '../../components/hero/NetworkMeshBackground';
+
+/* ─── Floating Shapes Component (for parallax & ambient motion) ─── */
+const FloatingShapes = () => {
+    const { scrollYProgress } = useScroll();
+    const y1 = useTransform(scrollYProgress, [0, 1], [0, -150]);
+    const y2 = useTransform(scrollYProgress, [0, 1], [0, 100]);
+  
+    return (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
+            <motion.div 
+                style={{ y: y1 }}
+                animate={{
+                    scale: [1, 1.08, 1],
+                    x: [0, 15, 0],
+                    opacity: [0.35, 0.55, 0.35]
+                }}
+                transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute -top-20 -left-20 w-80 h-80 rounded-full bg-blue-100/50 blur-3xl" 
+            />
+            <motion.div 
+                style={{ y: y2 }}
+                animate={{
+                    scale: [1, 1.12, 1],
+                    x: [0, -20, 0],
+                    opacity: [0.3, 0.5, 0.3]
+                }}
+                transition={{ duration: 11, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                className="absolute top-1/2 -right-20 w-96 h-96 rounded-full bg-violet-100/40 blur-3xl" 
+            />
+            <motion.div 
+                animate={{
+                    scale: [1, 1.06, 1],
+                    y: [0, -15, 0],
+                    opacity: [0.25, 0.45, 0.25]
+                }}
+                transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+                className="absolute -bottom-20 left-1/4 w-80 h-80 rounded-full bg-sky-100/40 blur-3xl" 
+            />
+        </div>
+    );
+};
 
 const AuthPage = () => {
     const { t } = useTranslation();
@@ -277,12 +319,9 @@ const AuthPage = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 bg-slate-50 relative overflow-hidden pt-20">
-            {/* Ambient background glows */}
-            <div className="absolute top-0 right-0 w-full h-full pointer-events-none opacity-20">
-                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-400 blur-[120px] rounded-full" />
-                <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-400 blur-[120px] rounded-full" />
-            </div>
+        <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 mesh-gradient-bg relative overflow-hidden pt-24 pb-12">
+            <NetworkMeshBackground />
+            <FloatingShapes />
 
             <motion.div 
                 layout
