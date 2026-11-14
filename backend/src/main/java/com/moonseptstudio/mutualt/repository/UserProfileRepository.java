@@ -18,5 +18,7 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, Long> 
     
     Optional<UserProfile> findByEmail(String email);
 
+    List<UserProfile> findByCurrentStation_Id(Long stationId);
+
     boolean existsByNic(String nic);
 }

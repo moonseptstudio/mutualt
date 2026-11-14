@@ -52,7 +52,7 @@ const DEFAULT_AVATARS = [
 
 const Profile = () => {
     const { t } = useTranslation();
-    const { logout } = useAuth();
+    const { user, logout, updateUser } = useAuth();
     const navigate = useNavigate();
     const [profile, setProfile] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -68,6 +68,9 @@ const Profile = () => {
             try {
                 const response = await apiClient.get('/profile/me');
                 setProfile(response.data);
+                if (response.data?.fullName && (!user?.fullName || user.fullName !== response.data.fullName)) {
+                    updateUser({ fullName: response.data.fullName, profileImageUrl: response.data.profileImageUrl });
+                }
                 setEditForm({
                     email: response.data.email,
                     phoneNumber: response.data.phoneNumber || '',
@@ -86,6 +89,9 @@ const Profile = () => {
         try {
             const response = await apiClient.put('/profile/me', editForm);
             setProfile(response.data);
+            if (response.data?.fullName) {
+                updateUser({ fullName: response.data.fullName, profileImageUrl: response.data.profileImageUrl });
+            }
             setIsEditing(false);
             toast.success(t('profile.toast_updated'));
         } catch (err) {
@@ -117,6 +123,7 @@ const Profile = () => {
             });
             setProfile({ ...profile, profileImageUrl: res.data });
             setEditForm({ ...editForm, profileImageUrl: res.data });
+            updateUser({ profileImageUrl: res.data });
             toast.success(t('profile.toast_photo_updated'));
         } catch (err) {
             toast.error(t('profile.toast_photo_failed'));
@@ -132,6 +139,7 @@ const Profile = () => {
             setEditForm({ ...editForm, profileImageUrl: avatarUrl });
             const response = await apiClient.put('/profile/me', { ...editForm, profileImageUrl: avatarUrl });
             setProfile(response.data);
+            updateUser({ profileImageUrl: avatarUrl });
             toast.success(t('profile.toast_avatar_updated'));
         } catch (err) {
             toast.error(t('profile.toast_avatar_failed'));
@@ -140,7 +148,7 @@ const Profile = () => {
 
 
 
-    if (loading) return <ProfileSkeleton />;
+    if (loading) return <ProfileSkeleton userName={user?.fullName} />;
 
     if (!profile) return (
         <div className="p-10 text-center glass-card rounded-[32px] bg-(--bg-card) border-(--border-main)">

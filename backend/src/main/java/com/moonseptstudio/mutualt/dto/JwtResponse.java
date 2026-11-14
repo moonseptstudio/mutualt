@@ -8,6 +8,8 @@ public class JwtResponse {
     private String role;
 
     private String packageName;
+    private String fullName;
+    private String profileImageUrl;
 
     public JwtResponse(String token, Long id, String username, String role, String packageName) {
         this.token = token;
@@ -15,6 +17,32 @@ public class JwtResponse {
         this.username = username;
         this.role = role;
         this.packageName = packageName;
+    }
+
+    public JwtResponse(String token, Long id, String username, String role, String packageName, String fullName, String profileImageUrl) {
+        this.token = token;
+        this.id = id;
+        this.username = username;
+        this.role = role;
+        this.packageName = packageName;
+        this.fullName = fullName;
+        this.profileImageUrl = profileImageUrl;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
+    public String getProfileImageUrl() {
+        return profileImageUrl;
+    }
+
+    public void setProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
     }
 
     public String getPackageName() {

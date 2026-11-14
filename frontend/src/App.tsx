@@ -64,6 +64,7 @@ function App() {
       <Routes>
         {/* Truly Public Routes (Accessible to everyone) */}
         <Route element={<WebLayout />}>
+          <Route path="/" element={<HomePage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/contact" element={<ContactPage />} />
@@ -72,7 +73,6 @@ function App() {
         {/* Guest-Only Routes (Redirect to dashboard if logged in) */}
         <Route element={<PublicRoute />}>
           <Route element={<WebLayout />}>
-            <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />

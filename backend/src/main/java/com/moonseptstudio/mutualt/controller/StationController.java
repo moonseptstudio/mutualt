@@ -16,16 +16,16 @@ public class StationController {
 
     @GetMapping
     public List<Station> getAllStations() {
-        return stationRepository.findAll();
+        return stationRepository.findByStatus("APPROVED");
     }
 
     @GetMapping("/search")
     public List<Station> searchStations(@RequestParam String query) {
-        return stationRepository.findByNameContainingIgnoreCase(query);
+        return stationRepository.findByNameContainingIgnoreCaseAndStatus(query, "APPROVED");
     }
 
     @GetMapping("/district/{district}")
     public List<Station> getStationsByDistrict(@PathVariable("district") String district) {
-        return stationRepository.findByDistrict(district);
+        return stationRepository.findByDistrictAndStatus(district, "APPROVED");
     }
 }

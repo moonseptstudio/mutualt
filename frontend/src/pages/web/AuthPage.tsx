@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
+import SearchableSelect, { type SearchableOption } from '../../components/common/SearchableSelect';
+import StationRequestModal from '../../components/StationRequestModal';
 import {
     ArrowRight,
     Lock,
@@ -14,7 +16,10 @@ import {
     Mail,
     Briefcase,
     Hospital,
-    ChevronDown,
+    MapPin,
+    Layers,
+    Building2,
+    School,
     Phone,
     KeyRound,
     Check
@@ -100,6 +105,7 @@ const AuthPage = () => {
 
     const [selectedFieldId, setSelectedFieldId] = useState('');
     const [selectedDistrict, setSelectedDistrict] = useState('');
+    const [isStationModalOpen, setIsStationModalOpen] = useState(false);
     const [registerError, setRegisterError] = useState('');
     const [registerLoading, setRegisterLoading] = useState(false);
     const [showRegisterPassword, setShowRegisterPassword] = useState(false);
@@ -192,6 +198,48 @@ const AuthPage = () => {
         return t('register.station');
     };
 
+    const getStationIcon = () => {
+        const field = fields.find(f => f.id === Number(selectedFieldId));
+        if (field?.name === 'Health') return Hospital;
+        if (field?.name === 'Education') return School;
+        return Building2;
+    };
+
+    const StationIcon = getStationIcon();
+
+    const fieldOptions: SearchableOption[] = useMemo(() => 
+        fields.map(f => ({
+            value: String(f.id),
+            label: String(t(`fields.${f.name.toLowerCase()}`, f.name))
+        })),
+        [fields, t]
+    );
+
+    const categoryOptions: SearchableOption[] = useMemo(() => 
+        categories.map(c => ({
+            value: String(c.id),
+            label: c.name
+        })),
+        [categories]
+    );
+
+    const districtOptions: SearchableOption[] = useMemo(() => 
+        districts.map(d => ({
+            value: d,
+            label: String(t(`districts.${d.toLowerCase().replace(/\s+/g, '_')}`, d))
+        })),
+        [districts, t]
+    );
+
+    const stationOptions: SearchableOption[] = useMemo(() => 
+        stations.map(s => ({
+            value: String(s.id),
+            label: s.status === 'PENDING' ? `${s.name} (${s.hierarchyLevel}) [Pending Approval]` : `${s.name} (${s.hierarchyLevel})`,
+            subLabel: s.status === 'PENDING' ? '⏳ Verification Pending' : s.hierarchyLevel
+        })),
+        [stations]
+    );
+
     // ----------------------------------------------------
     // Login Submit Handler
     // ----------------------------------------------------
@@ -242,9 +290,31 @@ const AuthPage = () => {
             return;
         }
 
-        if (registerFormData.password !== registerFormData.confirmPassword) {
-            setRegisterError(t('register.error_password_mismatch'));
-            return;
+        if (registerStep === 2) {
+            if (!selectedFieldId) {
+                setRegisterError(t('register.select_field_required', 'Please select a field'));
+                return;
+            }
+            if (!registerFormData.jobCategoryId) {
+                setRegisterError(t('register.select_category_required', 'Please select a job category'));
+                return;
+            }
+            if (!selectedDistrict) {
+                setRegisterError(t('register.select_district_required', 'Please select a district'));
+                return;
+            }
+            if (!registerFormData.currentStationId) {
+                setRegisterError(t('register.select_station_required', 'Please select a station'));
+                return;
+            }
+            if (!registerFormData.password) {
+                setRegisterError(t('register.error_password_required', 'Please enter a password'));
+                return;
+            }
+            if (registerFormData.password !== registerFormData.confirmPassword) {
+                setRegisterError(t('register.error_password_mismatch'));
+                return;
+            }
         }
 
         setRegisterLoading(true);
@@ -339,7 +409,9 @@ const AuthPage = () => {
             <motion.div 
                 layout
                 transition={{ type: "spring", stiffness: 220, damping: 26, mass: 0.8 }}
-                className="w-full max-w-4xl relative z-10"
+                className={`w-full relative z-10 ${
+                    isRegister ? 'max-w-4xl lg:max-w-5xl xl:max-w-6xl' : 'max-w-4xl'
+                }`}
             >
                 <div className="bg-white rounded-[28px] shadow-2xl shadow-blue-900/10 border border-slate-100 overflow-hidden relative">
                     <div className="flex flex-col md:flex-row items-stretch relative">
@@ -355,8 +427,8 @@ const AuthPage = () => {
                                 damping: 26, 
                                 mass: 0.85 
                             }}
-                            className={`w-full md:w-5/12 bg-slate-900 p-4 sm:p-6 md:p-8 text-white flex flex-col justify-between relative overflow-hidden z-20 shadow-xl md:shadow-2xl md:shadow-slate-950/20 group order-1 ${
-                                isRegister ? 'md:order-1' : 'md:order-2'
+                            className={`w-full bg-slate-900 p-4 sm:p-6 md:p-8 text-white flex flex-col justify-between relative overflow-hidden z-20 shadow-xl md:shadow-2xl md:shadow-slate-950/20 group order-1 ${
+                                isRegister ? 'md:w-5/12 lg:w-4/12 md:order-1' : 'md:w-5/12 lg:w-5/12 md:order-2'
                             }`}
                         >
                             {/* Background Image with cross-fade */}
@@ -556,8 +628,8 @@ const AuthPage = () => {
                                 damping: 26, 
                                 mass: 0.85 
                             }}
-                            className={`w-full md:w-7/12 p-5 sm:p-6 md:p-8 bg-white flex flex-col justify-between z-10 order-2 ${
-                                isRegister ? 'md:order-2' : 'md:order-1'
+                            className={`w-full bg-white flex flex-col justify-between z-10 order-2 ${
+                                isRegister ? 'md:w-7/12 lg:w-8/12 p-5 sm:p-6 md:p-8 lg:p-10 md:order-2' : 'md:w-7/12 lg:w-7/12 p-5 sm:p-6 md:p-8 md:order-1'
                             }`}
                         >
                             <AnimatePresence mode="wait">
@@ -662,99 +734,73 @@ const AuthPage = () => {
                                                 <div className="animate-in fade-in slide-in-from-right-4 duration-300">
                                                     <h3 className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-4">{t('register.step2_title')}</h3>
                                                     <div className="space-y-3.5">
-                                                        <div className="grid grid-cols-2 gap-3.5">
+                                                        {/* Field & Job Category */}
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 relative z-30">
                                                             <div>
                                                                 <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5 ml-1 block">{t('register.field_label')}</label>
-                                                                <div className="relative group">
-                                                                    <Briefcase className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                                                    <select
-                                                                        value={selectedFieldId}
-                                                                        onChange={(e) => {
-                                                                            setSelectedFieldId(e.target.value);
-                                                                            setRegisterFormData({ ...registerFormData, jobCategoryId: '', currentStationId: '' });
-                                                                        }}
-                                                                        className="w-full pl-11 pr-9 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition-all text-sm font-medium appearance-none"
-                                                                        required
-                                                                    >
-                                                                        <option value="">{t('register.select_field')}</option>
-                                                                        {fields.map(f => (
-                                                                            <option key={f.id} value={f.id}>
-                                                                                {String(t(`fields.${f.name.toLowerCase()}`, f.name))}
-                                                                            </option>
-                                                                        ))}
-                                                                    </select>
-                                                                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                                                        <ChevronDown className="w-4 h-4 text-slate-400" />
-                                                                    </div>
-                                                                </div>
+                                                                <SearchableSelect
+                                                                    value={selectedFieldId}
+                                                                    onChange={(val) => {
+                                                                        setSelectedFieldId(val);
+                                                                        setRegisterFormData({ ...registerFormData, jobCategoryId: '', currentStationId: '' });
+                                                                    }}
+                                                                    options={fieldOptions}
+                                                                    placeholder={t('register.select_field')}
+                                                                    icon={Briefcase}
+                                                                />
                                                             </div>
                                                             <div>
                                                                 <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5 ml-1 block">{t('register.job_category_label')}</label>
-                                                                <div className="relative group">
-                                                                    <select
-                                                                        value={registerFormData.jobCategoryId}
-                                                                        onChange={(e) => setRegisterFormData({ ...registerFormData, jobCategoryId: e.target.value })}
-                                                                        className="w-full pl-3.5 pr-9 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition-all text-sm font-medium appearance-none disabled:opacity-50"
-                                                                        required
-                                                                        disabled={!selectedFieldId}
-                                                                    >
-                                                                        <option value="">{t('register.select_category')}</option>
-                                                                        {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                                                                    </select>
-                                                                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                                                        <ChevronDown className="w-4 h-4 text-slate-400" />
-                                                                    </div>
-                                                                </div>
+                                                                <SearchableSelect
+                                                                    value={registerFormData.jobCategoryId}
+                                                                    onChange={(val) => setRegisterFormData({ ...registerFormData, jobCategoryId: val })}
+                                                                    options={categoryOptions}
+                                                                    placeholder={t('register.select_category')}
+                                                                    disabledPlaceholder={t('register.select_field_first', 'Select field first')}
+                                                                    disabled={!selectedFieldId}
+                                                                    icon={Layers}
+                                                                />
                                                             </div>
                                                         </div>
-                                                        <div className="grid grid-cols-2 gap-3.5">
+
+                                                        {/* District & Current Station */}
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 relative z-20">
                                                             <div>
                                                                 <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5 ml-1 block">{t('register.district_label')}</label>
-                                                                <div className="relative group">
-                                                                    <Hospital className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                                                    <select
-                                                                        value={selectedDistrict}
-                                                                        onChange={(e) => {
-                                                                            setSelectedDistrict(e.target.value);
-                                                                            setRegisterFormData({ ...registerFormData, currentStationId: '' });
-                                                                        }}
-                                                                        className="w-full pl-11 pr-9 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition-all text-sm font-medium appearance-none"
-                                                                        required
-                                                                    >
-                                                                        <option value="">{t('register.select_district')}</option>
-                                                                        {districts.map(d => (
-                                                                            <option key={d} value={d}>
-                                                                                {String(t(`districts.${d.toLowerCase().replace(/\s+/g, '_')}`, d))}
-                                                                            </option>
-                                                                        ))}
-                                                                    </select>
-                                                                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                                                        <ChevronDown className="w-4 h-4 text-slate-400" />
-                                                                    </div>
-                                                                </div>
+                                                                <SearchableSelect
+                                                                    value={selectedDistrict}
+                                                                    onChange={(val) => {
+                                                                        setSelectedDistrict(val);
+                                                                        setRegisterFormData({ ...registerFormData, currentStationId: '' });
+                                                                    }}
+                                                                    options={districtOptions}
+                                                                    placeholder={t('register.select_district')}
+                                                                    icon={MapPin}
+                                                                />
                                                             </div>
                                                             <div>
-                                                                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5 ml-1 block">{t('register.current_station_label', { label: getStationLabel() })}</label>
-                                                                <div className="relative group">
-                                                                    <select
-                                                                        value={registerFormData.currentStationId}
-                                                                        onChange={(e) => setRegisterFormData({ ...registerFormData, currentStationId: e.target.value })}
-                                                                        className="w-full pl-3.5 pr-9 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl focus:border-blue-500 focus:bg-white outline-none transition-all text-sm font-medium appearance-none disabled:opacity-50"
-                                                                        required
-                                                                        disabled={!selectedDistrict || !selectedFieldId}
-                                                                    >
-                                                                        <option value="">
-                                                                            {!selectedFieldId ? t('register.select_field_first') : !selectedDistrict ? t('register.select_district_first') : t('register.select_station', { label: getStationLabel() })}
-                                                                        </option>
-                                                                        {stations.map(s => <option key={s.id} value={s.id}>{s.name} ({s.hierarchyLevel})</option>)}
-                                                                    </select>
-                                                                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                                                        <ChevronDown className="w-4 h-4 text-slate-400" />
-                                                                    </div>
-                                                                </div>
+                                                                <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5 ml-1 block">
+                                                                    {t('register.current_station_label', { label: getStationLabel() })}
+                                                                </label>
+                                                                <SearchableSelect
+                                                                    value={registerFormData.currentStationId}
+                                                                    onChange={(val) => setRegisterFormData({ ...registerFormData, currentStationId: val })}
+                                                                    options={stationOptions}
+                                                                    placeholder={t('register.select_station', { label: getStationLabel() })}
+                                                                    disabledPlaceholder={
+                                                                        !selectedFieldId
+                                                                            ? t('register.select_field_first')
+                                                                            : t('register.select_district_first')
+                                                                    }
+                                                                    disabled={!selectedDistrict || !selectedFieldId}
+                                                                    icon={StationIcon}
+                                                                    actionLabel={t('station_request.not_in_list_action', 'Station not in list? Add New')}
+                                                                    onActionClick={() => setIsStationModalOpen(true)}
+                                                                />
                                                             </div>
                                                         </div>
-                                                        <div className="grid grid-cols-2 gap-3.5">
+
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 relative z-10">
                                                             <div>
                                                                 <label className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1.5 ml-1 block">{t('register.password_label')}</label>
                                                                 <div className="relative group">
@@ -881,7 +927,7 @@ const AuthPage = () => {
                                         animate={{ opacity: 1, x: 0 }}
                                         exit={{ opacity: 0, x: 16 }}
                                         transition={{ duration: 0.25 }}
-                                        className="h-full flex flex-col justify-between"
+                                        className="h-full flex flex-col justify-between max-w-sm sm:max-w-md mx-auto w-full"
                                     >
                                         <div>
                                             <div className="mb-4 sm:mb-5">
@@ -1013,6 +1059,27 @@ const AuthPage = () => {
                     </div>
                 </div>
             </motion.div>
+
+            <StationRequestModal
+                isOpen={isStationModalOpen}
+                onClose={() => setIsStationModalOpen(false)}
+                onSuccess={(newStation) => {
+                    setStations(prev => [...prev, newStation]);
+                    setRegisterFormData(prev => ({
+                        ...prev,
+                        currentStationId: String(newStation.id)
+                    }));
+                    if (!selectedDistrict && newStation.district) {
+                        setSelectedDistrict(newStation.district);
+                    }
+                }}
+                defaultFieldId={selectedFieldId}
+                defaultDistrict={selectedDistrict}
+                requesterName={registerFormData.fullName}
+                requesterPhone={registerFormData.phoneNumber}
+                requesterEmail={registerFormData.email}
+                fields={fields}
+            />
         </div>
     );
 };

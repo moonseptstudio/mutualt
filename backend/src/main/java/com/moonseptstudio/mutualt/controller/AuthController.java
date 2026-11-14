@@ -67,12 +67,17 @@ public class AuthController {
             String jwt = jwtUtils.generateJwtToken(authentication);
 
             User user = userRepository.findByUsername(loginRequest.getUsername()).orElseThrow();
+            UserProfile profile = userProfileRepository.findByUserId(user.getId()).orElse(null);
+            String fullName = profile != null ? profile.getFullName() : null;
+            String profileImageUrl = profile != null ? profile.getProfileImageUrl() : null;
 
             return ResponseEntity.ok(new JwtResponse(jwt,
                     user.getId(),
                     user.getUsername(),
                     user.getRole(),
-                    user.getSubscriptionPackage() != null ? user.getSubscriptionPackage().getName() : null));
+                    user.getSubscriptionPackage() != null ? user.getSubscriptionPackage().getName() : null,
+                    fullName,
+                    profileImageUrl));
         } catch (BadCredentialsException e) {
             return ResponseEntity.badRequest().body(new MessageResponse("Incorrect Password"));
         } catch (Exception e) {
@@ -136,13 +141,18 @@ public class AuthController {
         }
         
         User user = userRepository.findByUsername(authentication.getName()).orElseThrow();
+        UserProfile profile = userProfileRepository.findByUserId(user.getId()).orElse(null);
+        String fullName = profile != null ? profile.getFullName() : null;
+        String profileImageUrl = profile != null ? profile.getProfileImageUrl() : null;
         
         return ResponseEntity.ok(new JwtResponse(
                 null, // No need to return token again
                 user.getId(),
                 user.getUsername(),
                 user.getRole(),
-                user.getSubscriptionPackage() != null ? user.getSubscriptionPackage().getName() : null));
+                user.getSubscriptionPackage() != null ? user.getSubscriptionPackage().getName() : null,
+                fullName,
+                profileImageUrl));
     }
 
     @PostMapping("/change-password")

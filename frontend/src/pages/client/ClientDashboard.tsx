@@ -19,7 +19,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { useOutletContext } from 'react-router-dom';
 import UserGuideWidget from '../../components/dashboard/UserGuideWidget';
-import PageLoader from '../../components/common/PageLoader';
+import Skeleton from 'react-loading-skeleton';
+import { DashboardSkeleton, ThemeWrapper } from '../../components/common/Skeletons';
 
 import { getAvatarUrl } from '../../api/url';
 import featuredMatchCardBg from '../../assets/dashboard/featuredMatchCardbg.webp';
@@ -28,7 +29,7 @@ import featuredMatchCardBg from '../../assets/dashboard/featuredMatchCardbg.webp
 
 const ClientDashboard = () => {
     const { t } = useTranslation();
-    const { user } = useAuth();
+    const { user, updateUser } = useAuth();
     const { globalSearchQuery, hasPackage }: any = useOutletContext();
     const navigate = useNavigate();
     const [matches, setMatches] = useState<any[]>([]);
@@ -51,6 +52,9 @@ const ClientDashboard = () => {
                 ]);
                 setMatches(matchesRes.data);
                 setProfile(profileRes.data);
+                if (profileRes.data?.fullName && (!user?.fullName || user.fullName !== profileRes.data.fullName)) {
+                    updateUser({ fullName: profileRes.data.fullName, profileImageUrl: profileRes.data.profileImageUrl });
+                }
                 setRequests(requestsRes.data);
                 setRooms(roomsRes.data);
                 setPreferences(prefsRes.data);
@@ -83,8 +87,25 @@ const ClientDashboard = () => {
         </div>
     );
 
+    const firstName = (profile?.fullName || user?.fullName)?.trim().split(/\s+/)[0];
+
     if (loading) {
-        return <PageLoader />;
+        return (
+            <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 pb-10">
+                <div className="mb-6 lg:mb-8">
+                    <h1 className="text-3xl sm:text-4xl font-bold text-(--text-main) tracking-tight">
+                        {firstName ? (
+                            t('dashboard.welcome_heading', { name: firstName })
+                        ) : (
+                            <ThemeWrapper>
+                                <Skeleton width={260} height={40} className="rounded-xl inline-block" />
+                            </ThemeWrapper>
+                        )}
+                    </h1>
+                </div>
+                <DashboardSkeleton />
+            </div>
+        );
     }
 
     const allRequests = [...requests.incoming, ...requests.outgoing]
@@ -122,7 +143,11 @@ const ClientDashboard = () => {
         <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 pb-10">
             <div className="mb-6 lg:mb-8">
                 <h1 className="text-3xl sm:text-4xl font-bold text-(--text-main) tracking-tight">
-                    {t('dashboard.welcome_heading', { name: profile?.fullName?.split(' ')[0] || user?.username || '' })}
+                    {firstName ? (
+                        t('dashboard.welcome_heading', { name: firstName })
+                    ) : (
+                        t('dashboard.user_dashboard')
+                    )}
                 </h1>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

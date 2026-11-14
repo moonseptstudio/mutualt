@@ -11,4 +11,6 @@ public interface TransferPreferenceRepository extends JpaRepository<TransferPref
 
     List<TransferPreference> findByUserIdIn(List<Long> userIds);
     void deleteByUserId(Long userId);
+    List<TransferPreference> findByPreferredStation_Id(Long stationId);
+    void deleteByPreferredStation_Id(Long stationId);
 }

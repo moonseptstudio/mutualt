@@ -27,4 +27,24 @@ public class Station {
     @ManyToOne
     @JoinColumn(name = "field_id")
     private Field field;
+
+    @Column(nullable = false, columnDefinition = "varchar(50) default 'APPROVED'")
+    private String status = "APPROVED"; // "APPROVED", "PENDING", "REJECTED"
+
+    private String requestedByName;
+    private String requestedByEmail;
+    private String requestedByPhone;
+
+    private java.time.LocalDateTime createdAt = java.time.LocalDateTime.now();
+
+    public Station(Long id, String name, String district, String province, String hierarchyLevel, Field field) {
+        this.id = id;
+        this.name = name;
+        this.district = district;
+        this.province = province;
+        this.hierarchyLevel = hierarchyLevel;
+        this.field = field;
+        this.status = "APPROVED";
+        this.createdAt = java.time.LocalDateTime.now();
+    }
 }

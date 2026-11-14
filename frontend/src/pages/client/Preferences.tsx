@@ -14,8 +14,9 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 import toast from 'react-hot-toast';
-import PageLoader from '../../components/common/PageLoader';
+import { PreferencesSkeleton } from '../../components/common/Skeletons';
 import ConfirmationModal from '../../components/common/ConfirmationModal';
+import StationRequestModal from '../../components/StationRequestModal';
 
 interface PreferenceItemProps {
     item: any;
@@ -54,9 +55,16 @@ const PreferenceItem: React.FC<PreferenceItemProps> = ({ item, index, onRemove, 
                 </div>
             </div>
             <div className="grow min-w-0">
-                <p className="font-bold text-[var(--text-main)] text-base sm:text-lg leading-tight truncate">
-                    {item.preferredStation?.name}
-                </p>
+                <div className="flex items-center space-x-2">
+                    <p className="font-bold text-[var(--text-main)] text-base sm:text-lg leading-tight truncate">
+                        {item.preferredStation?.name}
+                    </p>
+                    {item.preferredStation?.status === 'PENDING' && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-300 dark:border-amber-700 shrink-0">
+                            ⏳ Pending Approval
+                        </span>
+                    )}
+                </div>
                 <div className="flex items-center text-[10px] sm:text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mt-1 sm:mt-1.5 space-x-3">
                     <span className="flex items-center">
                         <MapPin size={12} className="mr-1" />
@@ -83,9 +91,11 @@ const Preferences = () => {
     const [preferences, setPreferences] = useState<any[]>([]);
     const [currentStationId, setCurrentStationId] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
+    const [userProfile, setUserProfile] = useState<any>(null);
 
     // Modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
     const [isDistrictDropdownOpen, setIsDistrictDropdownOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [districtFilter, setDistrictFilter] = useState('');
@@ -117,6 +127,7 @@ const Preferences = () => {
                 let userFieldId: number | null = null;
 
                 if (profileRes.data) {
+                    setUserProfile(profileRes.data);
                     if (profileRes.data.currentStationId) {
                         setCurrentStationId(profileRes.data.currentStationId);
                     }
@@ -217,7 +228,19 @@ const Preferences = () => {
 
     const districts = Array.from(new Set(allStations.map(s => s.district).filter(Boolean))).sort();
 
-    if (loading) return <PageLoader />;
+    if (loading) {
+        return (
+            <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 space-y-8 pb-32 sm:pb-10">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h1 className="text-2xl sm:text-4xl font-semibold text-[var(--text-main)] tracking-tight leading-tight">{t('preferences.title')}</h1>
+                        <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-2 font-medium">{t('preferences.subtitle')}</p>
+                    </div>
+                </div>
+                <PreferencesSkeleton />
+            </div>
+        );
+    }
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 space-y-8 pb-32 sm:pb-10">
@@ -546,6 +569,18 @@ const Preferences = () => {
                                                     </motion.div>
                                                 )
                                             })}
+
+                                            {/* Bottom Station Row (non-sticky) */}
+                                            <div className="pt-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsRequestModalOpen(true)}
+                                                    className="w-full p-4 bg-slate-50 dark:bg-slate-800/50 hover:bg-primary-50/60 dark:hover:bg-primary-950/40 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 hover:border-primary-400 dark:hover:border-primary-600 transition-all flex items-center justify-center space-x-2 text-xs sm:text-sm font-bold text-primary-600 dark:text-primary-400 cursor-pointer active:scale-[0.99]"
+                                                >
+                                                    <Plus size={16} />
+                                                    <span>{t('station_request.not_in_list_action')}</span>
+                                                </button>
+                                            </div>
                                         </div>
                                     ) : (
                                         <div className="py-16 text-center bg-[var(--bg-card)] rounded-[24px] border border-[var(--border-main)] shadow-sm">
@@ -553,7 +588,15 @@ const Preferences = () => {
                                                 <Search size={24} className="text-slate-300 dark:text-slate-700" />
                                             </div>
                                             <p className="text-[var(--text-main)] font-semibold mb-1">{t('preferences.no_results_title')}</p>
-                                            <p className="text-[var(--text-muted)] text-sm max-w-xs mx-auto">{t('preferences.no_results_subtitle')}</p>
+                                            <p className="text-[var(--text-muted)] text-sm max-w-xs mx-auto mb-4">{t('preferences.no_results_subtitle')}</p>
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsRequestModalOpen(true)}
+                                                className="inline-flex items-center space-x-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl text-xs font-bold transition shadow-md shadow-primary-600/20 active:scale-95 cursor-pointer"
+                                            >
+                                                <Plus size={14} />
+                                                <span>{t('station_request.not_in_list_action')}</span>
+                                            </button>
                                         </div>
                                     )}
                                 </div>
@@ -571,6 +614,26 @@ const Preferences = () => {
                 message={t('preferences.remove_confirm_msg')}
                 confirmText={t('preferences.remove_label')}
                 type="danger"
+            />
+
+            <StationRequestModal
+                isOpen={isRequestModalOpen}
+                onClose={() => setIsRequestModalOpen(false)}
+                onSuccess={async (newStation) => {
+                    setAllStations(prev => [...prev, newStation]);
+                    try {
+                        const response = await apiClient.post('/preferences', { stationId: newStation.id });
+                        setPreferences(prev => [...prev, response.data]);
+                        toast.success("Station added to your preferences (Pending Verification)!");
+                    } catch (e) {
+                        console.error("Failed to add preference", e);
+                    }
+                }}
+                defaultFieldId={userProfile?.fieldId || (userProfile?.jobCategory?.field?.id)}
+                defaultDistrict={districtFilter}
+                requesterName={userProfile?.fullName}
+                requesterPhone={userProfile?.phoneNumber}
+                requesterEmail={userProfile?.email}
             />
         </div>
     );

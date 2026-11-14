@@ -1,6 +1,6 @@
 
 import testimonialBgImg from '../../assets/homePage/testimonial-bg.png';
-import Network3DBackground from '../../components/home/Network3DBackground';
+import SriLankaTransferMap from '../../components/hero/SriLankaTransferMap';
 import ChainCarouselFeatures from '../../components/home/ChainCarouselFeatures';
 
 import { 
@@ -399,16 +399,15 @@ const HomePage = () => {
 
       {/* ─── HERO SECTION ─── */}
       <section ref={heroRef} className="relative mesh-gradient-bg overflow-hidden min-h-screen lg:h-screen lg:max-h-screen flex flex-col justify-start lg:justify-center pt-20 sm:pt-24 lg:pt-16 lg:pb-12">
-        {/* Interactive 3D Connected Crystal Network Background */}
-        <Network3DBackground />
-        <FloatingShapes />
+        {/* Interactive Sri Lanka transfer map (2-way swaps + 3-way cycles) */}
+        <SriLankaTransferMap />
 
         <motion.div 
           style={{ y: heroY, scale: heroScale, opacity: heroOpacity }}
           className="relative z-10 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 my-auto"
         >
-          {/* On mobile: pt-80 frames the 7 3D interconnected avatars extending lower down into the screen */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center text-left pt-80 sm:pt-88 lg:pt-0">
+          {/* On mobile: top padding leaves room for the Sri Lanka map above the headline */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center text-left pt-72 sm:pt-80 lg:pt-0">
             <motion.div 
               initial="hidden"
               whileInView="visible"

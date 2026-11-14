@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ListSkeleton } from '../../components/common/Skeletons';
+import { RequestsSkeleton } from '../../components/common/Skeletons';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import apiClient from '../../api/client';
 import {
@@ -180,7 +180,33 @@ const Requests = () => {
         );
     });
 
-    if (loading) return <ListSkeleton />;
+    if (loading) {
+        return (
+            <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 space-y-8 pb-10">
+                <div>
+                    <h1 className="text-2xl sm:text-4xl font-semibold text-[var(--text-main)] tracking-tight leading-tight">{t('requests.title')}</h1>
+                    <p className="text-xs sm:text-sm text-[var(--text-muted)] mt-2 font-medium">{t('requests.subtitle')}</p>
+                </div>
+
+                <div className="flex p-1.5 bg-slate-100 dark:bg-slate-800/50 rounded-xl sm:rounded-2xl w-full sm:w-fit overflow-x-auto custom-scrollbar-hide">
+                    <button
+                        className="flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap grow sm:grow-0 bg-[var(--bg-card)] text-primary-600 dark:text-primary-400 shadow-sm"
+                    >
+                        <Inbox size={16} />
+                        <span>{t('requests.incoming_tab', { count: 0 })}</span>
+                    </button>
+                    <button
+                        className="flex items-center justify-center space-x-2 px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap grow sm:grow-0 text-[var(--text-muted)]"
+                    >
+                        <Send size={16} />
+                        <span>{t('requests.outgoing_tab', { count: 0 })}</span>
+                    </button>
+                </div>
+
+                <RequestsSkeleton />
+            </div>
+        );
+    }
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 space-y-8 pb-10">

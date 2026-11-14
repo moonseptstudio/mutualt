@@ -1,6 +1,7 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from '../context/AuthContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import toast from 'react-hot-toast';
 import { useState, useEffect } from 'react';
@@ -10,10 +11,13 @@ import 'lenis/dist/lenis.css';
 import logoImg from '../assets/logos/logo.jpg';
 
 const WebLayout = () => {
+    const { isAuthenticated, user } = useAuth();
     const [scrolled, setScrolled] = useState(false);
     const [mobileMenu, setMobileMenu] = useState(false);
     const { t } = useTranslation();
     const location = useLocation();
+
+    const dashboardPath = user?.role === 'ADMIN' ? '/admin' : '/dashboard';
 
     useEffect(() => {
         // Force light mode for web pages
@@ -119,18 +123,29 @@ const WebLayout = () => {
                     {/* Auth Buttons */}
                     <div className="hidden md:flex items-center space-x-3">
                         <LanguageSwitcher />
-                        <Link
-                            to="/login"
-                            className="px-5 py-2.5 text-sm font-semibold text-slate-700 hover:text-blue-600 rounded-xl transition-colors duration-300"
-                        >
-                            {t('common.login', 'Login')}
-                        </Link>
-                        <Link
-                            to="/register"
-                            className="px-5 py-2.5 text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all duration-300"
-                        >
-                            {t('common.register', 'Register')}
-                        </Link>
+                        {isAuthenticated ? (
+                            <Link
+                                to={dashboardPath}
+                                className="px-5 py-2.5 text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all duration-300"
+                            >
+                                {t('common.dashboard', 'Dashboard')}
+                            </Link>
+                        ) : (
+                            <>
+                                <Link
+                                    to="/login"
+                                    className="px-5 py-2.5 text-sm font-semibold text-slate-700 hover:text-blue-600 rounded-xl transition-colors duration-300"
+                                >
+                                    {t('common.login', 'Login')}
+                                </Link>
+                                <Link
+                                    to="/register"
+                                    className="px-5 py-2.5 text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:-translate-y-0.5 transition-all duration-300"
+                                >
+                                    {t('common.register', 'Register')}
+                                </Link>
+                            </>
+                        )}
                     </div>
 
                     {/* Mobile menu button */}
@@ -169,12 +184,23 @@ const WebLayout = () => {
                                 <div className="px-4 py-2 flex justify-center">
                                     <LanguageSwitcher />
                                 </div>
-                                <Link to="/login" className="px-4 py-3 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 text-center">
-                                    {t('common.login', 'Login')}
-                                </Link>
-                                <Link to="/register" className="px-4 py-3 rounded-xl text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white text-center shadow-lg shadow-blue-500/20 transition-all duration-300">
-                                    {t('common.register', 'Register')}
-                                </Link>
+                                {isAuthenticated ? (
+                                    <Link
+                                        to={dashboardPath}
+                                        className="px-4 py-3 rounded-xl text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white text-center shadow-lg shadow-blue-500/20 transition-all duration-300"
+                                    >
+                                        {t('common.dashboard', 'Dashboard')}
+                                    </Link>
+                                ) : (
+                                    <>
+                                        <Link to="/login" className="px-4 py-3 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 text-center">
+                                            {t('common.login', 'Login')}
+                                        </Link>
+                                        <Link to="/register" className="px-4 py-3 rounded-xl text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white text-center shadow-lg shadow-blue-500/20 transition-all duration-300">
+                                            {t('common.register', 'Register')}
+                                        </Link>
+                                    </>
+                                )}
                             </div>
                         </nav>
                     </div>

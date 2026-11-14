@@ -1,0 +1,62 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Backend: Spring Boot (No Debug)",
+      "type": "java",
+      "request": "launch",
+      "mainClass": "com.moonseptstudio.mutualt.MutualtApplication",
+      "projectName": "mutualt",
+      "cwd": "${workspaceFolder}/backend",
+      "noDebug": true
+    },
+    {
+      "name": "Backend: Terminal (mvnw)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": ".\\mvnw.cmd spring-boot:run",
+      "cwd": "${workspaceFolder}/backend"
+    },
+    {
+      "name": "Backend: Terminal (mvn)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "mvn spring-boot:run",
+      "cwd": "${workspaceFolder}/backend"
+    },
+    {
+      "name": "Frontend: Vite (npm run dev)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run dev",
+      "cwd": "${workspaceFolder}/frontend"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Run Full Stack (Backend mvnw + Frontend)",
+      "configurations": [
+        "Backend: Terminal (mvnw)",
+        "Frontend: Vite (npm run dev)"
+      ],
+      "stopAll": true
+    },
+    {
+      "name": "Run Full Stack (Backend mvn + Frontend)",
+      "configurations": [
+        "Backend: Terminal (mvn)",
+        "Frontend: Vite (npm run dev)"
+      ],
+      "stopAll": true
+    },
+    {
+      "name": "Run Full Stack (Java No-Debug + Frontend)",
+      "configurations": [
+        "Backend: Spring Boot (No Debug)",
+        "Frontend: Vite (npm run dev)"
+      ],
+      "stopAll": true
+    }
+  ]
+}
+

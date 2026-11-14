@@ -11,6 +11,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Boolean existsByUsername(String username);
 
+    java.util.List<User> findByRole(String role);
+
     long countByVerifiedFalse();
 
     @org.springframework.data.jpa.repository.Query("SELECT COUNT(u) FROM User u WHERE u.subscriptionPackage.name = :name")

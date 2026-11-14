@@ -2,6 +2,11 @@ package com.moonseptstudio.mutualt.controller;
 
 import com.moonseptstudio.mutualt.model.*;
 import com.moonseptstudio.mutualt.repository.*;
+import com.moonseptstudio.mutualt.service.EmailService;
+import com.moonseptstudio.mutualt.service.SmsService;
+import com.moonseptstudio.mutualt.dto.StationRequestDto;
+import com.moonseptstudio.mutualt.dto.StationRejectionDto;
+import com.moonseptstudio.mutualt.dto.AffectedUserDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +34,15 @@ public class MetadataController {
 
     @Autowired
     UserProfileRepository userProfileRepository;
+
+    @Autowired
+    TransferPreferenceRepository transferPreferenceRepository;
+
+    @Autowired
+    EmailService emailService;
+
+    @Autowired
+    SmsService smsService;
 
     @GetMapping("/fields")
     public List<Field> getFields() {
@@ -84,17 +98,222 @@ public class MetadataController {
 
     @GetMapping("/stations")
     public List<Station> getStations(@RequestParam(required = false) String district,
-                                     @RequestParam(required = false) Long fieldId) {
-        if (district != null && fieldId != null) {
-            return stationRepository.findByDistrictAndField_Id(district, fieldId);
-        } else if (district != null) {
-            return stationRepository.findByDistrict(district);
-        } else if (fieldId != null) {
-            return stationRepository.findByField_Id(fieldId);
+                                     @RequestParam(required = false) Long fieldId,
+                                     @RequestParam(required = false, defaultValue = "APPROVED") String status) {
+        if ("ALL".equalsIgnoreCase(status)) {
+            if (district != null && fieldId != null) {
+                return stationRepository.findByDistrictAndField_Id(district, fieldId);
+            } else if (district != null) {
+                return stationRepository.findByDistrict(district);
+            } else if (fieldId != null) {
+                return stationRepository.findByField_Id(fieldId);
+            }
+            return stationRepository.findAll();
         }
-        List<Station> stations = stationRepository.findAll();
-        System.out.println("Fetching Stations: found " + stations.size());
-        return stations;
+
+        String filterStatus = "PENDING".equalsIgnoreCase(status) ? "PENDING" : "APPROVED";
+        if (district != null && fieldId != null) {
+            return stationRepository.findByDistrictAndField_IdAndStatus(district, fieldId, filterStatus);
+        } else if (district != null) {
+            return stationRepository.findByDistrictAndStatus(district, filterStatus);
+        } else if (fieldId != null) {
+            return stationRepository.findByField_IdAndStatus(fieldId, filterStatus);
+        }
+        return stationRepository.findByStatus(filterStatus);
+    }
+
+    @GetMapping("/stations/pending-count")
+    public Map<String, Long> getPendingStationCount() {
+        return Map.of("count", stationRepository.countByStatus("PENDING"));
+    }
+
+    @PostMapping("/stations/request")
+    public org.springframework.http.ResponseEntity<?> requestNewStation(@RequestBody StationRequestDto req) {
+        if (req.getName() == null || req.getName().trim().isEmpty()) {
+            return org.springframework.http.ResponseEntity.badRequest().body(Map.of("message", "Station name is required"));
+        }
+        if (req.getDistrict() == null || req.getDistrict().trim().isEmpty()) {
+            return org.springframework.http.ResponseEntity.badRequest().body(Map.of("message", "District is required"));
+        }
+
+        Station station = new Station();
+        station.setName(req.getName().trim());
+        station.setDistrict(req.getDistrict().trim());
+        station.setProvince(req.getProvince() != null ? req.getProvince().trim() : "");
+        station.setHierarchyLevel(req.getHierarchyLevel() != null ? req.getHierarchyLevel().trim() : "Base Hospital");
+        station.setStatus("PENDING");
+        station.setRequestedByName(req.getRequestedByName());
+        station.setRequestedByPhone(req.getRequestedByPhone());
+        station.setRequestedByEmail(req.getRequestedByEmail());
+        station.setCreatedAt(java.time.LocalDateTime.now());
+
+        if (req.getFieldId() != null) {
+            fieldRepository.findById(req.getFieldId()).ifPresent(station::setField);
+        }
+
+        Station savedStation = stationRepository.save(station);
+
+        // Async Notification to all Admin accounts via Email and SMS
+        notifyAdminsAboutStationRequest(savedStation);
+
+        return org.springframework.http.ResponseEntity.ok(savedStation);
+    }
+
+    private void notifyAdminsAboutStationRequest(Station station) {
+        new Thread(() -> {
+            try {
+                String fieldName = station.getField() != null ? station.getField().getName() : "General";
+                List<User> admins = userRepository.findByRole("ADMIN");
+                java.util.Set<String> notifiedEmails = new java.util.HashSet<>();
+                java.util.Set<String> notifiedPhones = new java.util.HashSet<>();
+
+                for (User admin : admins) {
+                    userProfileRepository.findByUserId(admin.getId()).ifPresent(profile -> {
+                        // Send Email notification
+                        if (profile.getEmail() != null && !profile.getEmail().isBlank()) {
+                            String email = profile.getEmail().trim();
+                            if (notifiedEmails.add(email.toLowerCase())) {
+                                emailService.sendStationRequestNotification(
+                                        email,
+                                        station.getName(),
+                                        station.getDistrict(),
+                                        station.getProvince(),
+                                        station.getHierarchyLevel(),
+                                        fieldName,
+                                        station.getRequestedByName(),
+                                        station.getRequestedByPhone(),
+                                        station.getRequestedByEmail()
+                                );
+                            }
+                        }
+
+                        // Send SMS notification
+                        if (profile.getPhoneNumber() != null && !profile.getPhoneNumber().isBlank()) {
+                            String phone = profile.getPhoneNumber().trim();
+                            if (notifiedPhones.add(phone)) {
+                                String smsText = "MutualT Alert: New station approval request for '" + station.getName() +
+                                        "' (" + station.getDistrict() + ") by " +
+                                        (station.getRequestedByName() != null ? station.getRequestedByName() : "User") +
+                                        " (" + (station.getRequestedByPhone() != null ? station.getRequestedByPhone() : "N/A") +
+                                        "). Please check Admin Panel.";
+                                smsService.sendSms(phone, smsText);
+                            }
+                        }
+                    });
+                }
+
+                // Fallback email to kavinda@moonsept.com if not already notified
+                if (notifiedEmails.add("kavinda@moonsept.com")) {
+                    emailService.sendStationRequestNotification(
+                            "kavinda@moonsept.com",
+                            station.getName(),
+                            station.getDistrict(),
+                            station.getProvince(),
+                            station.getHierarchyLevel(),
+                            fieldName,
+                            station.getRequestedByName(),
+                            station.getRequestedByPhone(),
+                            station.getRequestedByEmail()
+                    );
+                }
+            } catch (Exception e) {
+                System.err.println("Error notifying admins about station request: " + e.getMessage());
+            }
+        }).start();
+    }
+
+    @PutMapping("/stations/{id}/approve")
+    @PreAuthorize("hasRole('ADMIN')")
+    public org.springframework.http.ResponseEntity<?> approveStation(@PathVariable Long id) {
+        return stationRepository.findById(id).map(station -> {
+            station.setStatus("APPROVED");
+            Station updated = stationRepository.save(station);
+            return org.springframework.http.ResponseEntity.ok(updated);
+        }).orElse(org.springframework.http.ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/stations/{id}/affected-users")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<AffectedUserDto> getAffectedUsers(@PathVariable Long id) {
+        List<AffectedUserDto> list = new java.util.ArrayList<>();
+
+        // Find users having currentStation == id
+        List<UserProfile> currentProfiles = userProfileRepository.findByCurrentStation_Id(id);
+        for (UserProfile p : currentProfiles) {
+            list.add(AffectedUserDto.builder()
+                    .userId(p.getUser() != null ? p.getUser().getId() : null)
+                    .fullName(p.getFullName())
+                    .phoneNumber(p.getPhoneNumber())
+                    .email(p.getEmail())
+                    .nic(p.getNic())
+                    .relationType("CURRENT_STATION")
+                    .build());
+        }
+
+        // Find users having preferredStation == id
+        List<TransferPreference> prefs = transferPreferenceRepository.findByPreferredStation_Id(id);
+        for (TransferPreference pref : prefs) {
+            User u = pref.getUser();
+            if (u != null) {
+                userProfileRepository.findByUserId(u.getId()).ifPresent(p -> {
+                    boolean alreadyIn = list.stream().anyMatch(item -> item.getUserId() != null && item.getUserId().equals(u.getId()));
+                    if (!alreadyIn) {
+                        list.add(AffectedUserDto.builder()
+                                .userId(u.getId())
+                                .fullName(p.getFullName())
+                                .phoneNumber(p.getPhoneNumber())
+                                .email(p.getEmail())
+                                .nic(p.getNic())
+                                .relationType("PREFERENCE")
+                                .build());
+                    }
+                });
+            }
+        }
+        return list;
+    }
+
+    @Transactional
+    @PostMapping("/stations/{id}/reject")
+    @PreAuthorize("hasRole('ADMIN')")
+    public org.springframework.http.ResponseEntity<?> rejectAndDeleteStation(
+            @PathVariable Long id,
+            @RequestBody(required = false) StationRejectionDto rejectionDto) {
+
+        Station station = stationRepository.findById(id).orElse(null);
+        if (station == null) {
+            return org.springframework.http.ResponseEntity.notFound().build();
+        }
+
+        Long reassignId = rejectionDto != null ? rejectionDto.getReassignStationId() : null;
+        Station reassignStation = null;
+        if (reassignId != null) {
+            reassignStation = stationRepository.findById(reassignId).orElse(null);
+        }
+
+        // 1. Update/Clean UserProfiles
+        List<UserProfile> currentProfiles = userProfileRepository.findByCurrentStation_Id(id);
+        for (UserProfile p : currentProfiles) {
+            p.setCurrentStation(reassignStation);
+            userProfileRepository.save(p);
+        }
+
+        // 2. Update/Clean TransferPreferences
+        List<TransferPreference> prefs = transferPreferenceRepository.findByPreferredStation_Id(id);
+        for (TransferPreference pref : prefs) {
+            if (reassignStation != null) {
+                pref.setPreferredStation(reassignStation);
+                transferPreferenceRepository.save(pref);
+            } else {
+                transferPreferenceRepository.delete(pref);
+            }
+        }
+
+        // 3. Delete Station
+        stationRepository.delete(station);
+        stationRepository.flush();
+
+        return org.springframework.http.ResponseEntity.ok(Map.of("message", "Station successfully removed."));
     }
 
     @PostMapping("/job-categories")
@@ -141,16 +360,12 @@ public class MetadataController {
     @Transactional
     @DeleteMapping("/stations/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public org.springframework.http.ResponseEntity<?> deleteStation(@PathVariable Long id) {
-        try {
-            stationRepository.deleteById(id);
-            stationRepository.flush();
-            return org.springframework.http.ResponseEntity.ok().build();
-        } catch (org.springframework.dao.DataIntegrityViolationException e) {
-            return org.springframework.http.ResponseEntity.badRequest().body(Map.of("message", "This station cannot be deleted because it is being used by one or more users."));
-        } catch (Exception e) {
-            return org.springframework.http.ResponseEntity.internalServerError().body(Map.of("message", "Error deleting station: " + e.getMessage()));
-        }
+    public org.springframework.http.ResponseEntity<?> deleteStation(
+            @PathVariable Long id,
+            @RequestParam(required = false) Long reassignStationId) {
+        StationRejectionDto dto = new StationRejectionDto();
+        dto.setReassignStationId(reassignStationId);
+        return rejectAndDeleteStation(id, dto);
     }
 
     @PutMapping("/stations/{id}")

@@ -32,7 +32,7 @@ interface HeaderProps {
 
 const Header = ({ hasPackage }: HeaderProps) => {
     const { t } = useTranslation();
-    const { user, logout } = useAuth();
+    const { user, logout, updateUser } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const navigate = useNavigate();
     const location = useLocation();
@@ -98,6 +98,9 @@ const Header = ({ hasPackage }: HeaderProps) => {
         try {
             const response = await apiClient.get('/profile/me');
             setProfile(response.data);
+            if (response.data?.fullName && (!user?.fullName || user.fullName !== response.data.fullName)) {
+                updateUser({ fullName: response.data.fullName, profileImageUrl: response.data.profileImageUrl });
+            }
         } catch (err) {
             console.error("Failed to fetch profile in header", err);
         }
@@ -348,7 +351,7 @@ const Header = ({ hasPackage }: HeaderProps) => {
                     >
                         <div className="w-8 h-8 sm:w-9 sm:h-9 bg-linear-to-br from-primary-500 to-indigo-600 rounded-xl sm:rounded-[14px] overflow-hidden flex items-center justify-center text-white shadow-xs border border-(--border-main)">
                             <img
-                                src={getAvatarUrl(profile?.profileImageUrl || user?.profileImageUrl, user?.fullName || user?.username || 'User')}
+                                src={getAvatarUrl(profile?.profileImageUrl || user?.profileImageUrl, profile?.fullName || user?.fullName || 'User')}
                                 alt="profile"
                                 className="w-full h-full object-cover"
                             />
@@ -366,15 +369,18 @@ const Header = ({ hasPackage }: HeaderProps) => {
                                         {profile?.verified ? t('profile.verified') : t('profile.under_review')}
                                     </span>
                                 </div>
-                                <p className="text-sm font-bold text-(--text-main) truncate">{profile?.fullName || user?.fullName || user?.username}</p>
+                                <p className="text-sm font-bold text-(--text-main) truncate">{profile?.fullName || user?.fullName || 'User'}</p>
                                 <p className="text-[11px] text-(--text-muted) truncate mt-0.5">{user?.username}</p>
                             </div>
 
                             {/* Quick Settings: Theme Toggle & Language Dropdown */}
                             <div className="px-4 py-3 my-2 border-y border-(--border-main) bg-slate-50/70 dark:bg-slate-800/40 space-y-2.5">
                                 {/* Dark Mode Row */}
-                                <div className="flex items-center justify-between">
-                                    <span className="text-xs font-semibold text-(--text-muted) flex items-center space-x-2">
+                                <div 
+                                    onClick={toggleTheme}
+                                    className="flex items-center justify-between cursor-pointer select-none group/toggle py-0.5"
+                                >
+                                    <span className="text-xs font-semibold text-(--text-muted) group-hover/toggle:text-(--text-main) transition-colors flex items-center space-x-2">
                                         {theme === 'dark' ? (
                                             <Moon size={14} className="text-primary-400" />
                                         ) : (
@@ -383,21 +389,29 @@ const Header = ({ hasPackage }: HeaderProps) => {
                                         <span>{t('settings.dark_mode_title')}</span>
                                     </span>
                                     <button
-                                        onClick={toggleTheme}
-                                        className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-(--bg-card) hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-all border border-(--border-main) text-(--text-main) cursor-pointer text-xs font-bold shadow-xs"
+                                        type="button"
+                                        role="switch"
+                                        aria-checked={theme === 'dark'}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            toggleTheme();
+                                        }}
+                                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full p-0.5 transition-colors duration-300 ease-in-out focus:outline-hidden ${
+                                            theme === 'dark' ? 'bg-primary-600' : 'bg-slate-200 dark:bg-slate-700'
+                                        }`}
                                         title={theme === 'dark' ? t('dashboard.switch_light') : t('dashboard.switch_dark')}
                                     >
-                                        {theme === 'dark' ? (
-                                            <>
-                                                <Sun size={13} className="text-amber-400" />
-                                                <span>Light</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Moon size={13} className="text-slate-600 dark:text-slate-300" />
-                                                <span>Dark</span>
-                                            </>
-                                        )}
+                                        <span
+                                            className={`pointer-events-none flex h-5 w-5 transform items-center justify-center rounded-full bg-white shadow-md ring-0 transition duration-300 ease-in-out ${
+                                                theme === 'dark' ? 'translate-x-5 text-primary-600' : 'translate-x-0 text-amber-500'
+                                            }`}
+                                        >
+                                            {theme === 'dark' ? (
+                                                <Moon size={11} className="text-primary-600" />
+                                            ) : (
+                                                <Sun size={11} className="text-amber-500" />
+                                            )}
+                                        </span>
                                     </button>
                                 </div>
 

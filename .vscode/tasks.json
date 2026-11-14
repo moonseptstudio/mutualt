@@ -1,0 +1,106 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run Backend (Spring Boot)",
+      "type": "shell",
+      "command": ".\\mvnw.cmd spring-boot:run",
+      "windows": {
+        "command": ".\\mvnw.cmd spring-boot:run"
+      },
+      "osx": {
+        "command": "./mvnw spring-boot:run"
+      },
+      "linux": {
+        "command": "./mvnw spring-boot:run"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "custom",
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*(Starting MutualtApplication|Building mutualt|Tomcat initialized).*",
+          "endsPattern": ".*(Started MutualtApplication|Tomcat started on port|Netty started on port).*"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": false,
+        "group": "servers"
+      }
+    },
+    {
+      "label": "Run Backend (Global mvn)",
+      "type": "shell",
+      "command": "mvn spring-boot:run",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "custom",
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*(Starting MutualtApplication|Building mutualt|Tomcat initialized).*",
+          "endsPattern": ".*(Started MutualtApplication|Tomcat started on port|Netty started on port).*"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": false,
+        "group": "servers"
+      }
+    },
+    {
+      "label": "Run Frontend (Vite)",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "custom",
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*(VITE|ready in).*",
+          "endsPattern": ".*(Local:\\s+http|Network:\\s+http).*"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": false,
+        "group": "servers"
+      }
+    },
+    {
+      "label": "Run Full Stack (Frontend + Backend)",
+      "dependsOn": [
+        "Run Backend (Spring Boot)",
+        "Run Frontend (Vite)"
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
+}
+

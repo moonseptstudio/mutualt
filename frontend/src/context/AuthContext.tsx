@@ -15,6 +15,7 @@ interface AuthContextType {
     user: User | null;
     login: (userData: User, rememberMe?: boolean) => void;
     logout: () => void;
+    updateUser: (fields: Partial<User>) => void;
     isAuthenticated: boolean;
     isLoading: boolean;
     refreshSession: () => Promise<void>;
@@ -99,6 +100,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(userData);
     };
 
+    const updateUser = (fields: Partial<User>) => {
+        setUser((prev) => {
+            if (!prev) return null;
+            const updated = { ...prev, ...fields };
+            if (localStorage.getItem('user')) {
+                localStorage.setItem('user', JSON.stringify(updated));
+            } else if (sessionStorage.getItem('user')) {
+                sessionStorage.setItem('user', JSON.stringify(updated));
+            }
+            return updated;
+        });
+    };
+
     const logout = () => {
         localStorage.removeItem('user');
         sessionStorage.removeItem('user');
@@ -131,7 +145,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, isLoading, refreshSession }}>
+        <AuthContext.Provider value={{ user, login, logout, updateUser, isAuthenticated: !!user, isLoading, refreshSession }}>
             {children}
         </AuthContext.Provider>
     );

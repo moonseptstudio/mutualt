@@ -5,7 +5,6 @@ import {
     MapPin,
     Inbox,
     MessageSquare,
-    Zap,
     Lock,
     Activity,
     Search
@@ -101,11 +100,15 @@ const ClientLayout = () => {
             <main className="grow overflow-auto p-4 sm:p-6 md:p-8 lg:p-10 relative bg-[var(--bg-main)] pb-24 lg:pb-12">
                 {hasPackage === false && location.pathname !== '/pricing' && (
                     <div className="max-w-7xl mx-auto mb-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 px-4 sm:px-6 py-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
-                        <div className="flex items-center space-x-3 text-center sm:text-left">
-                            <span className="p-1.5 bg-amber-100 dark:bg-amber-900/40 rounded-lg shrink-0"><Zap size={16} className="text-amber-600" /></span>
+                        <div className="text-center sm:text-left">
                             <p className="text-xs sm:text-sm font-semibold">{t('dashboard.unlock_full_access')}</p>
                         </div>
-                        <Link to="/pricing" className="text-[10px] sm:text-xs font-bold uppercase tracking-widest bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl transition-colors whitespace-nowrap">{t('dashboard.view_packages')}</Link>
+                        <Link 
+                            to="/pricing" 
+                            className="inline-flex items-center justify-center text-[10px] sm:text-xs font-bold uppercase tracking-widest bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 sm:py-3 rounded-xl transition-all shadow-sm hover:shadow whitespace-nowrap"
+                        >
+                            {t('dashboard.view_packages')}
+                        </Link>
                     </div>
                 )}
                 <div className="max-w-7xl mx-auto w-full">

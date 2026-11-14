@@ -3,7 +3,7 @@ import { useNavigate, useOutletContext } from 'react-router-dom';
 import apiClient from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
-import { CardGridSkeleton } from '../../components/common/Skeletons';
+import { MatchesSkeleton } from '../../components/common/Skeletons';
 import {
     Users,
     MapPin,
@@ -267,7 +267,19 @@ const Matches = () => {
         }
     };
 
-    if (loading) return <CardGridSkeleton />;
+    if (loading) {
+        return (
+            <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 space-y-8 pb-10">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">
+                    <div>
+                        <h1 className="text-2xl sm:text-4xl font-semibold text-(--text-main) tracking-tight leading-tight">{t('matches.title')}</h1>
+                        <p className="text-xs sm:text-sm text-(--text-muted) mt-2 font-medium">{t('matches.subtitle')}</p>
+                    </div>
+                </div>
+                <MatchesSkeleton />
+            </div>
+        );
+    }
 
     return (
         <div className="animate-in fade-in slide-in-from-bottom-8 duration-700 space-y-8 pb-10">

@@ -3,7 +3,7 @@ import { useLocation, useOutletContext, useSearchParams } from 'react-router-dom
 import apiClient from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
-import PageLoader from '../../components/common/PageLoader';
+import { ChatRoomsSkeleton, ChatHistorySkeleton } from '../../components/common/Skeletons';
 import {
     Send,
     User,
@@ -291,9 +291,7 @@ const Messages = () => {
 
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
                     {loadingRooms ? (
-                        <div className="flex items-center justify-center h-32">
-                            <PageLoader fullScreen={false} />
-                        </div>
+                        <ChatRoomsSkeleton />
                     ) : rooms.length > 0 ? (
                         rooms.filter((room: any) => {
                             const term = (sidebarSearchQuery || globalSearchQuery || '').toLowerCase();
@@ -404,7 +402,7 @@ const Messages = () => {
                         className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6 custom-scrollbar scroll-smooth"
                     >
                         {loadingHistory ? (
-                            <PageLoader fullScreen={false} />
+                            <ChatHistorySkeleton />
                         ) : messages.length > 0 ? (
                             messages.map((msg, idx) => {
                                 const isMe = msg.senderId === user?.id;
