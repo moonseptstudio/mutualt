@@ -49,11 +49,12 @@ const LON_MIN = 79.65, LON_MAX = 81.92, LAT_MIN = 5.88, LAT_MAX = 9.88;
 // While the cursor is over the hero, new waves come from the cursor's side instead.
 const DEFAULT_WAVE_ANGLE = Math.atan2(-0.866, 0.5);
 
+// 2-way swaps: deep blue / indigo. 3-way cycles: always light blue, so the two kinds are easy to tell apart.
 const PALETTE = [
   { core: '#2563eb', glow: '37, 99, 235' },
-  { core: '#0ea5e9', glow: '14, 165, 233' },
   { core: '#6366f1', glow: '99, 102, 241' },
 ];
+const THREE_WAY_COLOR = { core: '#38bdf8', glow: '56, 189, 248' };
 
 interface Dot { x: number; y: number; seed: number; edge: number; } // edge: 1 on the coastline, 0 inland
 interface Transfer {
@@ -61,7 +62,7 @@ interface Transfer {
   t: number;                 // travel progress 0..1
   speed: number;
   life: number;              // fades out after arrival
-  color: typeof PALETTE[number];
+  color: { core: string; glow: string };
   arrived: boolean;
 }
 
@@ -104,6 +105,8 @@ export const SriLankaTransferMap: React.FC = () => {
       fade: number;           // how much the ring fades on the side facing away from the island
       fadeIn: number;         // radius over which a new ring fades in (large = birth point stays invisible)
       foamDecay: number;
+      click: boolean;         // started by a visitor's click
+      dieAt: number;          // time a quick fade-out started (Infinity = alive)
     }
     let waves: SeaWave[] = [];
     let wavesReady = false;
@@ -111,27 +114,42 @@ export const SriLankaTransferMap: React.FC = () => {
     let setLeft = 0;
     let kickAngle = DEFAULT_WAVE_ANGLE; // direction of the last cursor-triggered wave
     let lastKick = -10;
+    // Rapid clicking: at most one click wave per CLICK_GAP and MAX_CLICK_WAVES alive at once;
+    // when over the limit the oldest click wave fades out quickly instead of vanishing
+    const CLICK_GAP = 0.2;
+    const MAX_CLICK_WAVES = 4;
+    const DIE_TIME = 0.45;
+    let lastClickWave = -10;
+    const killFactor = (wv: { dieAt: number }) => (wv.dieAt === Infinity ? 1 : Math.max(0, 1 - (time - wv.dieAt) / DIE_TIME));
     const rand = (a: number, b: number) => a + Math.random() * (b - a);
 
-    // Cast a ray per angle from the origin and record where it first meets the coastline
+    // Island shadow seen from a wave origin: for every angle, the distance to the first coast it hits.
+    // One sweep over the coastline (each coast segment fills the angle bins it covers with the nearest
+    // distance) instead of casting a ray per angle; same result within a fraction of a pixel.
     const shadowFrom = (ox: number, oy: number) => {
-      const hit = new Float32Array(N_ANG);
+      const hit = new Float32Array(N_ANG).fill(1e9);
       const n = coast.length;
-      for (let i = 0; i < N_ANG; i++) {
-        const a = (i / N_ANG) * Math.PI * 2;
-        const dx = Math.cos(a), dy = Math.sin(a);
-        let best = 1e9;
-        for (let k = 0; k < n; k++) {
-          const A = coast[k], B = coast[(k + 1) % n];
-          const ex = B.x - A.x, ey = B.y - A.y;
-          const den = dx * ey - dy * ex;
-          if (Math.abs(den) < 1e-9) continue;
-          const wx = A.x - ox, wy = A.y - oy;
-          const t = (wx * ey - wy * ex) / den;
-          const u = (wx * dy - wy * dx) / den;
-          if (t > 0 && u >= 0 && u <= 1 && t < best) best = t;
+      if (!n) return hit;
+      const perBin = N_ANG / (Math.PI * 2);
+      let pa = Math.atan2(coast[0].y - oy, coast[0].x - ox);
+      let pd = Math.hypot(coast[0].x - ox, coast[0].y - oy);
+      for (let k = 1; k <= n; k++) {
+        const c = coast[k % n];
+        const ca = Math.atan2(c.y - oy, c.x - ox);
+        const cd = Math.hypot(c.x - ox, c.y - oy);
+        let da = ca - pa;
+        if (da > Math.PI) da -= Math.PI * 2;
+        else if (da < -Math.PI) da += Math.PI * 2;
+        const b0 = pa * perBin, b1 = b0 + da * perBin;
+        const lo = Math.ceil(Math.min(b0, b1)), hi = Math.floor(Math.max(b0, b1));
+        for (let bin = lo; bin <= hi; bin++) {
+          const t = b1 === b0 ? 0 : (bin - b0) / (b1 - b0);
+          const d = pd + (cd - pd) * t;
+          const idx = ((bin % N_ANG) + N_ANG) % N_ANG;
+          if (d < hit[idx]) hit[idx] = d;
         }
-        hit[i] = best;
+        pa = ca;
+        pd = cd;
       }
       return hit;
     };
@@ -141,7 +159,7 @@ export const SriLankaTransferMap: React.FC = () => {
       const idx = ((Math.round((ang / (Math.PI * 2)) * N_ANG) % N_ANG) + N_ANG) % N_ANG;
       return wv.hit[idx];
     };
-    const addWave = (ox: number, oy: number, o: { speed: number; crests: number; gap: number; strength: number; fade: number; fadeIn: number; foamDecay: number; progress?: number; lead0?: number }) => {
+    const addWave = (ox: number, oy: number, o: { speed: number; crests: number; gap: number; strength: number; fade: number; fadeIn: number; foamDecay: number; progress?: number; lead0?: number; click?: boolean }) => {
       let far = 0;
       for (const c of coast) far = Math.max(far, Math.hypot(c.x - ox, c.y - oy));
       const reach = far + 40;
@@ -152,6 +170,7 @@ export const SriLankaTransferMap: React.FC = () => {
         reach, hit: shadowFrom(ox, oy),
         toIsland: Math.atan2(islandC.y - oy, islandC.x - ox),
         fade: o.fade, fadeIn: o.fadeIn, foamDecay: o.foamDecay,
+        click: !!o.click, dieAt: Infinity,
       });
       if (waves.length > 18) waves.shift();
     };
@@ -197,16 +216,6 @@ export const SriLankaTransferMap: React.FC = () => {
     };
     // Cursor ripples bend crests they pass through
     const ripples: { x: number; y: number; t: number }[] = [];
-    const rippleDisp = (x: number, y: number) => {
-      let disp = 0;
-      for (const rp of ripples) {
-        const age = time - rp.t;
-        const dd = Math.hypot(x - rp.x, y - rp.y);
-        const band = (dd - age * 140) / 22;
-        disp += Math.exp(-band * band) * Math.sin(band * 2.4) * 8 * (1 - age / 2.4);
-      }
-      return disp;
-    };
     let lastRipple = { x: -9999, y: -9999, t: 0 };
 
     const mouse = { x: -9999, y: -9999, sx: -9999, sy: -9999, active: false };
@@ -331,7 +340,7 @@ export const SriLankaTransferMap: React.FC = () => {
         t: 0,
         speed: 0.0045 + Math.random() * 0.002,
         life: 1,
-        color: PALETTE[Math.floor(Math.random() * PALETTE.length)],
+        color: threeWay ? THREE_WAY_COLOR : PALETTE[Math.floor(Math.random() * PALETTE.length)],
         arrived: false,
       });
       if (transfers.length > 7) transfers.shift();
@@ -373,7 +382,11 @@ export const SriLankaTransferMap: React.FC = () => {
       const x = e.clientX - r.left - tilt.x;
       const y = e.clientY - r.top - tilt.y;
       if (onLand(x, y)) return; // clicks on land don't make waves
-      addWave(x, y, { speed: 1.55, crests: 3, gap: 13, strength: 1.15, fade: 0.85, fadeIn: 40, foamDecay: 14 });
+      if (time - lastClickWave < CLICK_GAP) return;
+      lastClickWave = time;
+      const alive = waves.filter(wv => wv.click && wv.dieAt === Infinity);
+      for (let i = 0; i <= alive.length - MAX_CLICK_WAVES; i++) alive[i].dieAt = time; // oldest first
+      addWave(x, y, { speed: 1.55, crests: 3, gap: 13, strength: 1.15, fade: 0.85, fadeIn: 40, foamDecay: 14, click: true });
     };
 
     let animId = 0;
@@ -453,7 +466,7 @@ export const SriLankaTransferMap: React.FC = () => {
           nextWaveAt = time + rand(1.5, 2.6);
         }
       }
-      waves = waves.filter(wv => ((time - wv.t0) / 0.016) * wv.speed - (wv.crests - 1) * wv.gap <= wv.reach + 20);
+      waves = waves.filter(wv => killFactor(wv) > 0 && ((time - wv.t0) / 0.016) * wv.speed - (wv.crests - 1) * wv.gap <= wv.reach + 20);
 
       ctx.save();
       ctx.beginPath();
@@ -466,6 +479,12 @@ export const SriLankaTransferMap: React.FC = () => {
 
       const BINS = isMobile ? 120 : 200;
       const step = (Math.PI * 2) / BINS;
+      // Segments are grouped by brightness and each group is stroked once (a few strokes per crest
+      // instead of one per segment)
+      const LEVELS = 8;
+      const levelPaths: (Path2D | null)[] = new Array(LEVELS).fill(null);
+      const vx = new Float32Array(BINS + 1), vy = new Float32Array(BINS + 1);
+      const nearRipples: { x: number; y: number; front: number; amp: number }[] = [];
       ctx.lineCap = 'round';
       for (const wv of waves) {
         const lead = ((time - wv.t0) / 0.016) * wv.speed;
@@ -474,33 +493,62 @@ export const SriLankaTransferMap: React.FC = () => {
           if (rad <= 2) continue;
           const life = Math.min(1, rad / wv.fadeIn) * Math.max(0, Math.min(1, (wv.reach + 20 - rad) / 140));
           const dec = decay(wv, rad);
-          const base = (isMobile ? 0.4 : 0.5) * wv.strength * (1 - c * 0.28) * life * dec;
+          const base = (isMobile ? 0.4 : 0.5) * wv.strength * (1 - c * 0.28) * life * dec * killFactor(wv);
           if (base < 0.01) continue;
           ctx.lineWidth = (c === 0 ? 1 + 0.8 * wv.strength : 0.8) * (0.55 + 0.45 * dec);
+
+          // Only cursor ripples whose wave front (±60px) actually crosses this ring are evaluated
+          nearRipples.length = 0;
+          for (const rp of ripples) {
+            const age = time - rp.t;
+            const front = age * 140;
+            const dc = Math.hypot(rp.x - wv.x, rp.y - wv.y);
+            if (front + 60 < Math.abs(dc - rad) || front - 60 > dc + rad) continue;
+            nearRipples.push({ x: rp.x, y: rp.y, front, amp: 8 * (1 - age / 2.4) });
+          }
+          // Young (small) rings stay round instead of getting crumpled by ripples
+          const ripAmp = Math.min(1, rad / 150);
+          // Gentle irregularity, only once a ring is big enough that it doesn't look wobbly
+          const wobAmp = 1.3 * wv.strength * Math.min(1, rad / 220);
+
+          // Ring vertices, computed once and shared by neighbouring segments
+          for (let i = 0; i <= BINS; i++) {
+            const a = i * step;
+            const ca = Math.cos(a), sa = Math.sin(a);
+            let r = rad + Math.sin(a * 9 + time * 0.8 + wv.t0) * wobAmp;
+            if (nearRipples.length) {
+              const px = wv.x + ca * rad, py = wv.y + sa * rad;
+              let disp = 0;
+              for (const rp of nearRipples) {
+                const band = (Math.hypot(px - rp.x, py - rp.y) - rp.front) / 22;
+                if (band > -3 && band < 3) disp += Math.exp(-band * band) * Math.sin(band * 2.4) * rp.amp;
+              }
+              r += disp * ripAmp;
+            }
+            vx[i] = wv.x + ca * r;
+            vy[i] = wv.y + sa * r;
+          }
+
+          levelPaths.fill(null);
           for (let b = 0; b < BINS; b++) {
             const a0 = b * step, a1 = a0 + step;
             const facing = (Math.cos(a0 + step / 2 - wv.toIsland) + 1) / 2;
-            let alpha = base * (1 - wv.fade + wv.fade * facing * facing);
-            if (alpha < 0.01) continue;
+            let rel = 1 - wv.fade + wv.fade * facing * facing;
             // The part of the crest that already hit the island is gone
             const h = Math.min(hitAt(wv, a0), hitAt(wv, a1));
             if (rad >= h) continue;
-            alpha *= Math.min(1, (h - rad) / 6);
-            // Gentle irregularity, only once a ring is big enough that it doesn't look wobbly
-            const wobAmp = 1.3 * wv.strength * Math.min(1, rad / 220);
-            const wob0 = Math.sin(a0 * 9 + time * 0.8 + wv.t0) * wobAmp;
-            const wob1 = Math.sin(a1 * 9 + time * 0.8 + wv.t0) * wobAmp;
-            let x0 = wv.x + Math.cos(a0) * rad, y0 = wv.y + Math.sin(a0) * rad;
-            let x1 = wv.x + Math.cos(a1) * rad, y1 = wv.y + Math.sin(a1) * rad;
-            const r0 = rad + wob0 + (ripples.length ? rippleDisp(x0, y0) : 0);
-            const r1 = rad + wob1 + (ripples.length ? rippleDisp(x1, y1) : 0);
-            x0 = wv.x + Math.cos(a0) * r0; y0 = wv.y + Math.sin(a0) * r0;
-            x1 = wv.x + Math.cos(a1) * r1; y1 = wv.y + Math.sin(a1) * r1;
-            ctx.beginPath();
-            ctx.moveTo(x0, y0);
-            ctx.lineTo(x1, y1);
-            ctx.strokeStyle = `rgba(14, 165, 233, ${alpha})`;
-            ctx.stroke();
+            rel *= Math.min(1, (h - rad) / 6);
+            if (base * rel < 0.01) continue;
+            const lv = Math.min(LEVELS - 1, Math.floor(rel * LEVELS));
+            const path = levelPaths[lv] ?? (levelPaths[lv] = new Path2D());
+            path.moveTo(vx[b], vy[b]);
+            path.lineTo(vx[b + 1], vy[b + 1]);
+          }
+          for (let lv = 0; lv < LEVELS; lv++) {
+            const path = levelPaths[lv];
+            if (!path) continue;
+            ctx.strokeStyle = `rgba(14, 165, 233, ${base * ((lv + 0.5) / LEVELS)})`;
+            ctx.stroke(path);
           }
         }
       }
@@ -534,7 +582,7 @@ export const SriLankaTransferMap: React.FC = () => {
           const firstHit = Math.max(hitAt(wv, ang - da), hitAt(wv, ang), hitAt(wv, ang + da));
           if (d > firstHit + 6) continue; // this coast is in the island's own shadow
           const face = (c.nx * dx + c.ny * dy) / d;
-          const energy = wv.strength * (0.25 + 0.75 * Math.max(0, face)) * decay(wv, d);
+          const energy = wv.strength * (0.25 + 0.75 * Math.max(0, face)) * decay(wv, d) * killFactor(wv);
           for (let ci = 0; ci < wv.crests; ci++) {
             const sc = after - ci * wv.gap;
             if (sc < 0 || sc > BACK_RANGE) continue;
