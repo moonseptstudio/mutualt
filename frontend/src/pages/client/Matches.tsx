@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import apiClient from '../../api/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys, useMatchesQuery } from '../../api/queries';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { MatchesSkeleton } from '../../components/common/Skeletons';
@@ -173,13 +175,15 @@ const MatchRow = ({ match, currentUserId, onViewDetails, hasPackage, onUnlockReq
     );
 };
 
+const EMPTY: any[] = [];
+
 const Matches = () => {
     const { t } = useTranslation();
     const { user } = useAuth();
     const { globalSearchQuery }: any = useOutletContext();
     const navigate = useNavigate();
-    const [matches, setMatches] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const queryClient = useQueryClient();
+    const { data: matches = EMPTY, isPending: loading } = useMatchesQuery();
     const [isSending, setIsSending] = useState(false);
     const [typeFilter, setTypeFilter] = useState('All');
     const { hasPackage }: any = useOutletContext();
@@ -188,22 +192,6 @@ const Matches = () => {
     // Modal state
     const [selectedMatch, setSelectedMatch] = useState<any>(null);
     const [isMatchModalOpen, setIsMatchModalOpen] = useState(false);
-
-    const fetchMatches = async () => {
-        try {
-            setLoading(true);
-            const response = await apiClient.get('/matches');
-            setMatches(response.data);
-        } catch (err) {
-            console.error("Failed to fetch matches", err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchMatches();
-    }, []);
 
     const filteredMatches = matches.filter(m => {
         const matchesType = typeFilter === 'All' || m.type === typeFilter;
@@ -256,8 +244,9 @@ const Matches = () => {
             toast.success(`Request sent to ${targetPartner.name}!`, { icon: '🚀' });
 
 
-            // Refresh matches to get updated statuses
-            await fetchMatches();
+            // Refresh matches + requests to get updated statuses
+            queryClient.invalidateQueries({ queryKey: queryKeys.requests });
+            await queryClient.invalidateQueries({ queryKey: queryKeys.matches });
             setIsMatchModalOpen(false);
         } catch (err: any) {
             console.error("Failed to initiate request", err);

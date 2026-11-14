@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { RequestsSkeleton } from '../../components/common/Skeletons';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import apiClient from '../../api/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys, useRequestsQuery } from '../../api/queries';
 import {
     Inbox,
     Send,
@@ -126,37 +128,29 @@ const RequestCard = ({ request, type, onAction, onMessage, hasPackage }: any) =>
     );
 };
 
+const EMPTY_REQUESTS = { incoming: [] as any[], outgoing: [] as any[] };
+
 const Requests = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { globalSearchQuery, hasPackage }: any = useOutletContext();
-    const [requests, setRequests] = useState<any>({ incoming: [], outgoing: [] });
-    const [loading, setLoading] = useState(true);
+    const queryClient = useQueryClient();
+    const { data: requests = EMPTY_REQUESTS, isPending: loading, isError } = useRequestsQuery();
     const [activeTab, setActiveTab] = useState('incoming');
 
-    const fetchRequests = async () => {
-        try {
-            setLoading(true);
-            const response = await apiClient.get('/requests/me');
-            setRequests(response.data);
-        } catch (err) {
-            console.error("Failed to fetch requests", err);
-            toast.error(t('requests.toast_load_failed'));
-        } finally {
-            setLoading(false);
-        }
-    };
-
     useEffect(() => {
-        fetchRequests();
-    }, []);
+        if (isError) toast.error(t('requests.toast_load_failed'));
+    }, [isError]);
 
     const handleAction = async (id: number, action: 'accept' | 'reject') => {
         try {
             await apiClient.put(`/requests/${id}/${action}`);
             const actionLabel = action === 'accept' ? t('requests.action_accept') : t('requests.action_reject');
             toast.success(t('requests.toast_action_success', { action: actionLabel }));
-            fetchRequests();
+            queryClient.invalidateQueries({ queryKey: queryKeys.requests });
+            // Accepting a request creates a chat room and changes match statuses.
+            queryClient.invalidateQueries({ queryKey: queryKeys.matches });
+            queryClient.invalidateQueries({ queryKey: queryKeys.rooms });
         } catch (err) {
             console.error(`Failed to ${action} request`, err);
             const actionLabel = action === 'accept' ? t('requests.action_accept') : t('requests.action_reject');

@@ -11,10 +11,10 @@ import {
     CreditCard,
     Building2
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import apiClient from '../../api/client';
+import { useMatchesQuery, useProfileQuery, useRequestsQuery, useRoomsQuery, usePreferencesQuery } from '../../api/queries';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { useOutletContext } from 'react-router-dom';
@@ -27,47 +27,30 @@ import featuredMatchCardBg from '../../assets/dashboard/featuredMatchCardbg.webp
 
 
 
+const EMPTY: any[] = [];
+const EMPTY_REQUESTS = { incoming: [] as any[], outgoing: [] as any[] };
+
 const ClientDashboard = () => {
     const { t } = useTranslation();
-    const { user, updateUser } = useAuth();
+    const { user } = useAuth();
     const { globalSearchQuery, hasPackage }: any = useOutletContext();
     const navigate = useNavigate();
-    const [matches, setMatches] = useState<any[]>([]);
-    const [profile, setProfile] = useState<any>(null);
-    const [requests, setRequests] = useState<{ incoming: any[], outgoing: any[] }>({ incoming: [], outgoing: [] });
-    const [rooms, setRooms] = useState<any[]>([]);
-    const [preferences, setPreferences] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
     const [isGuideOpen, setIsGuideOpen] = useState(false);
 
-    useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                const [matchesRes, profileRes, requestsRes, roomsRes, prefsRes] = await Promise.all([
-                    apiClient.get('/matches'),
-                    apiClient.get('/profile/me'),
-                    apiClient.get('/requests/me'),
-                    apiClient.get('/messages/rooms'),
-                    apiClient.get('/preferences')
-                ]);
-                setMatches(matchesRes.data);
-                setProfile(profileRes.data);
-                if (profileRes.data?.fullName && (!user?.fullName || user.fullName !== profileRes.data.fullName)) {
-                    updateUser({ fullName: profileRes.data.fullName, profileImageUrl: profileRes.data.profileImageUrl });
-                }
-                setRequests(requestsRes.data);
-                setRooms(roomsRes.data);
-                setPreferences(prefsRes.data);
-            } catch (err) {
-                console.error("Dashboard fetch error", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchDashboardData();
-    }, []);
+    // All five sources come from the shared cache: instant on revisit,
+    // refreshed in the background and by real-time events.
+    const matchesQuery = useMatchesQuery();
+    const profileQuery = useProfileQuery();
+    const requestsQuery = useRequestsQuery();
+    const roomsQuery = useRoomsQuery();
+    const preferencesQuery = usePreferencesQuery();
 
-
+    const matches = matchesQuery.data ?? EMPTY;
+    const profile = profileQuery.data ?? null;
+    const requests = requestsQuery.data ?? EMPTY_REQUESTS;
+    const rooms = roomsQuery.data ?? EMPTY;
+    const preferences = preferencesQuery.data ?? EMPTY;
+    const loading = [matchesQuery, profileQuery, requestsQuery, roomsQuery, preferencesQuery].some(q => q.isPending);
 
     const StatsCard = ({ title, value, icon: Icon, trend, path }: any) => (
         <div 

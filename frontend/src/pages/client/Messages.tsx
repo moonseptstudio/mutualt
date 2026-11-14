@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useLocation, useOutletContext, useSearchParams } from 'react-router-dom';
+import { useOutletContext, useSearchParams } from 'react-router-dom';
 import apiClient from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -17,16 +17,19 @@ import {
     MessageSquare
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Client } from '@stomp/stompjs';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys, useRoomsQuery } from '../../api/queries';
+import { useRealtime } from '../../context/RealtimeContext';
 import { formatDistanceToNow } from 'date-fns';
 import { getAvatarUrl } from '../../api/url';
 
 
 
+const EMPTY: any[] = [];
+
 const Messages = () => {
     const { t } = useTranslation();
     const { user } = useAuth();
-    const location = useLocation();
     const { globalSearchQuery }: any = useOutletContext();
     const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -43,15 +46,21 @@ const Messages = () => {
         }
     };
 
-    const [rooms, setRooms] = useState<any[]>([]);
+    const queryClient = useQueryClient();
+    const { subscribe } = useRealtime();
+    // Rooms come from the shared cache; poll every 30s to refresh online status.
+    const roomsQuery = useRoomsQuery({ refetchInterval: 30_000 });
+    const rooms = roomsQuery.data ?? EMPTY;
+    const loadingRooms = roomsQuery.isPending;
     const [messages, setMessages] = useState<any[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [loadingHistory, setLoadingHistory] = useState(false);
-    const [loadingRooms, setLoadingRooms] = useState(true);
     const [activeRoom, setActiveRoom] = useState<any>(null);
     const prevMessageCount = useRef<number>(0);
     const currentRoomIdRef = useRef<number | null>(null);
-    const stompClientRef = useRef<Client | null>(null);
+    // Which room the current `messages` belong to (used to cache history per room).
+    const messagesRoomRef = useRef<number | null>(null);
+    const autoSelectedRef = useRef(false);
     const [refreshTime, setRefreshTime] = useState(Date.now());
     const [sidebarSearchQuery, setSidebarSearchQuery] = useState('');
 
@@ -63,53 +72,36 @@ const Messages = () => {
         return () => clearInterval(interval);
     }, []);
 
-    const fetchRooms = async (isBackground = false) => {
-        try {
-            if (!isBackground && rooms.length === 0) setLoadingRooms(true);
-            const response = await apiClient.get('/messages/rooms');
-            
-            setRooms(prevRooms => {
-                // Only update if there's an actual change to prevent unnecessary re-renders
-                if (JSON.stringify(prevRooms) !== JSON.stringify(response.data)) {
-                    return response.data;
-                }
-                return prevRooms;
-            });
-
-            if (!searchParams.get('room') && !isBackground && response.data.length > 0) {
-                // Only auto-select first room on initial load if no room in URL and not a background update
-                setActiveRoomId(response.data[0].id);
-            }
-        } catch (err) {
-            console.error("Failed to load chat rooms", err);
-            if (!isBackground) toast.error(t('messages.failed_load'));
-        } finally {
-            if (!isBackground) setLoadingRooms(false);
-        }
-    };
-
     useEffect(() => {
-        if (!user?.id) return;
-        
-        fetchRooms();
-        
-        // Poll for room updates (including online status) every 30 seconds
-        const interval = setInterval(() => {
-            fetchRooms(true);
-        }, 30000);
-        
-        return () => clearInterval(interval);
-    }, [user?.id, location.search]);
+        if (roomsQuery.isError) toast.error(t('messages.failed_load'));
+    }, [roomsQuery.isError]);
+
+    // On first load, open the most recent conversation if none is selected.
+    useEffect(() => {
+        if (autoSelectedRef.current || !roomsQuery.isSuccess) return;
+        autoSelectedRef.current = true;
+        if (!searchParams.get('room') && rooms.length > 0) {
+            setActiveRoomId(rooms[0].id);
+        }
+    }, [roomsQuery.isSuccess, rooms]);
 
     useEffect(() => {
         if (!activeRoomId) return;
 
         const isRoomSwitch = currentRoomIdRef.current !== activeRoomId;
+        const cachedHistory = queryClient.getQueryData<any[]>(queryKeys.messages(activeRoomId));
         if (isRoomSwitch) {
-            // Don't clear messages immediately to avoid jumpy UI
-            // unless the new ID is totally different
-            if (!currentRoomIdRef.current) {
-                setMessages([]);
+            if (cachedHistory) {
+                // Show the cached conversation instantly, then refresh below.
+                setMessages(cachedHistory);
+                messagesRoomRef.current = activeRoomId;
+            } else {
+                // Don't clear messages immediately to avoid jumpy UI
+                // unless the new ID is totally different
+                if (!currentRoomIdRef.current) {
+                    setMessages([]);
+                }
+                messagesRoomRef.current = null;
             }
             prevMessageCount.current = 0;
             currentRoomIdRef.current = activeRoomId;
@@ -117,13 +109,15 @@ const Messages = () => {
 
         const fetchHistory = async () => {
             try {
-                if (isRoomSwitch) {
+                if (isRoomSwitch && !cachedHistory) {
                     setLoadingHistory(true);
                 }
 
                 const response = await apiClient.get(`/messages/history/${activeRoomId}`);
 
                 const newMessages = response.data;
+                if (currentRoomIdRef.current !== activeRoomId) return; // user already switched
+                messagesRoomRef.current = activeRoomId;
                 setMessages(prev => {
                     const sendingMessages = prev.filter(m => (m as any).sending);
                     return [...newMessages, ...sendingMessages];
@@ -147,48 +141,32 @@ const Messages = () => {
 
         fetchHistory();
 
-        // WebSocket Connection using native Browser WebSocket (more stable in ESM/Vite)
-        const client = new Client({
-            brokerURL: 'ws://localhost:8080/ws',
-            debug: (str) => console.log('STOMP: ' + str),
-            reconnectDelay: 5000,
-            heartbeatIncoming: 4000,
-            heartbeatOutgoing: 4000,
+        // Live messages for this room over the shared WebSocket connection.
+        const unsubscribe = subscribe(`/topic/room/${activeRoomId}`, (message) => {
+            const receivedMsg = JSON.parse(message.body);
+            setMessages(prev => {
+                // Update existing message if it's a read receipt or from sending
+                const existingIdx = prev.findIndex(m => m.id === receivedMsg.id || ((m as any).sending && m.content === receivedMsg.content));
+
+                if (existingIdx !== -1) {
+                    const newMessages = [...prev];
+                    newMessages[existingIdx] = receivedMsg;
+                    return newMessages;
+                }
+
+                return [...prev, receivedMsg];
+            });
         });
 
-        client.onConnect = (frame) => {
-            console.log('Connected: ' + frame);
-            client.subscribe(`/topic/room/${activeRoomId}`, (message) => {
-                const receivedMsg = JSON.parse(message.body);
-                setMessages(prev => {
-                    // Update existing message if it's a read receipt or from sending
-                    const existingIdx = prev.findIndex(m => m.id === receivedMsg.id || ((m as any).sending && m.content === receivedMsg.content));
-
-                    if (existingIdx !== -1) {
-                        const newMessages = [...prev];
-                        newMessages[existingIdx] = receivedMsg;
-                        return newMessages;
-                    }
-
-                    return [...prev, receivedMsg];
-                });
-            });
-        };
-
-        client.onStompError = (frame) => {
-            console.error('Broker reported error: ' + frame.headers['message']);
-            console.error('Additional details: ' + frame.body);
-        };
-
-        client.activate();
-        stompClientRef.current = client;
-
-        return () => {
-            if (stompClientRef.current) {
-                stompClientRef.current.deactivate();
-            }
-        };
+        return unsubscribe;
     }, [activeRoomId, user?.id]);
+
+    // Cache the conversation so reopening it is instant.
+    useEffect(() => {
+        if (activeRoomId && messagesRoomRef.current === activeRoomId) {
+            queryClient.setQueryData(queryKeys.messages(activeRoomId), messages.filter(m => !m.sending));
+        }
+    }, [messages, activeRoomId]);
 
     // Keep activeRoom in sync with rooms array
     useEffect(() => {
@@ -222,7 +200,12 @@ const Messages = () => {
             // Mark unread messages as read
             const unreadMessages = messages.filter(m => !(m.isRead || m.read) && m.senderId !== user?.id && !m.sending);
             if (unreadMessages.length > 0 && activeRoomId) {
-                apiClient.post('/messages/read', { roomId: activeRoomId }).catch(console.error);
+                apiClient.post('/messages/read', { roomId: activeRoomId })
+                    .then(() => {
+                        queryClient.invalidateQueries({ queryKey: queryKeys.rooms });
+                        queryClient.invalidateQueries({ queryKey: queryKeys.notifications });
+                    })
+                    .catch(console.error);
                 // Optimistically mark as read locally
                 setMessages(prev => prev.map(m => (!(m.isRead || m.read) && m.senderId !== user?.id && !m.sending) ? { ...m, isRead: true, read: true } : m));
             }
@@ -259,6 +242,8 @@ const Messages = () => {
 
             // Replace the optimistic message with the actual message from server
             setMessages(prev => prev.map(m => m.id === tempId ? response.data : m));
+            // Move this conversation to the top of the room list with its new last message.
+            queryClient.invalidateQueries({ queryKey: queryKeys.rooms });
         } catch (err) {
             console.error("Failed to send message", err);
             toast.error(t('messages.failed_send'));

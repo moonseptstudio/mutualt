@@ -12,7 +12,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
-import NotificationListener from '../components/common/NotificationListener';
+import { RealtimeProvider } from '../context/RealtimeContext';
 import { motion } from 'framer-motion';
 import SEO from '../components/SEO';
 
@@ -86,14 +86,13 @@ const ClientLayout = () => {
     ];
 
     return (
+        <RealtimeProvider>
         <div className="flex flex-col h-screen bg-[var(--bg-main)] overflow-hidden font-sans selection:bg-primary-500/30">
             <SEO
                 title="My Dashboard"
                 description="Your private MutualTransfer.lk dashboard."
                 noindex
             />
-            <NotificationListener />
-
             <Header hasPackage={!!hasPackage} />
 
             {/* Main Content Area */}
@@ -201,6 +200,7 @@ const ClientLayout = () => {
                 </div>
             </nav>
         </div>
+        </RealtimeProvider>
     );
 };
 

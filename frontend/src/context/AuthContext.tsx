@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import apiClient from '../api/client';
+import { queryClient } from '../api/queryClient';
 
 interface User {
     id: number;
@@ -87,7 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }, 60000);
         
         return () => clearInterval(interval);
-    }, [user]);
+    }, [user?.id]);
 
     const login = (userData: User, rememberMe: boolean = false) => {
         if (rememberMe) {
@@ -117,6 +118,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.removeItem('user');
         sessionStorage.removeItem('user');
         setUser(null);
+        // Drop all cached server data so the next account never sees it.
+        queryClient.clear();
     };
 
     const refreshSession = async () => {
@@ -137,7 +140,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     sessionStorage.setItem('user', JSON.stringify(updatedUser));
                 }
                 
-                setUser(updatedUser);
+                // Only re-render the app when something actually changed.
+                setUser((prev) => (JSON.stringify(prev) === JSON.stringify(updatedUser) ? prev : updatedUser));
             }
         } catch (error) {
             console.error("Session refresh failed", error);

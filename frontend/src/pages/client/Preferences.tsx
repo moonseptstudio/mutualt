@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import apiClient from '../../api/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys, usePreferencesQuery, useProfileQuery, useStationsQuery } from '../../api/queries';
 import { useTranslation } from 'react-i18next';
 import { useOutletContext } from 'react-router-dom';
 import {
@@ -84,14 +86,33 @@ const PreferenceItem: React.FC<PreferenceItemProps> = ({ item, index, onRemove, 
     );
 };
 
+const EMPTY: any[] = [];
+
 const Preferences = () => {
     const { t } = useTranslation();
     const { globalSearchQuery }: any = useOutletContext();
-    const [allStations, setAllStations] = useState<any[]>([]);
-    const [preferences, setPreferences] = useState<any[]>([]);
-    const [currentStationId, setCurrentStationId] = useState<number | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [userProfile, setUserProfile] = useState<any>(null);
+    const queryClient = useQueryClient();
+
+    // Profile -> stations (filtered by field) and preferences, all cached.
+    const profileQuery = useProfileQuery();
+    const userProfile = profileQuery.data ?? null;
+    const currentStationId: number | null = userProfile?.currentStationId ?? null;
+    const userFieldId: number | null = userProfile?.fieldId ?? null;
+    // Wait for the profile (or its failure) so stations are filtered by field.
+    const stationsQuery = useStationsQuery(userFieldId, !profileQuery.isPending);
+    const preferencesQuery = usePreferencesQuery();
+
+    const allStations = stationsQuery.data ?? EMPTY;
+    const preferences = preferencesQuery.data ?? EMPTY;
+    const loading = profileQuery.isPending || stationsQuery.isPending || preferencesQuery.isPending;
+
+    type Updater = any[] | ((prev: any[]) => any[]);
+    const applyUpdate = (key: readonly unknown[], update: Updater) =>
+        queryClient.setQueryData<any[]>(key, (prev) => (typeof update === 'function' ? update(prev ?? []) : update));
+    const setPreferences = (update: Updater) => applyUpdate(queryKeys.preferences, update);
+    const setAllStations = (update: Updater) => applyUpdate(queryKeys.stations(userFieldId), update);
+    // Preference changes affect which matches are found.
+    const refreshMatches = () => queryClient.invalidateQueries({ queryKey: queryKeys.matches });
 
     // Modal state
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -118,49 +139,11 @@ const Preferences = () => {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [preferenceToDelete, setPreferenceToDelete] = useState<number | null>(null);
 
-    useEffect(() => {
-        const loadPageData = async () => {
-            setLoading(true);
-            try {
-                // Fetch user profile to get current station and field string
-                const profileRes = await apiClient.get('/profile/me');
-                let userFieldId: number | null = null;
-
-                if (profileRes.data) {
-                    setUserProfile(profileRes.data);
-                    if (profileRes.data.currentStationId) {
-                        setCurrentStationId(profileRes.data.currentStationId);
-                    }
-                    if (profileRes.data.fieldId) {
-                        userFieldId = profileRes.data.fieldId;
-                    }
-                }
-
-                // Fetch stations filtered by the user's field
-                const stationsUrl = userFieldId ? `/public/stations?fieldId=${userFieldId}` : '/public/stations';
-                const stationsRes = await apiClient.get(stationsUrl);
-                setAllStations(stationsRes.data);
-
-                // Fetch preferences (Protected)
-                try {
-                    const prefsRes = await apiClient.get('/preferences');
-                    setPreferences(prefsRes.data);
-                } catch (prefErr) {
-                    console.warn("Could not load user preferences", prefErr);
-                }
-            } catch (err) {
-                console.error("Error loading data", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        loadPageData();
-    }, []);
-
     const handleAddPreference = async (stationId: number) => {
         try {
             const response = await apiClient.post('/preferences', { stationId });
-            setPreferences([...preferences, response.data]);
+            setPreferences(prev => [...prev, response.data]);
+            refreshMatches();
             toast.success(t('preferences.toast_added'));
         } catch (err) {
             console.error("Error adding preference", err);
@@ -177,7 +160,8 @@ const Preferences = () => {
         if (preferenceToDelete === null) return;
         try {
             await apiClient.delete(`/preferences/${preferenceToDelete}`);
-            setPreferences(preferences.filter(p => p.id !== preferenceToDelete));
+            setPreferences(prev => prev.filter(p => p.id !== preferenceToDelete));
+            refreshMatches();
             toast.success(t('preferences.toast_removed'));
         } catch (err: any) {
             console.error("Error removing preference", err);
@@ -197,8 +181,10 @@ const Preferences = () => {
         try {
             const preferenceIds = preferencesRef.current.map(p => p.id);
             await apiClient.post('/preferences/reorder', preferenceIds);
+            refreshMatches();
         } catch (error) {
             console.error("Failed to save reordered preferences", error);
+            queryClient.invalidateQueries({ queryKey: queryKeys.preferences });
         }
     };
 
@@ -624,6 +610,7 @@ const Preferences = () => {
                     try {
                         const response = await apiClient.post('/preferences', { stationId: newStation.id });
                         setPreferences(prev => [...prev, response.data]);
+                        refreshMatches();
                         toast.success("Station added to your preferences (Pending Verification)!");
                     } catch (e) {
                         console.error("Failed to add preference", e);

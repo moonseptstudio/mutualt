@@ -33,6 +33,8 @@ const ConfigItem = ({ icon: Icon, label, value, action, warning, onClick }: any)
 );
 
 import { useState, useEffect, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys, useProfileQuery } from '../../api/queries';
 import { useTranslation } from 'react-i18next';
 import apiClient from '../../api/client';
 import { ProfileSkeleton } from '../../components/common/Skeletons';
@@ -54,8 +56,9 @@ const Profile = () => {
     const { t } = useTranslation();
     const { user, logout, updateUser } = useAuth();
     const navigate = useNavigate();
-    const [profile, setProfile] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
+    const queryClient = useQueryClient();
+    const { data: profile = null, isPending: loading } = useProfileQuery();
+    const setProfile = (data: any) => queryClient.setQueryData(queryKeys.profile, data);
     const [isEditing, setIsEditing] = useState(false);
     const [editForm, setEditForm] = useState({ email: '', phoneNumber: '', profileImageUrl: '' });
     const [isUploading, setIsUploading] = useState(false);
@@ -63,27 +66,15 @@ const Profile = () => {
 
     const photoInputRef = useRef<HTMLInputElement>(null);
 
+    // Fill the edit form from the (cached / refreshed) profile, unless the user is typing.
     useEffect(() => {
-        const fetchProfile = async () => {
-            try {
-                const response = await apiClient.get('/profile/me');
-                setProfile(response.data);
-                if (response.data?.fullName && (!user?.fullName || user.fullName !== response.data.fullName)) {
-                    updateUser({ fullName: response.data.fullName, profileImageUrl: response.data.profileImageUrl });
-                }
-                setEditForm({
-                    email: response.data.email,
-                    phoneNumber: response.data.phoneNumber || '',
-                    profileImageUrl: response.data.profileImageUrl || ''
-                });
-            } catch (err) {
-                console.error("Failed to fetch profile", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchProfile();
-    }, []);
+        if (!profile || isEditing) return;
+        setEditForm({
+            email: profile.email,
+            phoneNumber: profile.phoneNumber || '',
+            profileImageUrl: profile.profileImageUrl || ''
+        });
+    }, [profile, isEditing]);
 
     const handleUpdateProfile = async () => {
         try {

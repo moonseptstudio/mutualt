@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@stomp/stompjs": "^7.0.0",
+    "@tanstack/react-query": "^5.107.1",
     "autoprefixer": "^10.4.27",
     "axios": "^1.13.6",
     "date-fns": "^4.1.0",

@@ -1,10 +1,9 @@
 import {
   BrowserRouter as Router,
   Routes,
-  Route,
-  useLocation
+  Route
 } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAuth } from './context/AuthContext';
 import { Toaster } from 'react-hot-toast';
 
@@ -43,15 +42,29 @@ import AdminLoginPage from './pages/web/AdminLoginPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
 
+/**
+ * Keeps the stored user (package, name, avatar...) in sync with the server.
+ * Runs once after login / page load and when the tab regains focus - NOT on
+ * every route change, which used to delay every page switch.
+ */
 const SessionSync = () => {
   const { refreshSession, isAuthenticated } = useAuth();
-  const location = useLocation();
+  const lastSyncRef = useRef(0);
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (!isAuthenticated) return;
+
+    const sync = () => {
+      const now = Date.now();
+      if (now - lastSyncRef.current < 30_000) return;
+      lastSyncRef.current = now;
       refreshSession();
-    }
-  }, [location.pathname, isAuthenticated]);
+    };
+
+    sync();
+    window.addEventListener('focus', sync);
+    return () => window.removeEventListener('focus', sync);
+  }, [isAuthenticated]);
 
   return null;
 };

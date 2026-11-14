@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys, useSettingsQuery } from '../../api/queries';
 import { useTranslation } from 'react-i18next';
 import {
     Lock,
@@ -39,33 +41,27 @@ const SettingToggle = ({ icon: Icon, title, description, enabled, onToggle }: an
 const Settings = () => {
     const { t } = useTranslation();
     const { theme, toggleTheme, setTheme } = useTheme();
-    const [settings, setSettings] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
+    const queryClient = useQueryClient();
+    const { data: settings = null, isPending: loading } = useSettingsQuery();
+    const setSettings = (data: any) => queryClient.setQueryData(queryKeys.settings, data);
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
+    // Keep the cached darkMode flag in step with the theme context.
     useEffect(() => {
-        if (settings) {
+        if (settings && settings.darkMode !== (theme === 'dark')) {
             setSettings({ ...settings, darkMode: theme === 'dark' });
         }
     }, [theme]);
 
+    // Sync theme context with the backend setting the first time it loads.
+    const syncedThemeRef = useRef(false);
     useEffect(() => {
-        const fetchSettings = async () => {
-            try {
-                const response = await apiClient.get('/settings');
-                setSettings(response.data);
-                // Sync theme context with backend setting on load
-                if (response.data.darkMode !== (theme === 'dark')) {
-                    setTheme(response.data.darkMode ? 'dark' : 'light');
-                }
-            } catch (err) {
-                console.error("Failed to fetch settings", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchSettings();
-    }, []);
+        if (!settings || syncedThemeRef.current) return;
+        syncedThemeRef.current = true;
+        if (settings.darkMode !== (theme === 'dark')) {
+            setTheme(settings.darkMode ? 'dark' : 'light');
+        }
+    }, [settings]);
 
     const toggleSetting = async (key: string) => {
         try {

@@ -20,6 +20,8 @@ import { useTheme } from '../../context/ThemeContext';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import apiClient from '../../api/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys, useNotificationsQuery, useProfileQuery } from '../../api/queries';
 import ConfirmationModal from './ConfirmationModal';
 import LanguageSwitcher from '../LanguageSwitcher';
 import logoImg from '../../assets/logos/logo.jpg';
@@ -39,8 +41,6 @@ const Header = ({ hasPackage }: HeaderProps) => {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
     const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
-    const [profile, setProfile] = useState<any>(null);
-    const [notifications, setNotifications] = useState<any[]>([]);
     const searchInputRef = useRef<HTMLInputElement>(null);
     const notificationsDropdownRef = useRef<HTMLDivElement>(null);
     const profileDropdownRef = useRef<HTMLDivElement>(null);
@@ -85,53 +85,25 @@ const Header = ({ hasPackage }: HeaderProps) => {
         },
     ];
 
-    const fetchNotifications = async () => {
-        try {
-            const res = await apiClient.get('/notifications');
-            setNotifications(res.data);
-        } catch (error) {
-            console.error('Failed to fetch notifications', error);
-        }
-    };
+    const queryClient = useQueryClient();
+    const { data: notifications = [] } = useNotificationsQuery(!!user);
+    const { data: profile } = useProfileQuery();
 
-    const fetchProfile = async () => {
-        try {
-            const response = await apiClient.get('/profile/me');
-            setProfile(response.data);
-            if (response.data?.fullName && (!user?.fullName || user.fullName !== response.data.fullName)) {
-                updateUser({ fullName: response.data.fullName, profileImageUrl: response.data.profileImageUrl });
-            }
-        } catch (err) {
-            console.error("Failed to fetch profile in header", err);
-        }
-    };
-
+    // Keep the stored user's name / avatar in sync with the latest profile.
     useEffect(() => {
-        if (user) {
-            fetchNotifications();
-            fetchProfile();
-            // Poll every 30 seconds
-            const interval = setInterval(() => {
-                fetchNotifications();
-                fetchProfile();
-            }, 30000);
-
-            const handleNotificationReceived = () => {
-                fetchNotifications();
-            };
-            window.addEventListener('notification-received', handleNotificationReceived);
-
-            return () => {
-                clearInterval(interval);
-                window.removeEventListener('notification-received', handleNotificationReceived);
-            };
+        if (profile?.fullName && (user?.fullName !== profile.fullName || user?.profileImageUrl !== profile.profileImageUrl)) {
+            updateUser({ fullName: profile.fullName, profileImageUrl: profile.profileImageUrl });
         }
-    }, [user]);
+    }, [profile?.fullName, profile?.profileImageUrl]);
+
+    const setNotifications = (updater: (prev: any[]) => any[]) => {
+        queryClient.setQueryData<any[]>(queryKeys.notifications, (prev) => updater(prev ?? []));
+    };
 
     const markAsRead = async (id: number) => {
         try {
             await apiClient.put(`/notifications/${id}/read`);
-            setNotifications(notifications.map(n => n.id === id ? { ...n, isRead: true } : n));
+            setNotifications((prev) => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
         } catch (error) {
             console.error('Failed to mark as read', error);
         }
@@ -140,7 +112,7 @@ const Header = ({ hasPackage }: HeaderProps) => {
     const markAllAsRead = async () => {
         try {
             await apiClient.put('/notifications/read-all');
-            setNotifications(notifications.map(n => ({ ...n, isRead: true })));
+            setNotifications((prev) => prev.map(n => ({ ...n, isRead: true })));
         } catch (error) {
             console.error('Failed to mark all as read', error);
         }
