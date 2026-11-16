@@ -25,4 +25,11 @@ public class UserProfileDto {
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private java.time.LocalDateTime subscriptionEndDate;
+
+    /** True once the one-off free trial has been claimed. */
+    private boolean trialUsed;
+
+    /** When the claimed free trial runs out. Null until claimed. */
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    private java.time.LocalDateTime trialEndDate;
 }

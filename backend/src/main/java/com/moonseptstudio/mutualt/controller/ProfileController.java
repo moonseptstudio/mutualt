@@ -60,6 +60,8 @@ public class ProfileController {
         dto.setProfileImageUrl(profile.getProfileImageUrl());
         dto.setPackageName(user.getSubscriptionPackage() != null ? user.getSubscriptionPackage().getName() : null);
         dto.setSubscriptionEndDate(user.getSubscriptionEndDate());
+        dto.setTrialUsed(user.isTrialUsed());
+        dto.setTrialEndDate(user.getTrialEndDate());
 
         return dto;
     }

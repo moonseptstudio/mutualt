@@ -1,10 +1,12 @@
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Gift, Sparkles, CheckCircle2 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../api/client';
 import toast from 'react-hot-toast';
 import { useState, useRef } from 'react';
 import PaymentModal from '../../components/modals/PaymentModal';
+import { useTrialStatusQuery, claimFreeTrial, queryKeys } from '../../api/queries';
+import { queryClient } from '../../api/queryClient';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import PricingCard from '../../components/common/PricingCard';
@@ -78,11 +80,19 @@ const ScrollAnimatedSection = ({ children, className = "", id, ref: externalRef 
 
 const PricingPage = () => {
     const { t } = useTranslation();
-    const { isAuthenticated, login, user } = useAuth();
+    const { isAuthenticated, updateUser, user } = useAuth();
     const navigate = useNavigate();
     const [isUpgrading, setIsUpgrading] = useState(false);
     const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [isTrialCheckout, setIsTrialCheckout] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState<{name: string, price: string, duration: number} | null>(null);
+
+    // Free-trial state only exists for a signed-in account.
+    const trialQuery = useTrialStatusQuery(isAuthenticated);
+    const trial = trialQuery.data;
+    const trialDays = trial?.trialDays ?? 14;
+
+    const premiumPlanName = t('home.pricing_plan_premium1', 'Premium (1 Month)');
 
     const handleUpgradeRequest = (plan: {name: string, price: string, duration: number}) => {
         if (!isAuthenticated) {
@@ -90,25 +100,80 @@ const PricingPage = () => {
             return;
         }
 
+        setIsTrialCheckout(false);
         setSelectedPlan(plan);
         setShowPaymentModal(true);
     };
 
+    /** Opens the no-card trial panel. Visitors are sent to register first. */
+    const handleTrialRequest = () => {
+        if (!isAuthenticated) {
+            navigate('/register');
+            return;
+        }
+
+        setIsTrialCheckout(true);
+        setSelectedPlan({ name: premiumPlanName, price: "440", duration: 0 });
+        setShowPaymentModal(true);
+    };
+
     const handlePaymentSuccess = async () => {
-        if (!selectedPlan) return;
         setShowPaymentModal(false);
+
+        if (isTrialCheckout) {
+            await performTrialClaim();
+            return;
+        }
+
+        if (!selectedPlan) return;
         await performUpgrade(selectedPlan.duration);
+    };
+
+    /** Marks the session as Premium without disturbing which storage holds it. */
+    const markPremium = () => {
+        if (user) {
+            updateUser({ packageName: 'PREMIUM' });
+        }
+        queryClient.invalidateQueries({ queryKey: queryKeys.trial });
+        queryClient.invalidateQueries({ queryKey: queryKeys.profile });
+    };
+
+    const performTrialClaim = async () => {
+        try {
+            setIsUpgrading(true);
+            const status = await claimFreeTrial();
+            markPremium();
+
+            toast.success(
+                t('trial.claim_success', 'Your {{days}}-day free trial is active!', { days: status.trialDays }),
+                { icon: '🎁' }
+            );
+            navigate('/dashboard');
+        } catch (err: any) {
+            console.error("Trial activation failed", err);
+            // The server answers with a code so the reason can be shown in the user's language.
+            const code = err.response?.data?.code;
+            toast.error(
+              code === 'TRIAL_ALREADY_CLAIMED'
+                ? t('trial.error_already_claimed', 'This account has already used its free trial.')
+                : code === 'TRIAL_WINDOW_CLOSED'
+                  ? t('trial.error_window_closed', 'The free trial is only available during your first {{days}} days.', { days: trialDays })
+                  : t('trial.claim_failed', "Couldn't start your free trial. Please try again.")
+            );
+            queryClient.invalidateQueries({ queryKey: queryKeys.trial });
+        } finally {
+            setIsUpgrading(false);
+            setIsTrialCheckout(false);
+        }
     };
 
     const performUpgrade = async (durationMonths: number) => {
         try {
             setIsUpgrading(true);
             await apiClient.post('/packages/buy', { duration: durationMonths });
-            
-            if (user) {
-                login({ ...user, packageName: 'PREMIUM' });
-            }
-            
+
+            markPremium();
+
             toast.success(t('pricing_page.upgrade_success', "Welcome to Premium! All features unlocked."), { icon: '💎' });
             navigate('/dashboard');
         } catch (err: any) {
@@ -208,10 +273,13 @@ const PricingPage = () => {
             />
             <PaymentModal 
                 isOpen={showPaymentModal}
-                onClose={() => setShowPaymentModal(false)}
+                onClose={() => { setShowPaymentModal(false); setIsTrialCheckout(false); }}
                 onPaymentSuccess={handlePaymentSuccess}
                 packageName={selectedPlan?.name || "Premium"}
                 price={selectedPlan?.price || "0"}
+                trialMode={isTrialCheckout}
+                trialDays={trialDays}
+                trialDaysLeftToClaim={trial?.daysLeftToClaim}
             />
 
             {/* ─── Hero Section ─── */}
@@ -256,6 +324,73 @@ const PricingPage = () => {
                             {t('pricing_page.plans_subtitle', 'Transparent, one-time pricing tailored for government officers across Sri Lanka.')}
                         </motion.p>
                     </motion.div>
+
+                    {/* ─── 14-Day Free Trial Banner ─── */}
+                    {(!isAuthenticated || trial?.eligible || trial?.active) && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 30 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true, margin: "-100px" }}
+                            transition={{ duration: 0.6 }}
+                            className="max-w-4xl mx-auto mb-12"
+                        >
+                            <div className="relative overflow-hidden rounded-[32px] promo-banner-bg p-8 sm:p-10 shadow-2xl shadow-violet-500/20">
+                                <div className="absolute inset-0 bg-gradient-to-br from-violet-600/30 to-pink-600/20" />
+                                <div className="absolute -top-10 -left-10 w-40 h-40 bg-violet-400/20 rounded-full blur-3xl" />
+                                <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-pink-400/20 rounded-full blur-3xl" />
+
+                                <div className="relative z-10 flex flex-col sm:flex-row items-center gap-6 sm:gap-8 text-center sm:text-left">
+                                    <div className="w-16 h-16 shrink-0 bg-white/15 backdrop-blur-md border border-white/25 rounded-2xl flex items-center justify-center shadow-lg">
+                                        <Gift size={30} className="text-amber-300" />
+                                    </div>
+
+                                    <div className="flex-1">
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-400/20 border border-emerald-400/30 text-emerald-200 text-[10px] font-black uppercase tracking-widest rounded-full mb-3">
+                                            <CheckCircle2 size={10} />
+                                            {t('trial.no_card_badge', 'No card required')}
+                                        </span>
+
+                                        {trial?.active ? (
+                                            <>
+                                                <h3 className="text-2xl font-black text-white tracking-tight">
+                                                    {t('trial.active_title', 'Your free trial is running')}
+                                                </h3>
+                                                <p className="text-violet-100/80 text-sm mt-1.5">
+                                                    {t('trial.active_desc', '{{days}} days of Premium left. Buy a package any time to keep going.', { days: trial.daysRemaining })}
+                                                </p>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <h3 className="text-2xl font-black text-white tracking-tight">
+                                                    {t('trial.banner_title', 'First {{days}} days completely free', { days: trialDays })}
+                                                </h3>
+                                                <p className="text-violet-100/80 text-sm mt-1.5">
+                                                    {isAuthenticated
+                                                        ? t('trial.banner_desc_eligible', 'Unlock every Premium feature for {{days}} more days. No card details, no charge.', { days: trial?.daysLeftToClaim ?? trialDays })
+                                                        : t('trial.banner_desc_guest', 'Every new account gets full Premium access for {{days}} days. No card details, no charge.', { days: trialDays })}
+                                                </p>
+                                            </>
+                                        )}
+                                    </div>
+
+                                    {!trial?.active && (
+                                        <button
+                                            onClick={handleTrialRequest}
+                                            disabled={isUpgrading}
+                                            className="w-full sm:w-auto shrink-0 px-8 py-4 bg-white text-slate-900 font-black rounded-2xl flex items-center justify-center gap-2 shadow-lg hover:scale-[1.03] active:scale-[0.98] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                                        >
+                                            <Sparkles size={16} className="text-violet-600" />
+                                            <span>
+                                                {isAuthenticated
+                                                    ? t('trial.activate_cta', 'Start My Free Trial')
+                                                    : t('trial.guest_cta', 'Create Free Account')}
+                                            </span>
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
 
                     <motion.div 
                         initial="hidden"

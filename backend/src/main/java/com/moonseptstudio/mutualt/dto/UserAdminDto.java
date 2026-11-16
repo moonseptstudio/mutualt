@@ -19,4 +19,6 @@ public class UserAdminDto {
     private boolean verified;
     private LocalDateTime lastSeen;
     private LocalDateTime subscriptionEndDate;
+    private boolean trialUsed;
+    private LocalDateTime trialEndDate;
 }

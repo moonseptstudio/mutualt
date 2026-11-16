@@ -9,12 +9,13 @@ import {
     BookOpen,
     Smartphone,
     CreditCard,
-    Building2
+    Building2,
+    Gift
 } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { useMatchesQuery, useProfileQuery, useRequestsQuery, useRoomsQuery, usePreferencesQuery } from '../../api/queries';
+import { useMatchesQuery, useProfileQuery, useRequestsQuery, useRoomsQuery, usePreferencesQuery, useTrialStatusQuery } from '../../api/queries';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from 'react-i18next';
 import { useOutletContext } from 'react-router-dom';
@@ -44,12 +45,14 @@ const ClientDashboard = () => {
     const requestsQuery = useRequestsQuery();
     const roomsQuery = useRoomsQuery();
     const preferencesQuery = usePreferencesQuery();
+    const trialQuery = useTrialStatusQuery();
 
     const matches = matchesQuery.data ?? EMPTY;
     const profile = profileQuery.data ?? null;
     const requests = requestsQuery.data ?? EMPTY_REQUESTS;
     const rooms = roomsQuery.data ?? EMPTY;
     const preferences = preferencesQuery.data ?? EMPTY;
+    const trial = trialQuery.data;
     const loading = [matchesQuery, profileQuery, requestsQuery, roomsQuery, preferencesQuery].some(q => q.isPending);
 
     const StatsCard = ({ title, value, icon: Icon, trend, path }: any) => (
@@ -403,7 +406,30 @@ const ClientDashboard = () => {
                     {/* Pro Banner */}
                     <div className="bg-slate-950 rounded-[40px] p-8 text-white relative overflow-hidden group shadow-2xl shadow-slate-900/10">
                         <div className="relative z-10">
-                            {hasPackage ? (
+                            {trial?.active ? (
+                                <>
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 mb-3 bg-amber-400/15 border border-amber-400/25 text-amber-300 text-[9px] font-bold uppercase tracking-widest rounded-full">
+                                        <Gift size={10} />
+                                        {t('trial.badge', 'Free trial')}
+                                    </span>
+                                    <h4 className="text-lg font-bold tracking-tight mb-2">
+                                        {t('trial.dashboard_active_title', 'Free trial running')}
+                                    </h4>
+                                    <div className="flex items-center space-x-2 mb-6 text-white/40 text-[11px] font-medium leading-relaxed">
+                                        <Clock size={12} />
+                                        <span>{trial.daysRemaining} {t('dashboard.pro.days_remaining')}</span>
+                                    </div>
+                                    <p className="text-white/40 text-[11px] font-medium leading-relaxed mb-6">
+                                        {t('trial.dashboard_active_msg', 'Every Premium feature is unlocked. Buy a package before it ends to keep them.')}
+                                    </p>
+                                    <button
+                                        onClick={() => navigate('/pricing')}
+                                        className="w-full py-4 bg-white text-slate-950 rounded-[20px] text-[10px] font-bold uppercase tracking-[0.2em] shadow-lg hover:bg-primary-50 transition-all active:scale-95 cursor-pointer"
+                                    >
+                                        {t('dashboard.pro.view_plans')}
+                                    </button>
+                                </>
+                            ) : hasPackage ? (
                                 <>
                                     <h4 className="text-lg font-bold tracking-tight mb-2">{t('dashboard.pro.package_duration')}</h4>
                                     <div className="flex items-center space-x-2 mb-6 text-white/40 text-[11px] font-medium leading-relaxed">
@@ -418,6 +444,25 @@ const ClientDashboard = () => {
                                         className="w-full py-4 bg-white text-slate-950 rounded-[20px] text-[10px] font-bold uppercase tracking-[0.2em] shadow-lg hover:bg-primary-50 transition-all active:scale-95 cursor-pointer"
                                     >
                                         {t('dashboard.pro.extend')}
+                                    </button>
+                                </>
+                            ) : trial?.eligible ? (
+                                <>
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 mb-3 bg-emerald-400/15 border border-emerald-400/25 text-emerald-300 text-[9px] font-bold uppercase tracking-widest rounded-full">
+                                        <Gift size={10} />
+                                        {t('trial.no_card_badge', 'No card required')}
+                                    </span>
+                                    <h4 className="text-lg font-bold tracking-tight mb-2">
+                                        {t('trial.banner_title', 'First {{days}} days completely free', { days: trial.trialDays })}
+                                    </h4>
+                                    <p className="text-white/40 text-[11px] font-medium leading-relaxed mb-6">
+                                        {t('trial.dashboard_eligible_msg', 'Unlock every Premium feature for {{days}} more days. No card details, no charge.', { days: trial.daysLeftToClaim })}
+                                    </p>
+                                    <button
+                                        onClick={() => navigate('/pricing')}
+                                        className="w-full py-4 bg-white text-slate-950 rounded-[20px] text-[10px] font-bold uppercase tracking-[0.2em] shadow-lg hover:bg-primary-50 transition-all active:scale-95 cursor-pointer"
+                                    >
+                                        {t('trial.activate_cta', 'Start My Free Trial')}
                                     </button>
                                 </>
                             ) : (

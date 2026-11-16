@@ -32,4 +32,11 @@ public class User {
 
     private java.time.LocalDateTime subscriptionEndDate;
     private java.time.LocalDateTime createdAt = java.time.LocalDateTime.now();
+
+    /** True once the user has claimed their one-off free trial. */
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean trialUsed = false;
+
+    /** When the claimed trial runs out (= createdAt + trial length). Null until claimed. */
+    private java.time.LocalDateTime trialEndDate;
 }

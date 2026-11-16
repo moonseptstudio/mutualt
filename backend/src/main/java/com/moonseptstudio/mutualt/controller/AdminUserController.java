@@ -66,6 +66,8 @@ public class AdminUserController {
             dto.setRole(user.getRole());
             dto.setVerified(user.isVerified());
             dto.setLastSeen(user.getLastSeen());
+            dto.setTrialUsed(user.isTrialUsed());
+            dto.setTrialEndDate(user.getTrialEndDate());
             if (user.getSubscriptionPackage() != null) {
                 dto.setPackageName(user.getSubscriptionPackage().getName());
                 dto.setSubscriptionEndDate(user.getSubscriptionEndDate());

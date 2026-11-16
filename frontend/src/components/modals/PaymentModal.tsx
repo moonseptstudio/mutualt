@@ -8,10 +8,24 @@ interface PaymentModalProps {
     onPaymentSuccess: () => void;
     packageName: string;
     price: string;
-    promoActive?: boolean;
+    /** Renders the no-card free-trial panel instead of the card form. */
+    trialMode?: boolean;
+    /** Length of the free trial window, in days. */
+    trialDays?: number;
+    /** Whole days left to claim before the trial window closes. */
+    trialDaysLeftToClaim?: number;
 }
 
-const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentSuccess, packageName, price, promoActive = false }) => {
+const PaymentModal: React.FC<PaymentModalProps> = ({
+    isOpen,
+    onClose,
+    onPaymentSuccess,
+    packageName,
+    price,
+    trialMode = false,
+    trialDays = 14,
+    trialDaysLeftToClaim,
+}) => {
     const { t } = useTranslation();
     const [isProcessing, setIsProcessing] = useState(false);
     const [cardDetails, setCardDetails] = useState({
@@ -146,7 +160,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
         }, 2000);
     };
 
-    const handlePromoActivate = () => {
+    const handleTrialActivate = () => {
         if (isProcessing) return;
         setIsProcessing(true);
         setTimeout(() => {
@@ -170,10 +184,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
                     <X size={20} />
                 </button>
 
-                {promoActive ? (
-                    /* ── PROMO MODE ── */
+                {trialMode ? (
+                    /* ── FREE TRIAL MODE (no card details) ── */
                     <div className="p-8">
-                        {/* Promo Header */}
+                        {/* Trial Header */}
                         <div className="relative rounded-3xl overflow-hidden mb-8 promo-banner-bg p-8 text-center">
                             <div className="absolute inset-0 bg-gradient-to-br from-violet-600/30 to-pink-600/20" />
                             <div className="absolute -top-8 -left-8 w-24 h-24 bg-violet-400/20 rounded-full blur-2xl" />
@@ -183,10 +197,14 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
                                     <Gift size={30} className="text-amber-300" />
                                 </div>
                                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-400/20 border border-emerald-400/30 text-emerald-300 text-[10px] font-black uppercase tracking-widest rounded-full mb-3">
-                                    <CheckCircle2 size={10} /> Promo Auto-Applied
+                                    <CheckCircle2 size={10} /> {t('trial.no_card_badge', 'No card required')}
                                 </div>
-                                <h3 className="text-2xl font-black text-white tracking-tight">May Offer Active! 🎉</h3>
-                                <p className="text-violet-200/80 text-sm mt-1">No card details needed</p>
+                                <h3 className="text-2xl font-black text-white tracking-tight">
+                                    {t('trial.modal_title', '{{days}} Days Free', { days: trialDays })}
+                                </h3>
+                                <p className="text-violet-200/80 text-sm mt-1">
+                                    {t('trial.no_card_needed', 'No card details needed')}
+                                </p>
                             </div>
                         </div>
 
@@ -207,25 +225,30 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
                                         <span className="text-sm font-bold text-emerald-600">Rs.</span>
                                         <span className="text-4xl font-black text-emerald-600 tracking-tighter tabular-nums">0</span>
                                     </div>
-                                    <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">FREE this month</span>
+                                    <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">
+                                        {t('trial.free_label', 'Free for {{days}} days', { days: trialDays })}
+                                    </span>
                                 </div>
                             </div>
 
                             <div className="mt-4 pt-4 border-t border-violet-100 dark:border-violet-800/30 flex flex-col gap-2">
                                 {[
-                                    '✓ 1 Month Premium Access',
-                                    '✓ No card details required',
-                                    '✓ All premium features unlocked',
-                                    '✓ Promo valid until May 31, 2026',
+                                    t('trial.perk_access', '{{days}} days of full Premium access', { days: trialDays }),
+                                    t('trial.perk_no_card', 'No card details required'),
+                                    t('trial.perk_features', 'All premium features unlocked'),
+                                    t('trial.perk_no_charge', 'Nothing is charged, ever'),
                                 ].map((item, i) => (
-                                    <span key={i} className="text-xs font-medium text-slate-600 dark:text-slate-400">{item}</span>
+                                    <span key={i} className="text-xs font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+                                        <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />
+                                        {item}
+                                    </span>
                                 ))}
                             </div>
                         </div>
 
                         {/* Activate button */}
                         <button
-                            onClick={handlePromoActivate}
+                            onClick={handleTrialActivate}
                             disabled={isProcessing}
                             className="w-full py-4 promo-banner-bg text-white font-black rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-violet-500/25 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                         >
@@ -234,16 +257,22 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onPaymentS
                             ) : (
                                 <>
                                     <Crown size={18} className="text-amber-300" />
-                                    <span>Activate Free Premium</span>
+                                    <span>{t('trial.activate_cta', 'Start My Free Trial')}</span>
                                     <Sparkles size={16} className="text-violet-200" />
                                 </>
                             )}
                         </button>
 
-                        <p className="mt-4 text-center text-xs text-slate-400 flex items-center justify-center gap-1">
-                            <PartyPopper size={12} />
-                            <span>Special offer — May 31 deadline</span>
-                        </p>
+                        {typeof trialDaysLeftToClaim === 'number' && (
+                            <p className="mt-4 text-center text-xs text-slate-400 flex items-center justify-center gap-1">
+                                <PartyPopper size={12} />
+                                <span>
+                                    {t('trial.claim_window_hint', 'Available for {{days}} more days after registration', {
+                                        days: trialDaysLeftToClaim,
+                                    })}
+                                </span>
+                            </p>
+                        )}
                     </div>
                 ) : (
                     /* ── NORMAL PAYMENT MODE ── */

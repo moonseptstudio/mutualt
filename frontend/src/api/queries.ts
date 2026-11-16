@@ -10,6 +10,7 @@ export const queryKeys = {
     preferences: ['preferences'] as const,
     settings: ['settings'] as const,
     notifications: ['notifications'] as const,
+    trial: ['trial'] as const,
     stations: (fieldId: number | null | undefined) => ['stations', fieldId ?? 'all'] as const,
     messages: (roomId: number | null | undefined) => ['messages', roomId] as const,
 };
@@ -60,3 +61,39 @@ export const useStationsQuery = (fieldId: number | null | undefined, enabled = t
         // Station list rarely changes.
         staleTime: 10 * 60_000,
     });
+
+
+/** Free-trial state for the signed-in user, as returned by GET /packages/trial. */
+export interface TrialStatus {
+    /** Length of the trial window, in days (14). */
+    trialDays: number;
+    /** The trial can be claimed right now - never claimed and still inside the window. */
+    eligible: boolean;
+    /** The trial has been claimed at some point, running or not. */
+    claimed: boolean;
+    /** A claimed trial is still running. */
+    active: boolean;
+    /** The window closed without the trial ever being claimed. */
+    expired: boolean;
+    /** Whole days left to claim, 0 once the window has closed. */
+    daysLeftToClaim: number;
+    /** Whole days left on a running trial, 0 when none is running. */
+    daysRemaining: number;
+    /** End of the claim window (registration + trialDays). */
+    windowEndDate: string;
+    /** End of the claimed trial, null until claimed. */
+    trialEndDate: string | null;
+}
+
+export const useTrialStatusQuery = (enabled = true) =>
+    useQuery({
+        queryKey: queryKeys.trial,
+        queryFn: () => get<TrialStatus>('/packages/trial'),
+        enabled,
+    });
+
+/** Claims the 14-day free trial. No payment and no card details are involved. */
+export const claimFreeTrial = async (): Promise<TrialStatus> => {
+    const { data } = await apiClient.post<{ trial: TrialStatus }>('/packages/trial/claim');
+    return data.trial;
+};
