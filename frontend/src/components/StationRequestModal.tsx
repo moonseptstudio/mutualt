@@ -2,12 +2,15 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     X, 
-    Sparkles, 
     Briefcase, 
     Building2, 
     MapPin, 
     Compass, 
     Layers, 
+    Hospital,
+    GraduationCap,
+    Send,
+    Landmark,
     User, 
     Phone, 
     Mail 
@@ -57,19 +60,81 @@ export const SRI_LANKA_PROVINCES = [
     'Sabaragamuwa'
 ];
 
-export const HIERARCHY_LEVELS = [
-    'National Hospital',
-    'Teaching Hospital',
-    'Provincial General Hospital',
-    'District General Hospital',
-    'Base Hospital',
-    'Divisional Hospital',
-    'Primary Medical Care Unit (PMCU)',
-    'MOH Office',
-    'Specialized Institute',
-    'Department / Ministry Office',
+export const FIELD_HIERARCHY_LEVELS_MAP: Record<string, string[]> = {
+    health: [
+        'National Hospital',
+        'Teaching Hospital',
+        'Provincial General Hospital',
+        'District General Hospital',
+        'Base Hospital',
+        'Divisional Hospital',
+        'Primary Medical Care Unit (PMCU)',
+        'MOH Office',
+        'Specialized Institute / Hospital',
+        'Ministry / Department Office',
+        'Other'
+    ],
+    education: [
+        'National School',
+        'Provincial 1AB School',
+        'Provincial 1C School',
+        'Type 2 School',
+        'Type 3 Primary School',
+        'Special Education School',
+        'Pirivena',
+        'Zonal Education Office',
+        'Divisional Education Office',
+        'Provincial Department of Education',
+        'Ministry of Education / NIE',
+        'Teacher Training College / NCOE',
+        'Other'
+    ],
+    postal: [
+        'General Post Office (GPO)',
+        'Central Mail Exchange (CME)',
+        'Main Post Office (Grade 1)',
+        'Main Post Office (Grade 2)',
+        'Sub Post Office',
+        'Agency Post Office',
+        'Divisional Postal Office',
+        'Postal Department Head Office',
+        'Other'
+    ],
+    administration: [
+        'Ministry Head Office',
+        'Department Head Office',
+        'District Secretariat (Kachcheri)',
+        'Divisional Secretariat',
+        'Grama Niladhari Office',
+        'Municipal Council',
+        'Urban Council',
+        'Pradeshiya Sabha',
+        'Statutory Board / Authority',
+        'Other'
+    ]
+};
+
+export const DEFAULT_HIERARCHY_LEVELS: string[] = [
+    'National Level Institution',
+    'Provincial Level Institution',
+    'District Level Office',
+    'Divisional Level Office',
+    'Field / Sub Office',
+    'Branch Office',
     'Other'
 ];
+
+export const HIERARCHY_LEVELS = FIELD_HIERARCHY_LEVELS_MAP.health;
+
+export const getFieldCategory = (fieldName?: string): 'health' | 'education' | 'postal' | 'administration' | 'default' => {
+    if (!fieldName) return 'default';
+    const lower = fieldName.toLowerCase();
+    if (lower.includes('health') || lower.includes('hospital') || lower.includes('medical')) return 'health';
+    if (lower.includes('education') || lower.includes('school') || lower.includes('teach')) return 'education';
+    if (lower.includes('postal') || lower.includes('post') || lower.includes('mail')) return 'postal';
+    if (lower.includes('admin') || lower.includes('public')) return 'administration';
+    return 'default';
+};
 
 interface StationRequestModalProps {
     isOpen: boolean;
@@ -100,7 +165,7 @@ const StationRequestModal: React.FC<StationRequestModalProps> = ({
     const [name, setName] = useState('');
     const [district, setDistrict] = useState(defaultDistrict || '');
     const [province, setProvince] = useState('');
-    const [hierarchyLevel, setHierarchyLevel] = useState(HIERARCHY_LEVELS[4]); // Base Hospital
+    const [hierarchyLevel, setHierarchyLevel] = useState('');
     const [reqName, setReqName] = useState(requesterName);
     const [reqPhone, setReqPhone] = useState(requesterPhone);
     const [reqEmail, setReqEmail] = useState(requesterEmail);
@@ -126,17 +191,54 @@ const StationRequestModal: React.FC<StationRequestModalProps> = ({
         }
     }, [defaultDistrict]);
 
+    // Initialize field & matching hierarchy level from defaultFieldId
     useEffect(() => {
         if (defaultFieldId) {
-            setFieldId(String(defaultFieldId));
+            const fidStr = String(defaultFieldId);
+            setFieldId(fidStr);
+            const foundField = fields.find(item => String(item.id) === fidStr);
+            const category = getFieldCategory(foundField?.name);
+            const levels = FIELD_HIERARCHY_LEVELS_MAP[category] || DEFAULT_HIERARCHY_LEVELS;
+            setHierarchyLevel(prev => (levels.includes(prev) ? prev : (levels[0] || '')));
         }
-    }, [defaultFieldId]);
+    }, [defaultFieldId, fields]);
 
     useEffect(() => {
         if (requesterName) setReqName(requesterName);
         if (requesterPhone) setReqPhone(requesterPhone);
         if (requesterEmail) setReqEmail(requesterEmail);
     }, [requesterName, requesterPhone, requesterEmail]);
+
+    // Prevent background page scrolling while modal is open
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const originalOverflow = document.body.style.overflow;
+        const originalTouchAction = document.body.style.touchAction;
+
+        document.body.style.overflow = 'hidden';
+        document.body.style.touchAction = 'none';
+
+        return () => {
+            document.body.style.overflow = originalOverflow;
+            document.body.style.touchAction = originalTouchAction;
+        };
+    }, [isOpen]);
+
+    // Selected field and resolved domain category
+    const selectedField = useMemo(() => {
+        return fields.find(f => String(f.id) === String(fieldId));
+    }, [fields, fieldId]);
+
+    const fieldCategory = useMemo(() => {
+        return getFieldCategory(selectedField?.name);
+    }, [selectedField]);
+
+    // Available hierarchy levels dynamically mapped to the selected field
+    const availableHierarchyLevels = useMemo(() => {
+        if (!fieldId) return DEFAULT_HIERARCHY_LEVELS;
+        return FIELD_HIERARCHY_LEVELS_MAP[fieldCategory] || DEFAULT_HIERARCHY_LEVELS;
+    }, [fieldId, fieldCategory]);
 
     // Format options for SearchableSelect
     const fieldOptions: SearchableOption[] = useMemo(() => {
@@ -163,12 +265,59 @@ const StationRequestModal: React.FC<StationRequestModalProps> = ({
         }));
     }, [t]);
 
+    // Formatted hierarchy options with multi-language labels
     const hierarchyOptions: SearchableOption[] = useMemo(() => {
-        return HIERARCHY_LEVELS.map(level => ({
-            value: level,
-            label: level
-        }));
-    }, []);
+        return availableHierarchyLevels.map(level => {
+            const key = level.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+            const translated = t(`hierarchy_levels.${key}`, level);
+            return {
+                value: level,
+                label: translated,
+                subLabel: translated !== level ? level : undefined
+            };
+        });
+    }, [availableHierarchyLevels, t]);
+
+    // Appropriate icon for the classification based on field
+    const getHierarchyIcon = (cat: string) => {
+        switch (cat) {
+            case 'health': return Hospital;
+            case 'education': return GraduationCap;
+            case 'postal': return Send;
+            case 'administration': return Landmark;
+            default: return Layers;
+        }
+    };
+
+    // Dynamic station name placeholder
+    const stationNamePlaceholder = useMemo(() => {
+        switch (fieldCategory) {
+            case 'education':
+                return t('station_request.placeholder_education', 'e.g. Royal College Colombo, Dharmaraja College, Central College');
+            case 'postal':
+                return t('station_request.placeholder_postal', 'e.g. Central Mail Exchange, Kandy Post Office, Sub Post Office Nugegoda');
+            case 'administration':
+                return t('station_request.placeholder_admin', 'e.g. Divisional Secretariat Maharagama, District Secretariat Kandy');
+            case 'health':
+            default:
+                return t('station_request.name_placeholder', 'e.g. Nochchiyagama Divisional Hospital, Balangoda Base Hospital');
+        }
+    }, [fieldCategory, t]);
+
+    // Handle field change and automatically adapt hierarchy options & default
+    const handleFieldChange = (newVal: string) => {
+        setFieldId(newVal);
+        if (!newVal) {
+            setHierarchyLevel('');
+            return;
+        }
+        const f = fields.find(item => String(item.id) === String(newVal));
+        const cat = getFieldCategory(f?.name);
+        const levels = FIELD_HIERARCHY_LEVELS_MAP[cat] || DEFAULT_HIERARCHY_LEVELS;
+        
+        // Select the first level of the new domain
+        setHierarchyLevel(levels[0] || '');
+    };
 
     const handleDistrictChange = (d: string) => {
         setDistrict(d);
@@ -210,7 +359,7 @@ const StationRequestModal: React.FC<StationRequestModalProps> = ({
                 name: name.trim(),
                 district,
                 province,
-                hierarchyLevel,
+                hierarchyLevel: hierarchyLevel || (availableHierarchyLevels[0] || 'Other'),
                 fieldId: parseInt(fieldId),
                 requestedByName: reqName.trim(),
                 requestedByPhone: reqPhone.trim(),
@@ -235,13 +384,20 @@ const StationRequestModal: React.FC<StationRequestModalProps> = ({
 
     return (
         <AnimatePresence>
-            <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6">
+            <div 
+                className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6"
+                data-lenis-prevent
+                onWheel={(e) => e.stopPropagation()}
+                onTouchMove={(e) => e.stopPropagation()}
+            >
                 {/* Backdrop matching Discover Stations */}
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     onClick={onClose}
+                    onWheel={(e) => e.stopPropagation()}
+                    onTouchMove={(e) => e.stopPropagation()}
                     className="absolute inset-0 bg-slate-900/40 dark:bg-black/80 backdrop-blur-sm"
                 />
 
@@ -251,7 +407,9 @@ const StationRequestModal: React.FC<StationRequestModalProps> = ({
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: "100%", opacity: 0.5 }}
                     transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                    className="relative w-full sm:max-w-4xl h-[90vh] sm:h-auto sm:max-h-[90vh] bg-[var(--bg-card)] rounded-t-[32px] sm:rounded-[32px] shadow-2xl overflow-hidden flex flex-col border border-[var(--border-main)]"
+                    data-lenis-prevent
+                    onWheel={(e) => e.stopPropagation()}
+                    className="relative w-full sm:max-w-4xl h-[90vh] sm:h-auto sm:max-h-[90vh] bg-[var(--bg-card)] rounded-t-[32px] sm:rounded-[32px] shadow-2xl overflow-hidden flex flex-col border border-[var(--border-main)] overscroll-contain"
                 >
                     {/* Drag handle for mobile */}
                     <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto my-3 sm:hidden shrink-0" />
@@ -278,10 +436,14 @@ const StationRequestModal: React.FC<StationRequestModalProps> = ({
                     </div>
 
                     {/* Scrollable Form Body */}
-                    <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto custom-scrollbar p-6 sm:p-8 space-y-5">
+                    <form 
+                        onSubmit={handleSubmit} 
+                        data-lenis-prevent
+                        onWheel={(e) => e.stopPropagation()}
+                        className="flex-1 overflow-y-auto overscroll-contain custom-scrollbar p-6 sm:p-8 space-y-5"
+                    >
                         {/* Notice Banner */}
                         <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 text-xs font-medium text-amber-800 dark:text-amber-300 flex items-start space-x-3">
-                            <Sparkles size={16} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                             <span>
                                 {t('station_request.notice', 'This station will be temporarily selected with "Pending Verification" status. It will become officially active platform-wide once approved by administrators.')}
                             </span>
@@ -296,7 +458,7 @@ const StationRequestModal: React.FC<StationRequestModalProps> = ({
                                 </label>
                                 <SearchableSelect
                                     value={fieldId}
-                                    onChange={(val) => setFieldId(val)}
+                                    onChange={(val) => handleFieldChange(val)}
                                     options={fieldOptions}
                                     placeholder={t('station_request.select_field', 'Select Domain')}
                                     icon={Briefcase}
@@ -314,7 +476,7 @@ const StationRequestModal: React.FC<StationRequestModalProps> = ({
                                         type="text"
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
-                                        placeholder={t('station_request.name_placeholder', 'e.g. Base Hospital Balangoda, MOH Homagama')}
+                                        placeholder={stationNamePlaceholder}
                                         required
                                         className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800/80 border-2 border-slate-100 dark:border-slate-700/80 rounded-xl focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 outline-none transition-all text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                                     />
@@ -353,17 +515,26 @@ const StationRequestModal: React.FC<StationRequestModalProps> = ({
                             </div>
                         </div>
 
-                        {/* Classification Level (SearchableSelect) */}
+                        {/* Classification Level (Dynamically loaded based on Domain / Field) */}
                         <div className="relative z-20">
-                            <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 ml-1 block">
-                                {t('station_request.hierarchy_label', 'Classification / Level')}
-                            </label>
+                            <div className="flex items-center justify-between mb-1.5 ml-1">
+                                <label className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+                                    {t('station_request.hierarchy_label', 'Classification / Level')}
+                                </label>
+                                {selectedField && (
+                                    <span className="text-[11px] font-semibold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-950/40 px-2.5 py-0.5 rounded-full border border-primary-200/50 dark:border-primary-800/40">
+                                        {t(`fields.${selectedField.name.toLowerCase().replace(/\s+/g, '_')}`, selectedField.name)}
+                                    </span>
+                                )}
+                            </div>
                             <SearchableSelect
                                 value={hierarchyLevel}
                                 onChange={(val) => setHierarchyLevel(val)}
                                 options={hierarchyOptions}
-                                placeholder={t('station_request.select_hierarchy', 'Select Level')}
-                                icon={Layers}
+                                placeholder={fieldId ? t('station_request.select_hierarchy', 'Select Level') : t('station_request.select_field_first', 'Select domain / field first')}
+                                disabledPlaceholder={t('station_request.select_field_first', 'Select domain / field first')}
+                                disabled={!fieldId}
+                                icon={getHierarchyIcon(fieldCategory)}
                             />
                         </div>
 

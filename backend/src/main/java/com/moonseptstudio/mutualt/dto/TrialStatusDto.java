@@ -10,10 +10,8 @@ import java.time.LocalDateTime;
 /**
  * Snapshot of a user's free-trial state.
  *
- * The trial window is fixed to the first {@code trialDays} days after the account was
- * created. Claiming is free and needs no card details, and the trial always ends at
- * {@code windowEndDate} - claiming late gives the remainder of the window, not a fresh
- * 14 days.
+ * Every account can claim a 14-day free trial once without card details.
+ * When claimed, the trial runs for {@code trialDays} days from the claim date.
  */
 @Data
 @NoArgsConstructor
@@ -23,7 +21,7 @@ public class TrialStatusDto {
     /** Length of the trial window, in days. */
     private int trialDays;
 
-    /** True when the trial can be claimed right now (never claimed + still inside the window). */
+    /** True when the trial can be claimed right now (never claimed). */
     private boolean eligible;
 
     /** True once the trial has been claimed, whether or not it is still running. */
@@ -32,16 +30,16 @@ public class TrialStatusDto {
     /** True while a claimed trial is still running. */
     private boolean active;
 
-    /** True when the window has closed without the trial ever being claimed. */
+    /** True when the trial was claimed and has since expired. */
     private boolean expired;
 
-    /** Whole days left before the window closes. 0 once it has closed. */
+    /** Whole days available to claim (14 while eligible, 0 once claimed). */
     private long daysLeftToClaim;
 
     /** Whole days left on a running trial. 0 when no trial is running. */
     private long daysRemaining;
 
-    /** End of the claim window (createdAt + trialDays). */
+    /** End of the trial window or current trial end date. */
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime windowEndDate;
 

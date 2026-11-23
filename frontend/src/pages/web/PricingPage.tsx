@@ -1,4 +1,4 @@
-import { ArrowRight, Gift, Sparkles, CheckCircle2 } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import apiClient from '../../api/client';
@@ -237,6 +237,15 @@ const PricingPage = () => {
                             },
                             {
                                 '@type': 'Offer',
+                                name: 'Free Trial (14 Days)',
+                                price: '0',
+                                priceCurrency: 'LKR',
+                                availability: 'https://schema.org/InStock',
+                                url: `${SITE_URL}/pricing`,
+                                description: 'Full access to all Premium features free for 14 days without a credit card.',
+                            },
+                            {
+                                '@type': 'Offer',
                                 name: 'Premium (1 Month)',
                                 price: '440',
                                 priceCurrency: 'LKR',
@@ -325,80 +334,14 @@ const PricingPage = () => {
                         </motion.p>
                     </motion.div>
 
-                    {/* ─── 14-Day Free Trial Banner ─── */}
-                    {(!isAuthenticated || trial?.eligible || trial?.active) && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 30 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true, margin: "-100px" }}
-                            transition={{ duration: 0.6 }}
-                            className="max-w-4xl mx-auto mb-12"
-                        >
-                            <div className="relative overflow-hidden rounded-[32px] promo-banner-bg p-8 sm:p-10 shadow-2xl shadow-violet-500/20">
-                                <div className="absolute inset-0 bg-gradient-to-br from-violet-600/30 to-pink-600/20" />
-                                <div className="absolute -top-10 -left-10 w-40 h-40 bg-violet-400/20 rounded-full blur-3xl" />
-                                <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-pink-400/20 rounded-full blur-3xl" />
-
-                                <div className="relative z-10 flex flex-col sm:flex-row items-center gap-6 sm:gap-8 text-center sm:text-left">
-                                    <div className="w-16 h-16 shrink-0 bg-white/15 backdrop-blur-md border border-white/25 rounded-2xl flex items-center justify-center shadow-lg">
-                                        <Gift size={30} className="text-amber-300" />
-                                    </div>
-
-                                    <div className="flex-1">
-                                        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-400/20 border border-emerald-400/30 text-emerald-200 text-[10px] font-black uppercase tracking-widest rounded-full mb-3">
-                                            <CheckCircle2 size={10} />
-                                            {t('trial.no_card_badge', 'No card required')}
-                                        </span>
-
-                                        {trial?.active ? (
-                                            <>
-                                                <h3 className="text-2xl font-black text-white tracking-tight">
-                                                    {t('trial.active_title', 'Your free trial is running')}
-                                                </h3>
-                                                <p className="text-violet-100/80 text-sm mt-1.5">
-                                                    {t('trial.active_desc', '{{days}} days of Premium left. Buy a package any time to keep going.', { days: trial.daysRemaining })}
-                                                </p>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <h3 className="text-2xl font-black text-white tracking-tight">
-                                                    {t('trial.banner_title', 'First {{days}} days completely free', { days: trialDays })}
-                                                </h3>
-                                                <p className="text-violet-100/80 text-sm mt-1.5">
-                                                    {isAuthenticated
-                                                        ? t('trial.banner_desc_eligible', 'Unlock every Premium feature for {{days}} more days. No card details, no charge.', { days: trial?.daysLeftToClaim ?? trialDays })
-                                                        : t('trial.banner_desc_guest', 'Every new account gets full Premium access for {{days}} days. No card details, no charge.', { days: trialDays })}
-                                                </p>
-                                            </>
-                                        )}
-                                    </div>
-
-                                    {!trial?.active && (
-                                        <button
-                                            onClick={handleTrialRequest}
-                                            disabled={isUpgrading}
-                                            className="w-full sm:w-auto shrink-0 px-8 py-4 bg-white text-slate-900 font-black rounded-2xl flex items-center justify-center gap-2 shadow-lg hover:scale-[1.03] active:scale-[0.98] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                                        >
-                                            <Sparkles size={16} className="text-violet-600" />
-                                            <span>
-                                                {isAuthenticated
-                                                    ? t('trial.activate_cta', 'Start My Free Trial')
-                                                    : t('trial.guest_cta', 'Create Free Account')}
-                                            </span>
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-
                     <motion.div 
                         initial="hidden"
                         whileInView="visible"
                         viewport={{ once: true, margin: "-100px" }}
                         variants={staggerContainer}
-                        className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto items-stretch"
+                        className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch"
                     >
+                        {/* 1. Basic Plan */}
                         <PricingCard
                             name={t('home.pricing_plan_basic', 'Basic')}
                             price="0"
@@ -415,8 +358,44 @@ const PricingPage = () => {
                             actionLabel={t('home.pricing_start_free', 'Start for Free')}
                             periodLabel={t('home.pricing_forever', '/ forever')}
                         />
+
+                        {/* 2. Free / 14 Days Plan (Trial) */}
                         <PricingCard
-                            name={t('home.pricing_plan_premium1', 'Premium (1 Month)')}
+                            name={t('home.pricing_plan_trial', 'Free Trial')}
+                            price="Free"
+                            laserBorder={true}
+                            description={t('home.pricing_trial_desc', 'Experience full Premium features for 14 days')}
+                            features={[
+                                t('home.pricing_feature_dynamic', '2-Way & 3-Way Dynamic Matching'),
+                                t('home.pricing_feature_unlimited', 'Unlimited Match Requests'),
+                                t('home.pricing_feature_msg', 'Direct Messaging Option'),
+                                t('home.pricing_feature_visibility', 'Full Profile & Contact Visibility'),
+                                t('home.pricing_feature_no_card', 'No Credit Card Required')
+                            ]}
+                            highlighted={false}
+                            onAction={
+                                trial?.active
+                                    ? () => navigate('/dashboard')
+                                    : (!isAuthenticated || trial?.eligible)
+                                        ? handleTrialRequest
+                                        : undefined
+                            }
+                            actionLabel={
+                                trial?.active
+                                    ? t('trial.active_status', '{{days}} Days Left', { days: trial?.daysRemaining })
+                                    : !isAuthenticated
+                                        ? t('trial.activate_cta', 'Start My Free Trial')
+                                        : trial?.eligible
+                                            ? (isUpgrading ? t('home.pricing_upgrading', 'Upgrading...') : t('trial.activate_cta', 'Start My Free Trial'))
+                                            : t('trial.already_used', 'Trial Used')
+                            }
+                            disabled={Boolean(isAuthenticated && !trial?.eligible && !trial?.active) || isUpgrading}
+                            periodLabel={t('home.pricing_14_days', '/ 14 days')}
+                        />
+
+                        {/* 3. Premium Plan */}
+                        <PricingCard
+                            name={premiumPlanName}
                             price="440"
                             description={t('home.pricing_premium1_desc', 'Best for quick direct & 3-way swaps')}
                             features={[
@@ -427,7 +406,7 @@ const PricingPage = () => {
                                 t('home.pricing_feature_no_ads', '100% Ad-Free Experience')
                             ]}
                             highlighted={true}
-                            onAction={() => handleUpgradeRequest({name: t('home.pricing_plan_premium1', 'Premium (1 Month)'), price: "440", duration: 1})}
+                            onAction={() => handleUpgradeRequest({name: premiumPlanName, price: "440", duration: 1})}
                             actionLabel={isUpgrading ? t('home.pricing_upgrading', 'Upgrading...') : (user?.packageName === 'PREMIUM' ? t('home.pricing_extend_1m', 'Extend 1 Month') : t('home.pricing_buy_1m', 'Buy 1 Month'))}
                             periodLabel={t('home.pricing_one_time', '/ one-time')}
                         />

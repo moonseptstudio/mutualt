@@ -58,19 +58,6 @@ public class PackageService {
     // ───────────────────────────── Free trial ─────────────────────────────
 
     /**
-     * End of the free-trial window for an account: the first {@link #TRIAL_DAYS} days
-     * after it was created. Accounts created before the column existed fall back to
-     * "now", which leaves them ineligible rather than handing out a surprise trial.
-     */
-    private LocalDateTime trialWindowEnd(User user) {
-        LocalDateTime createdAt = user.getCreatedAt();
-        if (createdAt == null) {
-            return LocalDateTime.now();
-        }
-        return createdAt.plusDays(TRIAL_DAYS);
-    }
-
-    /**
      * Days left, rounded up: a trial claimed seconds ago still reads "14 days", and the
      * final part-day reads "1 day" rather than "0".
      */
@@ -98,20 +85,36 @@ public class PackageService {
 
     public TrialStatusDto getTrialStatus(Long userId) {
         User user = userRepository.findById(userId).orElseThrow();
+        LocalDateTime now = LocalDateTime.now();
+
+        // Self-heal: If an active trial was set to (createdAt + 14 days) by the old legacy logic,
+        // restore the user's full 14 days from now so they don't lose days simply because their account is older.
+        if (user.isTrialUsed() && user.getTrialEndDate() != null && user.getTrialEndDate().isAfter(now)) {
+            if (user.getCreatedAt() != null && user.getTrialEndDate().isBefore(now.plusDays(TRIAL_DAYS - 1))) {
+                long diffSeconds = Math.abs(Duration.between(user.getTrialEndDate(), user.getCreatedAt().plusDays(TRIAL_DAYS)).getSeconds());
+                if (diffSeconds < 3600) {
+                    LocalDateTime restoredEnd = now.plusDays(TRIAL_DAYS);
+                    user.setTrialEndDate(restoredEnd);
+                    if (user.getSubscriptionEndDate() == null || user.getSubscriptionEndDate().isBefore(restoredEnd)) {
+                        user.setSubscriptionEndDate(restoredEnd);
+                    }
+                    userRepository.save(user);
+                }
+            }
+        }
+
         return buildTrialStatus(user);
     }
 
     private TrialStatusDto buildTrialStatus(User user) {
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime windowEnd = trialWindowEnd(user);
 
         boolean claimed = user.isTrialUsed();
-        boolean insideWindow = now.isBefore(windowEnd);
-        boolean eligible = !claimed && insideWindow;
+        boolean eligible = !claimed;
         boolean active = claimed
                 && user.getTrialEndDate() != null
                 && now.isBefore(user.getTrialEndDate());
-        boolean expired = !claimed && !insideWindow;
+        boolean expired = claimed && !active;
 
         TrialStatusDto dto = new TrialStatusDto();
         dto.setTrialDays(TRIAL_DAYS);
@@ -119,44 +122,41 @@ public class PackageService {
         dto.setClaimed(claimed);
         dto.setActive(active);
         dto.setExpired(expired);
-        dto.setDaysLeftToClaim(eligible ? daysLeft(now, windowEnd) : 0);
+        dto.setDaysLeftToClaim(eligible ? TRIAL_DAYS : 0);
         dto.setDaysRemaining(active ? daysLeft(now, user.getTrialEndDate()) : 0);
-        dto.setWindowEndDate(windowEnd);
+        dto.setWindowEndDate(active ? user.getTrialEndDate() : now.plusDays(TRIAL_DAYS));
         dto.setTrialEndDate(user.getTrialEndDate());
         return dto;
     }
 
     /**
-     * Grants the one-off free trial. No payment and no card details are involved.
+     * Grants the one-off free trial for 14 days starting from the claim time.
+     * No payment and no card details are involved.
      *
-     * @throws TrialNotAvailableException when the trial was already claimed or the window has closed.
+     * @throws TrialNotAvailableException when the trial was already claimed.
      */
     @jakarta.transaction.Transactional
     public TrialStatusDto claimFreeTrial(Long userId) {
         User user = userRepository.findById(userId).orElseThrow();
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime windowEnd = trialWindowEnd(user);
 
         if (user.isTrialUsed()) {
             throw new TrialNotAvailableException(
                     "TRIAL_ALREADY_CLAIMED", "Free trial already claimed for this account.");
         }
-        if (!now.isBefore(windowEnd)) {
-            throw new TrialNotAvailableException(
-                    "TRIAL_WINDOW_CLOSED",
-                    "The free trial is only available during the first " + TRIAL_DAYS + " days after registration.");
-        }
 
         SubscriptionPackage premium = packageRepository.findByName("PREMIUM").orElseThrow();
 
+        LocalDateTime trialEnd = now.plusDays(TRIAL_DAYS);
+
         user.setTrialUsed(true);
-        user.setTrialEndDate(windowEnd);
+        user.setTrialEndDate(trialEnd);
         user.setSubscriptionPackage(premium);
 
         // Never shorten an existing paid subscription that already runs past the trial.
         LocalDateTime currentEnd = user.getSubscriptionEndDate();
-        if (currentEnd == null || currentEnd.isBefore(windowEnd)) {
-            user.setSubscriptionEndDate(windowEnd);
+        if (currentEnd == null || currentEnd.isBefore(trialEnd)) {
+            user.setSubscriptionEndDate(trialEnd);
         }
 
         userRepository.save(user);

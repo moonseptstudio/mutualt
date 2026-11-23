@@ -135,6 +135,21 @@ const Preferences = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // Prevent background page scrolling while Discover Stations modal is open
+    useEffect(() => {
+        if (!isModalOpen) return;
+        const originalOverflow = document.body.style.overflow;
+        const originalTouchAction = document.body.style.touchAction;
+
+        document.body.style.overflow = 'hidden';
+        document.body.style.touchAction = 'none';
+
+        return () => {
+            document.body.style.overflow = originalOverflow;
+            document.body.style.touchAction = originalTouchAction;
+        };
+    }, [isModalOpen]);
+
     // Delete Confirmation Modal state
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [preferenceToDelete, setPreferenceToDelete] = useState<number | null>(null);
@@ -324,12 +339,19 @@ const Preferences = () => {
             {/* Discovery Discovery Section (Modal/Bottom Sheet) */}
             <AnimatePresence>
                 {isModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6">
+                    <div 
+                        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6"
+                        data-lenis-prevent
+                        onWheel={(e) => e.stopPropagation()}
+                        onTouchMove={(e) => e.stopPropagation()}
+                    >
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             onClick={() => setIsModalOpen(false)}
+                            onWheel={(e) => e.stopPropagation()}
+                            onTouchMove={(e) => e.stopPropagation()}
                             className="absolute inset-0 bg-slate-900/40 dark:bg-black/80 backdrop-blur-sm"
                         ></motion.div>
 
@@ -338,7 +360,9 @@ const Preferences = () => {
                             animate={{ y: 0, opacity: 1 }}
                             exit={{ y: "100%", opacity: 0.5 }}
                             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                            className="relative w-full sm:max-w-4xl h-[90vh] sm:h-auto sm:max-h-[90vh] bg-[var(--bg-card)] rounded-t-[32px] sm:rounded-[32px] shadow-2xl overflow-hidden flex flex-col border border-[var(--border-main)]"
+                            data-lenis-prevent
+                            onWheel={(e) => e.stopPropagation()}
+                            className="relative w-full sm:max-w-4xl h-[90vh] sm:h-auto sm:max-h-[90vh] bg-[var(--bg-card)] rounded-t-[32px] sm:rounded-[32px] shadow-2xl overflow-hidden flex flex-col border border-[var(--border-main)] overscroll-contain"
                         >
                             {/* Drag Indicator for Mobile */}
                             <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto my-3 sm:hidden shrink-0"></div>
@@ -433,7 +457,11 @@ const Preferences = () => {
                             </div>
 
                             {/* Modal Body */}
-                            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 sm:p-8 relative z-10 space-y-6">
+                            <div 
+                                data-lenis-prevent
+                                onWheel={(e) => e.stopPropagation()}
+                                className="flex-1 overflow-y-auto overscroll-contain custom-scrollbar p-6 sm:p-8 relative z-10 space-y-6"
+                            >
                                 {/* Selected Preferences Section (Directly Below Search Bar) */}
                                 {preferences.length > 0 ? (
                                     <div className="p-4 sm:p-5 rounded-2xl bg-primary-50/40 dark:bg-primary-950/20 border border-primary-100 dark:border-primary-900/40">

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     ShieldCheck,
@@ -33,6 +33,11 @@ const AdminLayout = () => {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
     const [isSignOutModalOpen, setIsSignOutModalOpen] = useState(false);
+
+    useEffect(() => {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+    }, [location.pathname]);
 
     const confirmSignOut = () => {
         setIsSignOutModalOpen(true);

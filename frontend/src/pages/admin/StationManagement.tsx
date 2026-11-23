@@ -537,7 +537,7 @@ const StationManagement = () => {
                                         value={formData.name}
                                         onChange={(e) => setFormData({...formData, name: e.target.value})}
                                         className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-primary-50 transition-all outline-none font-bold text-slate-900 shadow-inner"
-                                        placeholder="e.g. National Hospital Colombo"
+                                        placeholder="e.g. Nochchiyagama Divisional Hospital, Balangoda Base Hospital"
                                         required
                                     />
                                 </div>

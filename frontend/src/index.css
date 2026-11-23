@@ -617,6 +617,31 @@ h6,
   filter: drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 4px #38bdf8);
 }
 
+.laser-card-container {
+  pointer-events: none;
+  position: absolute;
+  inset: -1px;
+  border-radius: 1.5rem;
+  padding: 1.5px;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  z-index: 20;
+}
+
+.laser-card-tracer {
+  position: absolute;
+  width: 140px;
+  height: 24px;
+  border-radius: 12px;
+  offset-path: rect(0 auto auto 0 round 24px);
+  offset-anchor: 80% 50%;
+  animation: laser-beam-move 4s linear infinite;
+  background: linear-gradient(90deg, transparent 0%, rgba(2, 132, 199, 0.3) 15%, #0ea5e9 40%, #38bdf8 72%, #ffffff 95%, #ffffff 100%);
+  filter: drop-shadow(0 0 2px #ffffff) drop-shadow(0 0 5px #38bdf8);
+}
+
 @keyframes laser-tracer {
   from {
     stroke-dashoffset: 0;

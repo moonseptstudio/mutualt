@@ -37,6 +37,6 @@ public class User {
     @Column(nullable = false, columnDefinition = "boolean default false")
     private boolean trialUsed = false;
 
-    /** When the claimed trial runs out (= createdAt + trial length). Null until claimed. */
+    /** When the claimed trial runs out (= claim date + trial length). Null until claimed. */
     private java.time.LocalDateTime trialEndDate;
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { X, ShieldCheck, Lock, AlertCircle, Tag, CheckCircle2, Gift, Crown, Sparkles, PartyPopper } from 'lucide-react';
+import { X, ShieldCheck, Lock, AlertCircle, Tag, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 interface PaymentModalProps {
@@ -24,7 +24,6 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
     price,
     trialMode = false,
     trialDays = 14,
-    trialDaysLeftToClaim,
 }) => {
     const { t } = useTranslation();
     const [isProcessing, setIsProcessing] = useState(false);
@@ -185,94 +184,58 @@ const PaymentModal: React.FC<PaymentModalProps> = ({
                 </button>
 
                 {trialMode ? (
-                    /* ── FREE TRIAL MODE (no card details) ── */
-                    <div className="p-8">
-                        {/* Trial Header */}
-                        <div className="relative rounded-3xl overflow-hidden mb-8 promo-banner-bg p-8 text-center">
-                            <div className="absolute inset-0 bg-gradient-to-br from-violet-600/30 to-pink-600/20" />
-                            <div className="absolute -top-8 -left-8 w-24 h-24 bg-violet-400/20 rounded-full blur-2xl" />
-                            <div className="absolute -bottom-6 -right-6 w-20 h-20 bg-pink-400/20 rounded-full blur-2xl" />
-                            <div className="relative z-10">
-                                <div className="w-16 h-16 bg-white/15 backdrop-blur-md border border-white/25 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                                    <Gift size={30} className="text-amber-300" />
-                                </div>
-                                <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-400/20 border border-emerald-400/30 text-emerald-300 text-[10px] font-black uppercase tracking-widest rounded-full mb-3">
-                                    <CheckCircle2 size={10} /> {t('trial.no_card_badge', 'No card required')}
-                                </div>
-                                <h3 className="text-2xl font-black text-white tracking-tight">
-                                    {t('trial.modal_title', '{{days}} Days Free', { days: trialDays })}
-                                </h3>
-                                <p className="text-violet-200/80 text-sm mt-1">
-                                    {t('trial.no_card_needed', 'No card details needed')}
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Plan Summary with crossed-out price */}
-                        <div className="relative p-6 bg-linear-to-br from-violet-50 to-pink-50 dark:from-violet-900/10 dark:to-pink-900/10 rounded-3xl mb-8 border border-violet-200/50 dark:border-violet-700/30 overflow-hidden">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <span className="text-[10px] font-bold uppercase tracking-widest text-violet-600 bg-violet-100 dark:bg-violet-900/40 px-2 py-0.5 rounded-md mb-2 inline-block">
-                                        {t('payment_modal.selected_plan', 'Selected Plan')}
-                                    </span>
-                                    <h4 className="text-lg font-bold text-(--text-main) leading-none">{packageName}</h4>
-                                </div>
-                                <div className="text-right">
-                                    <div className="flex items-baseline justify-end gap-2">
-                                        <span className="text-2xl font-black text-(--text-muted) line-through opacity-40">Rs. {price}</span>
-                                    </div>
-                                    <div className="flex items-baseline justify-end gap-1 mt-1">
-                                        <span className="text-sm font-bold text-emerald-600">Rs.</span>
-                                        <span className="text-4xl font-black text-emerald-600 tracking-tighter tabular-nums">0</span>
-                                    </div>
-                                    <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">
-                                        {t('trial.free_label', 'Free for {{days}} days', { days: trialDays })}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div className="mt-4 pt-4 border-t border-violet-100 dark:border-violet-800/30 flex flex-col gap-2">
-                                {[
-                                    t('trial.perk_access', '{{days}} days of full Premium access', { days: trialDays }),
-                                    t('trial.perk_no_card', 'No card details required'),
-                                    t('trial.perk_features', 'All premium features unlocked'),
-                                    t('trial.perk_no_charge', 'Nothing is charged, ever'),
-                                ].map((item, i) => (
-                                    <span key={i} className="text-xs font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
-                                        <CheckCircle2 size={12} className="text-emerald-500 shrink-0" />
-                                        {item}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Activate button */}
-                        <button
-                            onClick={handleTrialActivate}
-                            disabled={isProcessing}
-                            className="w-full py-4 promo-banner-bg text-white font-black rounded-2xl flex items-center justify-center gap-3 shadow-lg shadow-violet-500/25 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                        >
-                            {isProcessing ? (
-                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            ) : (
-                                <>
-                                    <Crown size={18} className="text-amber-300" />
-                                    <span>{t('trial.activate_cta', 'Start My Free Trial')}</span>
-                                    <Sparkles size={16} className="text-violet-200" />
-                                </>
-                            )}
-                        </button>
-
-                        {typeof trialDaysLeftToClaim === 'number' && (
-                            <p className="mt-4 text-center text-xs text-slate-400 flex items-center justify-center gap-1">
-                                <PartyPopper size={12} />
-                                <span>
-                                    {t('trial.claim_window_hint', 'Available for {{days}} more days after registration', {
-                                        days: trialDaysLeftToClaim,
-                                    })}
-                                </span>
+                    /* ── FREE TRIAL CONFIRMATION MODE ── */
+                    <div className="p-6 sm:p-8">
+                        <div className="mb-6">
+                            <h3 className="text-2xl font-bold text-[var(--text-main)]">
+                                {t('trial.confirm_title', 'Activate 14-Day Free Trial')}
+                            </h3>
+                            <p className="text-[var(--text-muted)] text-sm mt-1">
+                                {t('trial.confirm_sub', 'Unlock all Premium features for 14 days. No payment or card required.')}
                             </p>
-                        )}
+                        </div>
+
+                        {/* Summary details */}
+                        <div className="p-5 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200/60 dark:border-slate-700/50 mb-6 space-y-3">
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-[var(--text-muted)]">{t('payment_modal.plan', 'Plan')}</span>
+                                <span className="font-semibold text-[var(--text-main)]">{packageName}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-[var(--text-muted)]">{t('payment_modal.duration', 'Duration')}</span>
+                                <span className="font-semibold text-[var(--text-main)]">{trialDays} {t('common.days', 'Days')}</span>
+                            </div>
+                            <div className="flex justify-between items-center pt-3 border-t border-slate-200/50 dark:border-slate-700/50 text-sm">
+                                <span className="text-[var(--text-muted)]">{t('payment_modal.amount_to_pay', 'Amount')}</span>
+                                <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                                    {t('trial.price_free', 'Free (Rs. 0)')}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="space-y-3">
+                            <button
+                                type="button"
+                                onClick={handleTrialActivate}
+                                disabled={isProcessing}
+                                className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                            >
+                                {isProcessing ? (
+                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                ) : (
+                                    <span>{t('trial.confirm_cta', 'Confirm & Start Trial')}</span>
+                                )}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                disabled={isProcessing}
+                                className="w-full py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold rounded-2xl transition-all cursor-pointer"
+                            >
+                                {t('common.cancel', 'Cancel')}
+                            </button>
+                        </div>
                     </div>
                 ) : (
                     /* ── NORMAL PAYMENT MODE ── */

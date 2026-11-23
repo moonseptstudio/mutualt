@@ -7,7 +7,8 @@ import {
     FileText,
     AlertCircle,
     Camera,
-    LogOut
+    LogOut,
+    Zap
 } from 'lucide-react';
 
 const ConfigItem = ({ icon: Icon, label, value, action, warning, onClick }: any) => (
@@ -34,7 +35,7 @@ const ConfigItem = ({ icon: Icon, label, value, action, warning, onClick }: any)
 
 import { useState, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { queryKeys, useProfileQuery } from '../../api/queries';
+import { queryKeys, useProfileQuery, useTrialStatusQuery } from '../../api/queries';
 import { useTranslation } from 'react-i18next';
 import apiClient from '../../api/client';
 import { ProfileSkeleton } from '../../components/common/Skeletons';
@@ -58,6 +59,8 @@ const Profile = () => {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const { data: profile = null, isPending: loading } = useProfileQuery();
+    const trialQuery = useTrialStatusQuery(!!user);
+    const trial = trialQuery.data;
     const setProfile = (data: any) => queryClient.setQueryData(queryKeys.profile, data);
     const [isEditing, setIsEditing] = useState(false);
     const [editForm, setEditForm] = useState({ email: '', phoneNumber: '', profileImageUrl: '' });
@@ -136,6 +139,27 @@ const Profile = () => {
             toast.error(t('profile.toast_avatar_failed'));
         }
     };
+
+    const getRemainingDays = () => {
+        if (!profile?.subscriptionEndDate) return 0;
+        
+        let end: Date;
+        if (Array.isArray(profile.subscriptionEndDate)) {
+            const [y, m, d, h, min] = profile.subscriptionEndDate;
+            end = new Date(y, m - 1, d, h || 0, min || 0);
+        } else {
+            end = new Date(profile.subscriptionEndDate);
+        }
+
+        if (isNaN(end.getTime())) return 0;
+        
+        const diff = end.getTime() - new Date().getTime();
+        return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+    };
+
+    const isTrial = (trial?.active || (profile?.trialEndDate && new Date(profile.trialEndDate) > new Date())) ?? false;
+    const isPaidPremium = !isTrial && (profile?.packageName === 'PREMIUM' || (profile?.packageName && profile.packageName !== 'FREE'));
+    const remainingDays = isTrial ? (trial?.daysRemaining ?? getRemainingDays()) : getRemainingDays();
 
 
 
@@ -294,6 +318,40 @@ const Profile = () => {
                                     <ConfigItem icon={CreditCard} label={t('profile.nic_label')} value={profile.nic} />
                                 </>
                             )}
+                        </div>
+                    </div>
+
+                    {/* Subscription Package Section */}
+                    <div className="px-2">
+                        <h3 className="text-base sm:text-lg font-semibold text-(--text-main) tracking-tight mb-4 sm:mb-6 flex items-center space-x-3">
+                            <Zap size={20} className="text-primary-600" />
+                            <span>{t('profile.package_title', 'Subscription Package')}</span>
+                        </h3>
+                        <div className="flex items-center justify-between p-4 sm:p-5 bg-(--bg-card) dark:bg-(--bg-card)/40 rounded-3xl border border-(--border-main) hover:border-primary-500/30 dark:hover:border-primary-400/20 group transition-all duration-300 hover:shadow-lg hover:shadow-primary-500/5">
+                            <div>
+                                <p className="text-[10px] font-bold text-(--text-muted) uppercase tracking-widest mb-1 leading-none">
+                                    {isTrial
+                                        ? t('profile.package_trial', '14-Day Free Trial')
+                                        : isPaidPremium
+                                            ? t('profile.package_premium', 'Premium')
+                                            : t('profile.package_basic', 'Basic Plan')}
+                                </p>
+                                <p className="text-sm font-bold text-(--text-main) tracking-tight">
+                                    {isTrial || isPaidPremium
+                                        ? (remainingDays > 0
+                                            ? `${remainingDays} ${t('dashboard.pro.days_remaining', 'Days Remaining')}`
+                                            : t('common.expired', 'Expired'))
+                                        : t('profile.package_free_account', 'Free Account')}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => navigate('/pricing')}
+                                className="px-4 py-2 sm:px-5 sm:py-2.5 text-xs font-bold bg-primary-600 text-white hover:bg-primary-700 dark:bg-primary-600 dark:hover:bg-primary-500 uppercase tracking-wider rounded-xl transition-all duration-300 cursor-pointer active:scale-95 shadow-md shadow-primary-600/15"
+                            >
+                                {isPaidPremium
+                                    ? t('profile.package_extend', 'Extend')
+                                    : t('profile.package_upgrade', 'Upgrade')}
+                            </button>
                         </div>
                     </div>
 

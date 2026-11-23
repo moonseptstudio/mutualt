@@ -10,6 +10,7 @@ import {
     Search
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { RealtimeProvider } from '../context/RealtimeContext';
@@ -21,15 +22,20 @@ const ClientLayout = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const { user } = useAuth();
+    const { theme } = useTheme();
     const [globalSearchQuery, setGlobalSearchQuery] = useState('');
     
-    // Restore preferred theme for dashboard
+    // Apply preferred theme for dashboard and restore light mode on unmount
     useEffect(() => {
         const root = window.document.documentElement;
-        const savedTheme = localStorage.getItem('theme') || 'light';
         root.classList.remove('light', 'dark');
-        root.classList.add(savedTheme);
-    }, []);
+        root.classList.add(theme);
+
+        return () => {
+            root.classList.remove('dark');
+            root.classList.add('light');
+        };
+    }, [theme]);
     
     const hasPackage = user?.packageName === 'PREMIUM';
 

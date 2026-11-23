@@ -44,6 +44,9 @@ public class MetadataController {
     @Autowired
     SmsService smsService;
 
+    @Autowired(required = false)
+    org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
     @GetMapping("/fields")
     public List<Field> getFields() {
         return fieldRepository.findAll();
@@ -151,7 +154,22 @@ public class MetadataController {
             fieldRepository.findById(req.getFieldId()).ifPresent(station::setField);
         }
 
-        Station savedStation = stationRepository.save(station);
+        Station savedStation;
+        try {
+            savedStation = stationRepository.save(station);
+        } catch (org.springframework.dao.DataIntegrityViolationException ex) {
+            // Sequence out of sync! Auto-heal PostgreSQL sequence and retry
+            if (jdbcTemplate != null) {
+                try {
+                    jdbcTemplate.execute("SELECT setval(pg_get_serial_sequence('stations', 'id'), COALESCE(MAX(id), 1)) FROM stations");
+                    savedStation = stationRepository.save(station);
+                } catch (Exception retryEx) {
+                    throw ex;
+                }
+            } else {
+                throw ex;
+            }
+        }
 
         // Async Notification to all Admin accounts via Email and SMS
         notifyAdminsAboutStationRequest(savedStation);

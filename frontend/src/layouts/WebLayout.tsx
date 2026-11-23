@@ -61,10 +61,12 @@ const WebLayout = () => {
         restDelta: 0.001
     });
 
-    // Close mobile menu on route change & reset scroll
+    // Close mobile menu on route change, reset scroll & enforce light mode
     useEffect(() => {
         setMobileMenu(false);
         window.scrollTo(0, 0);
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
     }, [location.pathname]);
 
     const navLinks = [

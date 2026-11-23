@@ -8,6 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
+import java.util.List;
 
 @Component
 public class DataSeeder implements CommandLineRunner {
@@ -70,8 +71,14 @@ public class DataSeeder implements CommandLineRunner {
             profile.setFullName("System Administrator");
             profile.setNic("ADMIN001");
             profile.setEmail("admin@mutualt.com");
-            profile.setJobCategory(jobCategoryRepository.findAll().get(0));
-            profile.setCurrentStation(stationRepository.findAll().get(0));
+            List<JobCategory> adminCategories = jobCategoryRepository.findAll();
+            if (!adminCategories.isEmpty()) {
+                profile.setJobCategory(adminCategories.get(0));
+            }
+            List<Station> adminStations = stationRepository.findAll();
+            if (!adminStations.isEmpty()) {
+                profile.setCurrentStation(adminStations.get(0));
+            }
             userProfileRepository.save(profile);
 
             System.out.println("Seeded Admin User: admin / admin123");
@@ -114,12 +121,12 @@ public class DataSeeder implements CommandLineRunner {
             Field health = fieldRepository.findByName("Health").orElseThrow();
             stationRepository.saveAll(Arrays.asList(
                     new Station(null, "National Hospital Sri Lanka", "Colombo", "Western", "National Hospital", health),
-                    new Station(null, "Teaching Hospital Kandy", "Kandy", "Central", "Teaching Hospital", health),
-                    new Station(null, "Teaching Hospital Karapitiya", "Galle", "Southern", "Teaching Hospital", health),
-                    new Station(null, "Teaching Hospital Matara", "Matara", "Southern", "Teaching Hospital", health),
-                    new Station(null, "Teaching Hospital Jaffna", "Jaffna", "Northern", "Teaching Hospital", health),
-                    new Station(null, "GH Matale", "Matale", "Central", "General Hospital", health),
-                    new Station(null, "Base Hospital Panadura", "Kalutara", "Western", "Base Hospital", health)));
+                    new Station(null, "Kandy Teaching Hospital", "Kandy", "Central", "Teaching Hospital", health),
+                    new Station(null, "Karapitiya Teaching Hospital", "Galle", "Southern", "Teaching Hospital", health),
+                    new Station(null, "Matara Teaching Hospital", "Matara", "Southern", "Teaching Hospital", health),
+                    new Station(null, "Jaffna Teaching Hospital", "Jaffna", "Northern", "Teaching Hospital", health),
+                    new Station(null, "Matale General Hospital", "Matale", "Central", "General Hospital", health),
+                    new Station(null, "Panadura Base Hospital", "Kalutara", "Western", "Base Hospital", health)));
             System.out.println("Seeded Stations.");
         }
     }
@@ -140,8 +147,14 @@ public class DataSeeder implements CommandLineRunner {
             profile.setFullName("Test User One");
             profile.setNic("990011223V");
             profile.setEmail("test1@example.com");
-            profile.setJobCategory(jobCategoryRepository.findAll().get(0));
-            profile.setCurrentStation(stationRepository.findAll().get(0));
+            List<JobCategory> userCategories = jobCategoryRepository.findAll();
+            if (!userCategories.isEmpty()) {
+                profile.setJobCategory(userCategories.get(0));
+            }
+            List<Station> userStations = stationRepository.findAll();
+            if (!userStations.isEmpty()) {
+                profile.setCurrentStation(userStations.get(0));
+            }
             userProfileRepository.save(profile);
 
             System.out.println("Seeded Test User: 990011223V / password123");
